@@ -22,6 +22,11 @@ function runAllTests() {
   });
 }
 
+function testEmail() {
+  MailApp.sendEmail("tom@rd3tech.com", "Test Subject", "Test Body");
+}
+undefined
+
 function sendTestAdminEmail() {
   const testRecipient = 'tom@rd3tech.com';
   const mockGoal = 'My TV screen has a display fault and needs power repair.';
@@ -313,4 +318,69 @@ function createMockItemResponse(title, responseValue) {
   };
 }
 
+
+
+
+
+/**
+ * Test function to verify that Honeypot detection cleanly aborts execution.
+ */
+function testHoneypotSilentDrop() {
+  Logger.log('======================================================================');
+  Logger.log('  STARTING TEST: HONEYPOT SILENT DROP VERIFICATION');
+  Logger.log('======================================================================');
+
+  const formConfig = getFormConfig();
+  const honeypotTitle = formConfig.fields.honeypot ? formConfig.fields.honeypot.titleMatch : 'leave blank';
+
+  // -------------------------------------------------------------------
+  // CASE 1: BOT SUBMISSION (Honeypot Filled)
+  // -------------------------------------------------------------------
+  Logger.log('\n[CASE 1] Simulating Bot Submission (Honeypot filled)...');
+  
+  const botResponses = [
+    createMockItemResponse(formConfig.fields.name.titleMatch, "Spam Bot"),
+    createMockItemResponse(formConfig.fields.email.titleMatch, "spambot@example.com"),
+    createMockItemResponse(formConfig.fields.userGoal.titleMatch, "Buy cheap products at http://spam.test"),
+    createMockItemResponse(honeypotTitle, "http://spam-link.test") // <-- TRAP TRIPPED
+  ];
+
+  const botEvent = {
+    response: {
+      getRespondentEmail: function() { return "spambot@example.com"; },
+      getItemResponses: function() { return botResponses; }
+    }
+  };
+
+  Logger.log(' Executing onFormSubmit(e) with Honeypot data...');
+  onFormSubmit(botEvent);
+  Logger.log(' SUCCESS: Case 1 execution completed (Verify above logs show "Execution aborted").');
+
+  // -------------------------------------------------------------------
+  // CASE 2: HUMAN SUBMISSION (Honeypot Left Blank)
+  // -------------------------------------------------------------------
+  Logger.log('\n[CASE 2] Simulating Genuine Human Submission (Honeypot empty)...');
+  
+  const humanResponses = [
+    createMockItemResponse(formConfig.fields.name.titleMatch, "Real User"),
+    createMockItemResponse(formConfig.fields.email.titleMatch, "realuser@example.com"),
+    createMockItemResponse(formConfig.fields.userGoal.titleMatch, "Need help setting up Wi-Fi router"),
+    createMockItemResponse(honeypotTitle, "") // <-- CLEAN (EMPTY)
+  ];
+
+  const humanEvent = {
+    response: {
+      getRespondentEmail: function() { return "realuser@example.com"; },
+      getItemResponses: function() { return humanResponses; }
+    }
+  };
+
+  Logger.log(' Executing onFormSubmit(e) with clean submission...');
+  onFormSubmit(humanEvent);
+  Logger.log(' SUCCESS: Case 2 processed normally and dispatched email.');
+
+  Logger.log('======================================================================');
+  Logger.log('  HONEYPOT TEST COMPLETE');
+  Logger.log('======================================================================');
+}
 

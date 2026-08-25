@@ -44,3 +44,18 @@ function getSpamConfig() {
   }
   return getFallbackSpamConfig();
 }
+
+
+
+/**
+ * Checks if the hidden/honeypot field was filled out by a bot.
+ * 
+ * @param {string} honeypotValue - Text extracted from the honeypot field.
+ * @returns {boolean} True if filled (Spam/Bot), False if empty (Human).
+ */
+function checkHoneypot(honeypotValue) {
+  if (!honeypotValue) return false;
+  
+  // If field contains any non-whitespace text, it's a bot
+  return honeypotValue.trim().length > 0;
+}
