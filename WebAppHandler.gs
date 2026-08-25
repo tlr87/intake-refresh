@@ -1,8 +1,6 @@
-
-
 /**
  * Web App HTTP POST Endpoint for RD3 Tech Website Forms.
- * Traps spam, records to Google Form, and dispatches HTML emails.
+ * Traps spam, limits repeat submissions, records to Google Form, and dispatches HTML emails.
  */
 function doPost(e) {
   try {
@@ -12,6 +10,8 @@ function doPost(e) {
     const formConfig = (typeof getFormConfig === 'function') ? getFormConfig() : {};
     const reviewConfig = (typeof getReviewConfig === 'function') ? getReviewConfig() : {};
     const spamConfig = (typeof getSpamConfig === 'function') ? getSpamConfig() : {};
+    const rateLimitConfig = (typeof getRateLimitConfig === 'function') ? getRateLimitConfig() : { enabled: true, cooldownSeconds: 60 };
+    
     const adminEmail = (formConfig.settings && formConfig.settings.adminEmail) 
       ? formConfig.settings.adminEmail 
       : 'tom@rd3tech.com';
@@ -30,7 +30,7 @@ function doPost(e) {
 
     // Core Fields
     const name = params.rd3_name || params.name || params.Name || 'Visitor';
-    const userEmail = params.rd3_email || params.email || params.Email || '';
+    const userEmail = (params.rd3_email || params.email || params.Email || '').trim().toLowerCase();
     const phone = params.rd3_phone || params.phone || params.Phone || 'Not provided';
     const pref = params.rd3_contactPreference || params.contactPreference || 'Email';
     const usedBefore = params.rd3_usedBefore || params.usedBefore || 'Not provided';
@@ -44,6 +44,23 @@ function doPost(e) {
     if (honeypotValue && honeypotValue.trim() !== '') {
       Logger.log('🚫 HONEYPOT TRIPPED');
       return createJsonResponse({ status: "success", message: "Form submitted successfully." });
+    }
+
+    // Rate Limiting / Cooldown Check
+    if (rateLimitConfig.enabled && userEmail) {
+      const cache = CacheService.getScriptCache();
+      const cacheKey = "rl_" + Utilities.base64Encode(userEmail);
+      const isCooldown = cache.get(cacheKey);
+
+      if (isCooldown) {
+        Logger.log('⏱️ RATE LIMIT TRIGGERED for: ' + userEmail);
+        return createJsonResponse({ 
+          status: "error", 
+          message: `Please wait ${rateLimitConfig.cooldownSeconds || 60} seconds before submitting another request.` 
+        });
+      }
+
+      cache.put(cacheKey, "active", rateLimitConfig.cooldownSeconds || 60);
     }
 
     // 2. Record to Google Form
@@ -195,118 +212,14 @@ function doPost(e) {
     return createJsonResponse({ status: "error", message: error.toString() });
   }
 }
+
 /**
- * Helper to parse URL-encoded POST strings into an object
+ * Handles HTTP GET Requests.
  */
-function parseQueryString(queryString) {
-  const params = {};
-  if (!queryString) return params;
-  const pairs = queryString.split('&');
-  for (let i = 0; i < pairs.length; i++) {
-    const pair = pairs[i].split('=');
-    const key = decodeURIComponent(pair[0]);
-    const value = decodeURIComponent((pair[1] || '').replace(/\+/g, ' '));
-    if (key) params[key] = value;
-  }
-  return params;
-}
-
 function doGet(e) {
-  return createJsonResponse({ status: "active", service: "RD3 Tech API" });
+  return createJsonResponse({ status: "active", service: "RD3 Tech Web App API" });
 }
 
-function parseQueryString(queryString) {
-  const params = {};
-  if (!queryString) return params;
-  const pairs = queryString.split('&');
-  for (let i = 0; i < pairs.length; i++) {
-    const pair = pairs[i].split('=');
-    const key = decodeURIComponent(pair[0]);
-    const value = decodeURIComponent((pair[1] || '').replace(/\+/g, ' '));
-    if (key) params[key] = value;
-  }
-  return params;
-}
-
-function createJsonResponse(data) {
-  return ContentService.createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-function doGet(e) {
-  return createJsonResponse({ status: "active", service: "RD3 Tech API" });
-}
-
-function parseQueryString(queryString) {
-  const params = {};
-  if (!queryString) return params;
-  const pairs = queryString.split('&');
-  for (let i = 0; i < pairs.length; i++) {
-    const pair = pairs[i].split('=');
-    const key = decodeURIComponent(pair[0]);
-    const value = decodeURIComponent((pair[1] || '').replace(/\+/g, ' '));
-    if (key) params[key] = value;
-  }
-  return params;
-}
-
-function createJsonResponse(data) {
-  return ContentService.createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-function doGet(e) {
-  return createJsonResponse({ status: "active", service: "RD3 Tech API" });
-}
-
-function parseQueryString(queryString) {
-  const params = {};
-  if (!queryString) return params;
-  const pairs = queryString.split('&');
-  for (let i = 0; i < pairs.length; i++) {
-    const pair = pairs[i].split('=');
-    const key = decodeURIComponent(pair[0]);
-    const value = decodeURIComponent((pair[1] || '').replace(/\+/g, ' '));
-    if (key) params[key] = value;
-  }
-  return params;
-}
-
-function createJsonResponse(data) {
-  return ContentService.createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-function escapeHtml(text) {
-  return String(text)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
-function doGet(e) {
-  return createJsonResponse({ status: "active", service: "RD3 Tech API" });
-}
-
-function parseQueryString(queryString) {
-  const params = {};
-  if (!queryString) return params;
-  const pairs = queryString.split('&');
-  for (let i = 0; i < pairs.length; i++) {
-    const pair = pairs[i].split('=');
-    const key = decodeURIComponent(pair[0]);
-    const value = decodeURIComponent((pair[1] || '').replace(/\+/g, ' '));
-    if (key) params[key] = value;
-  }
-  return params;
-}
-
-function createJsonResponse(data) {
-  return ContentService.createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON);
-}
 /**
  * Saves form submission data if a Google Sheet is bound to the script.
  */
@@ -327,13 +240,6 @@ function saveToSheet(data) {
     data.timestamp, data.name, data.email, data.phone, data.pref,
     data.usedBefore, data.clientType, data.category, data.urgency, data.goal
   ]);
-}
-
-/**
- * Handles HTTP GET Requests.
- */
-function doGet(e) {
-  return createJsonResponse({ status: "active", service: "RD3 Tech Web App API" });
 }
 
 /**
@@ -358,4 +264,16 @@ function parseQueryString(queryString) {
 function createJsonResponse(data) {
   return ContentService.createTextOutput(JSON.stringify(data))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+/**
+ * HTML Escaping utility helper.
+ */
+function escapeHtml(text) {
+  return String(text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
