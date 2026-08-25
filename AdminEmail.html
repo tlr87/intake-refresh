@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Form Submission — RD3 Tech</title>
+  <style>
+    body { margin: 0; padding: 0; width: 100% !important; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    .wrapper { width: 100%; table-layout: fixed; background-color: #f1f5f9; padding: 24px 0; }
+    .main-table { background-color: #ffffff; margin: 0 auto; width: 100%; max-width: 600px; border-spacing: 0; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+    .header { background-color: #0f172a; padding: 24px 32px; text-align: left; }
+    .header h1 { color: #ffffff; margin: 0; font-size: 22px; font-weight: 700; }
+    .header p { color: #38bdf8; margin: 4px 0 0 0; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; }
+    .content { padding: 32px; }
+    .intro-meta { font-size: 15px; color: #334155; line-height: 1.5; margin-top: 0; margin-bottom: 20px; }
+    
+    /* Banners */
+    .banner { padding: 14px 16px; margin-bottom: 16px; border-radius: 0 6px 6px 0; }
+    .banner-title { font-weight: 700; font-size: 12px; text-transform: uppercase; }
+    .banner-body { font-size: 13px; margin-top: 4px; }
+
+    /* Spam - Dark Red / Purple */
+    .banner-spam { background-color: #fdf2f8; border-left: 4px solid #9333ea; }
+    .banner-spam .banner-title { color: #6b21a8; }
+    .banner-spam .banner-body { color: #581c87; }
+
+    /* Urgent - Bright Orange / Red */
+    .banner-urgent { background-color: #fff7ed; border-left: 4px solid #ea580c; }
+    .banner-urgent .banner-title { color: #c2410c; }
+    .banner-urgent .banner-body { color: #9a3412; }
+
+    /* Out of Scope / Flagged - Soft Red */
+    .banner-flagged { background-color: #fef2f2; border-left: 4px solid #ef4444; }
+    .banner-flagged .banner-title { color: #991b1b; }
+    .banner-flagged .banner-body { color: #7f1d1d; }
+
+    /* Clean - Green */
+    .banner-clean { background-color: #f0fdf4; border-left: 4px solid #22c55e; padding: 12px 16px; margin-bottom: 24px; border-radius: 0 6px 6px 0; color: #166534; font-size: 12px; font-weight: 700; }
+
+    .field-card { margin-bottom: 14px; background-color: #f8fafc; padding: 14px 16px; border-radius: 6px; border-left: 3px solid #0284c7; }
+    .field-title { font-weight: 700; color: #64748b; font-size: 11px; margin-bottom: 4px; text-transform: uppercase; }
+    .field-value { color: #0f172a; font-size: 14px; line-height: 1.5; }
+    .footer { background-color: #f8fafc; padding: 18px 32px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b; text-align: center; }
+  </style>
+</head>
+<body>
+  <center class="wrapper">
+    <table class="main-table" width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td class="header">
+          <h1>RD3 TECH</h1>
+          <p>Admin Notification &bull; Contact Form</p>
+        </td>
+      </tr>
+      <tr>
+        <td class="content">
+          <p class="intro-meta">
+            New contact form response received from 
+            <strong><?= name ? name : 'Website Visitor' ?></strong> 
+            (<?= userEmail ? userEmail : 'No Email Provided' ?>).
+          </p>
+
+          <!-- 1. SPAM BANNER -->
+          <? if (typeof isSpam !== 'undefined' && isSpam) { ?>
+            <div class="banner banner-spam">
+              <div class="banner-title">🚫 Spam Flagged</div>
+              <div class="banner-body">Matched Term(s): <strong><?= matchedSpamKeywords.join(', ') ?></strong></div>
+            </div>
+          <? } ?>
+
+          <!-- 2. URGENT BANNER -->
+          <? if (typeof isUrgent !== 'undefined' && isUrgent) { ?>
+            <div class="banner banner-urgent">
+              <div class="banner-title">⚡ High Urgency Request</div>
+              <div class="banner-body">Priority level marked as <strong>HIGH</strong>. Rapid response required.</div>
+            </div>
+          <? } ?>
+
+          <!-- 3. OUT OF SCOPE / FLAGGED BANNER -->
+          <? if (needsReview) { ?>
+            <div class="banner banner-flagged">
+              <div class="banner-title">⚠️ Review Flagged &bull; Out-of-Scope</div>
+              <div class="banner-body">Matched Keyword(s): <strong><?= matchedKeywords.join(', ') ?></strong></div>
+            </div>
+          <? } ?>
+
+          <!-- 4. CLEAN BANNER (renders if no flags triggered) -->
+          <? if (!needsReview && (typeof isSpam === 'undefined' || !isSpam) && (typeof isUrgent === 'undefined' || !isUrgent)) { ?>
+            <div class="banner-clean">✓ Standard IT Request (No flags triggered)</div>
+          <? } ?>
+
+          <!-- SUBMISSION FIELDS -->
+          <? for (var i = 0; i < fields.length; i++) { ?>
+            <div class="field-card">
+              <div class="field-title"><?= fields[i].title ?></div>
+              <div class="field-value">
+                <? if (Array.isArray(fields[i].value)) { ?>
+                  <? for (var j = 0; j < fields[i].value.length; j++) { ?>
+                    <div>&bull; <?= fields[i].value[j] ?></div>
+                  <? } ?>
+                <? } else { ?>
+                  <?= fields[i].value ? fields[i].value.replace(/\n/g, '<br>') : '<span style="color:#94a3b8; font-style:italic;">No answer</span>' ?>
+                <? } ?>
+              </div>
+            </div>
+          <? } ?>
+        </td>
+      </tr>
+      <tr>
+        <td class="footer">Automated notification sent via Google Apps Script.</td>
+      </tr>
+    </table>
+  </center>
+</body>
+</html>

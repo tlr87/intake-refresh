@@ -1,49 +1,108 @@
 /**
- * Test function to verify checkReviewKeywords() without submitting the Google Form.
- * Select 'runKeywordTests' in the toolbar and click 'Run'.
+ * Test suite for verifying keyword analysis and live HTML rendering.
  */
-function runKeywordTests() {
+function runAllTests() {
+  Logger.log('==========================================');
+  Logger.log('     STARTING KEYWORD CHECKER TESTS       ');
+  Logger.log('==========================================');
+
   const testCases = [
-    {
-      label: "Test 1: Spam / Unrelated Enquiry (SEO & Crypto)",
-      text: "Hi, we offer guest post services and backlinks to boost your rankings for crypto projects."
-    },
-    {
-      label: "Test 2: Out of Scope Repair (TV & Electronics)",
-      text: "My TV screen has a display fault and won't turn on. Do you fix TV power failure?"
-    },
-    {
-      label: "Test 3: Mobile Hardware (Phone screen)",
-      text: "I dropped my mobile phone screen and need a new charging port installed."
-    },
-    {
-      label: "Test 4: Valid IT Enquiry (Should NOT flag)",
-      text: "We need help setting up Microsoft 365 emails and configuring our Wi-Fi router for our small business."
-    },
-    {
-      label: "Test 5: Short Word Boundary Test (Word containing 'tv')",
-      text: "Our team is trying to improve productivity and activity in the office." // Should NOT trigger "tv"
-    }
+    { name: 'Spam/SEO', text: 'Guest post services and backlinks for crypto projects.', expected: true },
+    { name: 'Out of Scope TV', text: 'My TV screen has a display fault.', expected: true },
+    { name: 'Valid IT Enquiry', text: 'Need help setting up Microsoft 365 and Wi-Fi.', expected: false },
+    { name: 'Word Boundary Safeguard', text: 'Trying to improve productivity and activity.', expected: false }
   ];
 
-  Logger.log("==========================================");
-  Logger.log("     STARTING KEYWORD CHECKER TESTS       ");
-  Logger.log("==========================================\n");
+  testCases.forEach((tc, idx) => {
+    const res = checkReviewKeywords(tc.text);
+    Logger.log(`Test ${idx + 1}: ${tc.name}`);
+    Logger.log(`Needs Review? --> ${res.needsReview ? 'YES' : 'NO'}`);
+    Logger.log(`Matched: [${res.matchedKeywords.join(', ')}]`);
+    Logger.log('------------------------------------------');
+  });
+}
 
-  testCases.forEach((test, index) => {
-    const result = checkReviewKeywords(test.text);
-    
-    Logger.log(`--- ${test.label} ---`);
-    Logger.log(`Input Text: "${test.text}"`);
-    Logger.log(`Needs Review? --> ${result.needsReview ? "YES (FLAGGED)" : "NO (CLEAN)"}`);
-    Logger.log(`Matched Keywords: [${result.matchedKeywords.join(", ")}]`);
-    Logger.log("------------------------------------------\n");
+function sendTestAdminEmail() {
+  const testRecipient = 'tom@rd3tech.com';
+  const mockGoal = 'My TV screen has a display fault and needs power repair.';
+  
+  const mockFields = [
+    { title: 'Name', value: 'Jane Doe' },
+    { title: 'Email', value: 'jane.doe@example.com' },
+    { title: 'What Are You Trying To Achieve?', value: mockGoal }
+  ];
+
+  const reviewResult = checkReviewKeywords(mockGoal);
+
+  const adminTemplate = HtmlService.createTemplateFromFile('AdminEmail');
+  adminTemplate.name = 'Jane Doe';
+  adminTemplate.userEmail = 'jane.doe@example.com';
+  adminTemplate.fields = mockFields;
+  adminTemplate.needsReview = reviewResult.needsReview;
+  adminTemplate.matchedKeywords = reviewResult.matchedKeywords;
+
+  MailApp.sendEmail({
+    to: testRecipient,
+    subject: `[TEST] ${reviewResult.needsReview ? '[FLAGGED] ' : ''}New Enquiry — Jane Doe`,
+    htmlBody: adminTemplate.evaluate().getContent()
   });
 
-  Logger.log("==========================================");
-  Logger.log("            TESTS COMPLETED               ");
-  Logger.log("==========================================");
+  Logger.log('Test email sent to ' + testRecipient);
 }
+
+
+
+
+
+/**
+ * Test suite to verify checkReviewKeywords and getReviewConfig integration.
+ */
+function testKeywordCheckerStandalone() {
+  Logger.log('==================================================');
+  Logger.log('  TEST 1: Auto-Hydration via getReviewConfig()');
+  Logger.log('==================================================');
+
+  // 1. Test using default auto-loaded config (Script Properties or Fallback)
+  const testInput1 = 'My TV screen has a display fault and power issues.';
+  const result1 = checkReviewKeywords(testInput1);
+
+  Logger.log('Input Text: "' + testInput1 + '"');
+  Logger.log('Needs Review? --> ' + (result1.needsReview ? 'YES' : 'NO'));
+  Logger.log('Matched Keywords: [' + result1.matchedKeywords.join(', ') + ']');
+
+  if (result1.needsReview && result1.matchedKeywords.includes('tv screen')) {
+    Logger.log('PASSED: Auto-hydration successfully loaded default outOfScope keywords.\n');
+  } else {
+    Logger.log('FAILED: Auto-hydration failed to evaluate input.\n');
+  }
+
+  Logger.log('==================================================');
+  Logger.log('  TEST 2: Explicit Config Override');
+  Logger.log('==================================================');
+
+  // 2. Test passing a mock custom config object explicitly
+  const mockCustomConfig = {
+    settings: { enableReview: true },
+    categories: {
+      outOfScope: ['customkeyword', 'testphrase']
+    }
+  };
+
+  const testInput2 = 'This string contains a customkeyword for testing.';
+  const result2 = checkReviewKeywords(testInput2, mockCustomConfig);
+
+  Logger.log('Input Text: "' + testInput2 + '"');
+  Logger.log('Needs Review? --> ' + (result2.needsReview ? 'YES' : 'NO'));
+  Logger.log('Matched Keywords: [' + result2.matchedKeywords.join(', ') + ']');
+
+  if (result2.needsReview && result2.matchedKeywords.includes('customkeyword')) {
+    Logger.log('PASSED: Custom config override executed correctly.');
+  } else {
+    Logger.log('FAILED: Custom config override failed.');
+  }
+  Logger.log('==================================================');
+}
+
 
 
 
@@ -52,51 +111,206 @@ function runKeywordTests() {
 
 
 /**
- * Sends a live test email of AdminEmail.html directly to tom@rd3tech.com.
- * Select 'sendTestAdminEmail' in the Apps Script toolbar and click 'Run'.
+ * Test function that trips Spam, Out-of-Scope, and Urgent filters simultaneously.
+ * Run this function directly from the editor to test end-to-end email rendering.
  */
-function sendTestAdminEmail() {
-  const testRecipient = 'tom@rd3tech.com';
+function testTripAllFilters() {
+  Logger.log('==================================================');
+  Logger.log('  STARTING TEST: TRIPPING ALL FILTER MODULES');
+  Logger.log('==================================================');
+
+  // 1. Crafted input payload designed to trigger all three filters:
+  // - Out-of-Scope: "tv screen", "soldering"
+  // - Spam: "casino", "http://"
+  // - Urgent: "server down", "emergency"
+  const testGoalText = "EMERGENCY: Our server down! Also need soldering for a tv screen. Check out http://casino.com for deals.";
+
+  Logger.log('Test Input Payload:\n"' + testGoalText + '"\n');
+
+  // 2. Load module configurations
+  const formConfig = getFormConfig();
+  const reviewConfig = getReviewConfig();
+  const spamConfig = getSpamConfig();
+  const urgencyConfig = getUrgencyConfig();
+
+  const adminEmail = formConfig.settings ? formConfig.settings.adminEmail : 'tom@rd3tech.com';
+
+  // 3. Evaluate inputs against keyword engines
+  const reviewResult = checkReviewKeywords(testGoalText, reviewConfig);
+  const spamResult = checkSpamKeywords(testGoalText, spamConfig);
+
+  // Evaluate Urgency (Check if "High" level or keyword-driven)
+  const isUrgentTest = testGoalText.toLowerCase().includes('emergency') || testGoalText.toLowerCase().includes('server down');
+
+  // 4. Log evaluation results to Apps Script Execution Log
+  Logger.log('--- EVALUATION RESULTS ---');
+  Logger.log('1. Out-of-Scope Flagged? -> ' + (reviewResult.needsReview ? 'YES' : 'NO'));
+  Logger.log('   Matched Keywords: [' + reviewResult.matchedKeywords.join(', ') + ']');
   
-  // 1. Mock Form Input Data (simulating a flagged TV repair request)
-  const mockName = 'Jane Doe';
-  const mockEmail = 'jane.doe@example.com';
-  const mockUserGoal = 'My TV screen has a display fault and needs a new TV panel or power repair.';
-  
+  Logger.log('2. Spam Flagged? ---------> ' + (spamResult.isSpam ? 'YES' : 'NO'));
+  Logger.log('   Matched Spam: [' + spamResult.matchedKeywords.join(', ') + ']');
+
+  Logger.log('3. Urgent Flagged? -------> ' + (isUrgentTest ? 'YES' : 'NO'));
+  Logger.log('---------------------------\n');
+
+  // 5. Construct subject line prefixes
+  let subjectPrefix = '';
+  if (spamResult.isSpam) subjectPrefix += '[SPAM] ';
+  if (isUrgentTest) subjectPrefix += '[URGENT] ';
+  if (reviewResult.needsReview) subjectPrefix += '[FLAGGED] ';
+
+  // 6. Build mock field list for email payload
   const mockFields = [
-    { title: 'Name', value: 'Jane Doe' },
-    { title: 'Email', value: 'jane.doe@example.com' },
-    { title: 'Phone', value: '021 555 0199' },
-    { title: 'How would you prefer us to contact you?', value: 'Email' },
-    { title: 'Have you used RD3 Tech before?', value: 'No' },
-    { title: 'I am contacting RD3 Tech as:', value: 'Home or Family' },
-    { 
-      title: 'What can we help you with?', 
-      value: ['Help with Something Broken?', 'Help with Knowing Where to Start?'] 
-    },
-    { title: 'What Are You Trying To Achieve?', value: mockUserGoal },
-    { title: 'How Urgent Is This For You?', value: 'High' }
+    { title: 'Name', value: 'Test User (Multi-Filter)' },
+    { title: 'Email', value: 'tester@example.com' },
+    { title: 'How Urgent Is This For You?', value: 'High' },
+    { title: 'What Are You Trying To Achieve?', value: testGoalText }
   ];
 
-  // 2. Run Keyword Evaluation using KeywordChecker.gs
-  const reviewResult = checkReviewKeywords(mockUserGoal);
-
-  // 3. Populate AdminEmail.html template
+  // 7. Hydrate AdminEmail.html template
   const adminTemplate = HtmlService.createTemplateFromFile('AdminEmail');
-  adminTemplate.name = mockName;
-  adminTemplate.userEmail = mockEmail;
+  adminTemplate.name = 'Test User (Multi-Filter)';
+  adminTemplate.userEmail = 'tester@example.com';
   adminTemplate.fields = mockFields;
+
+  // Pass evaluation flags to HTML Template
   adminTemplate.needsReview = reviewResult.needsReview;
   adminTemplate.matchedKeywords = reviewResult.matchedKeywords;
+  
+  adminTemplate.isSpam = spamResult.isSpam;
+  adminTemplate.matchedSpamKeywords = spamResult.matchedKeywords;
 
-  const htmlBody = adminTemplate.evaluate().getContent();
+  adminTemplate.isUrgent = isUrgentTest;
 
-  // 4. Send the test email
+  const adminHtmlBody = adminTemplate.evaluate().getContent();
+
+  // 8. Dispatch Test Email
   MailApp.sendEmail({
-    to: testRecipient,
-    subject: `[TEST] ${reviewResult.needsReview ? '[FLAGGED] ' : ''}New Enquiry — Jane Doe`,
-    htmlBody: htmlBody
+    to: adminEmail,
+    subject: `${subjectPrefix}[New Enquiry] Test User — RD3 Tech`,
+    htmlBody: adminHtmlBody
   });
 
-  Logger.log(`Test email sent successfully to ${testRecipient}! Check your inbox.`);
+  Logger.log('PASSED: Email dispatched to ' + adminEmail);
+  Logger.log('Subject Sent: "' + `${subjectPrefix}[New Enquiry] Test User — RD3 Tech` + '"');
+  Logger.log('==================================================');
 }
+
+
+/**
+ * Simulates a live Google Form submission using the exact data from your pre-filled URL.
+ * Includes detailed step-by-step diagnostic logging.
+ */
+function testPreFilledUrlSubmission() {
+  Logger.log('======================================================================');
+  Logger.log('  STARTING TEST: PRE-FILLED URL SIMULATED SUBMISSION');
+  Logger.log('======================================================================');
+
+  // 1. Step: Load Configurations
+  Logger.log('[STEP 1/5] Loading system configurations...');
+  const formConfig = getFormConfig();
+  const reviewConfig = getReviewConfig();
+  const spamConfig = getSpamConfig();
+  const urgencyConfig = getUrgencyConfig();
+
+  Logger.log(' - Admin Email Target: ' + (formConfig.settings ? formConfig.settings.adminEmail : 'Fallback/Default Email'));
+  Logger.log(' - Review Filtering:  ' + (reviewConfig.settings ? reviewConfig.settings.enableReview : 'Enabled'));
+  Logger.log(' - Spam Filtering:    ' + (spamConfig.settings ? spamConfig.settings.enableSpamCheck : 'Enabled'));
+
+  // 2. Step: Prepare Mock Payload from Pre-Filled URL Parameters
+  Logger.log('\n[STEP 2/5] Building mock submission payload from pre-filled URL data...');
+  
+  const mockFormValues = {
+    name: "Tom Revill",
+    email: "tom.revill@gmail.com",
+    phone: "022 555 554",
+    contactPreference: "Email",
+    usedBefore: "Yes",
+    clientType: "Home or Family",
+    helpCategory: ["Help with Something Broken?"],
+    userGoal: "TV is broken",
+    urgency: "High"
+  };
+
+  Logger.log(' Input Values:');
+  Logger.log('   - Name:               ' + mockFormValues.name);
+  Logger.log('   - Email:              ' + mockFormValues.email);
+  Logger.log('   - Phone:              ' + mockFormValues.phone);
+  Logger.log('   - Contact Pref:       ' + mockFormValues.contactPreference);
+  Logger.log('   - Existing Client:    ' + mockFormValues.usedBefore);
+  Logger.log('   - Client Type:        ' + mockFormValues.clientType);
+  Logger.log('   - Help Category:      ' + JSON.stringify(mockFormValues.helpCategory));
+  Logger.log('   - User Goal:          "' + mockFormValues.userGoal + '"');
+  Logger.log('   - Urgency Level:      ' + mockFormValues.urgency);
+
+  const mockItemResponses = [
+    createMockItemResponse(formConfig.fields.name.titleMatch, mockFormValues.name),
+    createMockItemResponse(formConfig.fields.email.titleMatch, mockFormValues.email),
+    createMockItemResponse(formConfig.fields.phone.titleMatch, mockFormValues.phone),
+    createMockItemResponse(formConfig.fields.contactPreference.titleMatch, mockFormValues.contactPreference),
+    createMockItemResponse(formConfig.fields.usedBefore.titleMatch, mockFormValues.usedBefore),
+    createMockItemResponse(formConfig.fields.clientType.titleMatch, mockFormValues.clientType),
+    createMockItemResponse(formConfig.fields.helpCategory.titleMatch, mockFormValues.helpCategory),
+    createMockItemResponse(formConfig.fields.userGoal.titleMatch, mockFormValues.userGoal),
+    createMockItemResponse(formConfig.fields.urgency.titleMatch, mockFormValues.urgency)
+  ];
+
+  const mockEvent = {
+    response: {
+      getRespondentEmail: function() { return mockFormValues.email; },
+      getItemResponses: function() { return mockItemResponses; }
+    }
+  };
+
+  // 3. Step: Standalone Keyword Engine Diagnostics
+  Logger.log('\n[STEP 3/5] Running pre-execution moderation check on userGoal...');
+  const reviewCheck = checkReviewKeywords(mockFormValues.userGoal, reviewConfig);
+  const spamCheck = checkSpamKeywords(mockFormValues.userGoal, spamConfig);
+
+  Logger.log(' Moderation Results:');
+  Logger.log('   - Out-of-Scope Triggered? -> ' + (reviewCheck.needsReview ? 'YES' : 'NO'));
+  Logger.log('     Matched Term(s):        [' + reviewCheck.matchedKeywords.join(', ') + ']');
+  Logger.log('   - Spam Triggered? ---------> ' + (spamCheck.isSpam ? 'YES' : 'NO'));
+  Logger.log('     Matched Term(s):        [' + spamCheck.matchedKeywords.join(', ') + ']');
+
+  // 4. Step: Execute onFormSubmit
+  Logger.log('\n[STEP 4/5] Executing onFormSubmit(e) handler...');
+  try {
+    onFormSubmit(mockEvent);
+    Logger.log(' Handler execution completed without runtime errors.');
+  } catch (err) {
+    Logger.log(' ERROR: Handler threw an exception: ' + err.toString());
+    return;
+  }
+
+  // 5. Step: Verify Subject Line Output
+  Logger.log('\n[STEP 5/5] Subject line construction verification:');
+  let expectedPrefix = '';
+  if (spamCheck.isSpam) expectedPrefix += '[SPAM] ';
+  if (mockFormValues.urgency === 'High') expectedPrefix += '[URGENT] ';
+  if (reviewCheck.needsReview) expectedPrefix += '[FLAGGED] ';
+
+  const expectedSubject = `${expectedPrefix}[New Enquiry] ${mockFormValues.name} — RD3 Tech`;
+  Logger.log(' Expected Subject: "' + expectedSubject + '"');
+  Logger.log(' Delivered To:     ' + (formConfig.settings ? formConfig.settings.adminEmail : 'tom@rd3tech.com') + ' & ' + mockFormValues.email);
+
+  Logger.log('======================================================================');
+  Logger.log('  TEST COMPLETE: Check execution log and inbox for verified email.');
+  Logger.log('======================================================================');
+}
+
+/**
+ * Helper to build mock Google Form ItemResponse objects.
+ */
+function createMockItemResponse(title, responseValue) {
+  return {
+    getItem: function() {
+      return {
+        getTitle: function() { return title; }
+      };
+    },
+    getResponse: function() { return responseValue; }
+  };
+}
+
+

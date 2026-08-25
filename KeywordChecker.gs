@@ -1,98 +1,65 @@
 /**
- * Scans the "What Are You Trying To Achieve?" field against a single array of keywords
- * to flag submission for manual review or spam filtering.
+ * Scans user input for out-of-scope keywords.
+ * 
+ * @param {string} textToScan - Input string to evaluate (e.g., userGoal).
+ * @param {Object} [reviewConfig] - Optional explicit configuration object.
+ * @returns {Object} { needsReview: boolean, matchedKeywords: string[] }
  */
-function checkReviewKeywords(userGoal) {
-  if (!userGoal) {
-    return { needsReview: false, matchedKeywords: [] };
+function checkReviewKeywords(textToScan, reviewConfig) {
+  const result = {
+    needsReview: false,
+    matchedKeywords: []
+  };
+
+  if (!textToScan) return result;
+
+  const config = reviewConfig || getReviewConfig();
+  if (config.settings && config.settings.enableReview === false) {
+    return result;
   }
 
-  // List of keywords/phrases to flag
-  const reviewKeywords = [
-    "tv",
-    "TV",
-    "Tuned",
-    "Tv Tuned",
-    "crypto",
-    "seo",
-    "guest post",
-    "backlinks",
-    "rankings",
-    "partnership",
-    "TV screen",
-    "TV panel",
-    "Display fault",
-    "TV power failure",
-    "Internal TV component",
-    "Antenna",
-    "TV reception",
-    "Mobile phone screen",
-    "Mobile phone battery",
-    "Charging port",
-    "Water damage",
-    "Tablet screen",
-    "Soldering",
-    "Component-level electronics",
-    "Console hardware",
-    "PlayStation",
-    "Xbox",
-    "Nintendo",
-    "Appliance",
-    "Whiteware",
-    "Electrical wiring",
-    "General electronics",
-    "Manufacturer warranty service"
-  ];
+  const outOfScopeList = (config.categories && config.categories.outOfScope) 
+    ? config.categories.outOfScope 
+    : [];
 
-  const matchedKeywords = [];
-  const textToSearch = userGoal.toLowerCase();
+  if (outOfScopeList.length === 0) return result;
 
-  // Deduplicate and convert reviewKeywords to lowercase for accurate matching
-  const uniqueLowerKeywords = [...new Set(reviewKeywords.map(k => k.toLowerCase()))];
+  const textLower = textToScan.toLowerCase();
+  const matched = [];
+  const uniqueKeywords = [...new Set(outOfScopeList.map(k => String(k).toLowerCase()))];
 
-  for (const keyword of uniqueLowerKeywords) {
-    // Regex matches exact words or multi-word phrases safely
+  for (const keyword of uniqueKeywords) {
     const regex = new RegExp('\\b' + escapeRegExp(keyword) + '\\b', 'i');
-    if (regex.test(textToSearch)) {
-      matchedKeywords.push(keyword);
+    if (regex.test(textLower)) {
+      matched.push(keyword);
     }
   }
 
-  return {
-    needsReview: matchedKeywords.length > 0,
-    matchedKeywords: matchedKeywords
-  };
+  result.needsReview = matched.length > 0;
+  result.matchedKeywords = matched;
+
+  return result;
 }
 
 /**
- * Escapes special regex characters in keywords
+ * Utility function to escape special Regex characters in keywords.
  */
 function escapeRegExp(string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 /**
- * Implementation inside your main onFormSubmit function
+ * Loads REVIEW_CONFIG from Script Properties or falls back to FallbackReviewConfig.gs
  */
-function onFormSubmit(e) {
-  const itemResponses = e.response.getItemResponses();
-  let userGoal = '';
-
-  itemResponses.forEach(itemResponse => {
-    const title = itemResponse.getItem().getTitle();
-    if (title.includes('What Are You Trying To Achieve?')) {
-      userGoal = itemResponse.getResponse();
+function getReviewConfig() {
+  const props = PropertiesService.getScriptProperties();
+  const raw = props.getProperty('REVIEW_CONFIG');
+  if (raw) {
+    try {
+      return JSON.parse(raw);
+    } catch (e) {
+      Logger.log('Error parsing REVIEW_CONFIG: ' + e.message);
     }
-  });
-
-  // Perform keyword review check
-  const reviewResult = checkReviewKeywords(userGoal);
-
-  // Example usage: Pass flags into Admin email template
-  const adminTemplate = HtmlService.createTemplateFromFile('AdminEmail');
-  adminTemplate.needsReview = reviewResult.needsReview;
-  adminTemplate.matchedKeywords = reviewResult.matchedKeywords;
-
-  Logger.log('Needs Review: ' + reviewResult.needsReview);
-  Logger.log('Matched Keywords: ' + reviewResult.matchedKeywords.join(', '));
+  }
+  return getFallbackReviewConfig();
 }

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>We Received Your Enquiry — RD3 Tech</title>
+  <style>
+    body { margin: 0; padding: 0; width: 100% !important; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    .wrapper { width: 100%; table-layout: fixed; background-color: #f1f5f9; padding: 24px 0; }
+    .main-table { background-color: #ffffff; margin: 0 auto; width: 100%; max-width: 600px; border-spacing: 0; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+    .header { background-color: #0f172a; padding: 24px 32px; text-align: left; }
+    .header h1 { color: #ffffff; margin: 0; font-size: 22px; font-weight: 700; }
+    .header p { color: #38bdf8; margin: 4px 0 0 0; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+    .content { padding: 32px; color: #334155; line-height: 1.6; }
+    .field-card { margin-bottom: 12px; background-color: #f8fafc; padding: 12px 14px; border-radius: 6px; border-left: 3px solid #0284c7; }
+    .field-title { font-weight: 700; color: #64748b; font-size: 11px; text-transform: uppercase; }
+    .field-value { color: #0f172a; font-size: 13px; margin-top: 2px; }
+    .footer { background-color: #f8fafc; padding: 18px 32px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b; text-align: center; }
+  </style>
+</head>
+<body>
+  <center class="wrapper">
+    <table class="main-table" width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td class="header">
+          <h1>RD3 TECH</h1>
+          <p>Confirmation Notice</p>
+        </td>
+      </tr>
+      <tr>
+        <td class="content">
+          <p>Hi <strong><?= name ? name : 'there' ?></strong>,</p>
+          <p>Thank you for reaching out to RD3 Tech. We have received your submission and will review it shortly.</p>
+          
+          <h3 style="color: #0f172a; font-size: 14px; margin-top: 24px;">Summary of Your Submission</h3>
+          
+          <? for (var i = 0; i < fields.length; i++) { ?>
+            <div class="field-card">
+              <div class="field-title"><?= fields[i].title ?></div>
+              <div class="field-value">
+                <? if (Array.isArray(fields[i].value)) { ?>
+                  <?= fields[i].value.join(', ') ?>
+                <? } else { ?>
+                  <?= fields[i].value ?>
+                <? } ?>
+              </div>
+            </div>
+          <? } ?>
+          
+          <p style="margin-top: 24px;">Best regards,<br><strong>RD3 Tech Team</strong></p>
+        </td>
+      </tr>
+      <tr>
+        <td class="footer">RD3 Tech &bull; tom@rd3tech.com</td>
+      </tr>
+    </table>
+  </center>
+</body>
+</html>
