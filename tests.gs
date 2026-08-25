@@ -384,3 +384,55 @@ function testHoneypotSilentDrop() {
   Logger.log('======================================================================');
 }
 
+
+
+
+
+
+/**
+ * Test runner for doPost logic.
+ * Run this directly inside the Apps Script Editor.
+ */
+function test_doPostSubmission() {
+  // Construct mock event object matching a real web form payload
+  const mockEvent = {
+    parameter: {
+      rd3_name: "Automation Tester",
+      rd3_email: "tom@rd3tech.com",
+      rd3_phone: "021 999 8888",
+      rd3_contactPreference: "Email",
+      rd3_usedBefore: "Yes",
+      rd3_clientType: "Business",
+      rd3_helpCategory: "General Inquiry",
+      rd3_urgency: "Normal",
+      rd3_userGoal: "This is a direct test execution from tests.gs to verify Google Form submission and emails."
+    }
+  };
+
+  Logger.log("⏳ Starting direct doPost test...");
+  
+  // Call doPost directly
+  const response = doPost(mockEvent);
+
+  Logger.log("📥 Raw Response from doPost: " + response.getContent());
+  Logger.log("✅ Test Execution Finished. Check your Google Form responses tab & tom@rd3tech.com inbox.");
+}
+
+/**
+ * Test Invisible Honeypot Trap logic.
+ * Verifies that hidden bot fields get caught without sending emails.
+ */
+function test_honeypotBotTrap() {
+  const botEvent = {
+    parameter: {
+      rd3_name: "Spam Bot",
+      rd3_email: "spammer@badsite.com",
+      website_url: "http://spam-site.com/fake-link", // Honeypot field
+      rd3_userGoal: "Buy cheap products now!"
+    }
+  };
+
+  Logger.log("⏳ Testing Bot Trap...");
+  const response = doPost(botEvent);
+  Logger.log("📥 Bot Response (Should succeed silently without form entry): " + response.getContent());
+}

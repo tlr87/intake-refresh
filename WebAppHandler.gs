@@ -1,80 +1,137 @@
-/**
- * Web App HTTP POST Endpoint for Custom HTML Website Forms.
- * Handles incoming requests, emails notifications, and optionally logs to Google Sheets.
- */
-/**
- * Web App HTTP POST Endpoint for RD3 Tech Website Forms.
- * Routes form submissions through standalone AdminEmail and ClientEmail HTML builders.
- */
-/**
- * Web App HTTP POST Endpoint for RD3 Tech Website Forms.
- * Uses local AdminEmail.html and ClientEmail.html files to render emails.
- */
 
 
 /**
  * Web App HTTP POST Endpoint for RD3 Tech Website Forms.
- * Uses local AdminEmail.html and ClientEmail.html files to render emails.
- */
-/**
- * Web App HTTP POST Endpoint for RD3 Tech Website Forms.
- * Binds parameters directly to AdminEmail.html and ClientEmail.html templates.
+ * Traps spam, records to Google Form, and dispatches HTML emails.
  */
 function doPost(e) {
   try {
-    const formConfig = getFormConfig();
-    const reviewConfig = getReviewConfig();
-    const spamConfig = getSpamConfig();
+    Logger.log("Incoming parameter payload: " + JSON.stringify(e));
+
+    // Get configuration settings if helper functions exist
+    const formConfig = (typeof getFormConfig === 'function') ? getFormConfig() : {};
+    const reviewConfig = (typeof getReviewConfig === 'function') ? getReviewConfig() : {};
+    const spamConfig = (typeof getSpamConfig === 'function') ? getSpamConfig() : {};
     const adminEmail = (formConfig.settings && formConfig.settings.adminEmail) 
       ? formConfig.settings.adminEmail 
       : 'tom@rd3tech.com';
 
-    // 1. Enhanced Parameter Parsing (Handles URL-Encoded, JSON, and Direct PostData)
+    // 1. Parameter Extraction
     let params = {};
-    if (e && e.postData && e.postData.contents) {
-      const contentType = e.postData.type || '';
-      if (contentType.indexOf('application/json') !== -1) {
-        params = JSON.parse(e.postData.contents);
-      } else if (contentType.indexOf('application/x-www-form-urlencoded') !== -1) {
-        params = parseQueryString(e.postData.contents);
-      } else {
-        params = e.parameter || parseQueryString(e.postData.contents);
-      }
-    } else if (e && e.parameter) {
+    if (e && e.parameter && Object.keys(e.parameter).length > 0) {
       params = e.parameter;
+    } else if (e && e.postData && e.postData.contents) {
+      try {
+        params = JSON.parse(e.postData.contents);
+      } catch (jsonErr) {
+        params = parseQueryString(e.postData.contents);
+      }
     }
 
-    // Extract core fields (supporting both standard and prefixed rd3_ field names)
-    const name = params.rd3_name || params.name || params.Name || '';
+    // Core Fields
+    const name = params.rd3_name || params.name || params.Name || 'Visitor';
     const userEmail = params.rd3_email || params.email || params.Email || '';
-    const phone = params.rd3_phone || params.phone || params.Phone || '';
-    const userGoal = params.rd3_userGoal || params.userGoal || params.message || params.comments || '';
-    const selectedUrgency = params.rd3_urgency || params.urgency || params.Urgency || '';
+    const phone = params.rd3_phone || params.phone || params.Phone || 'Not provided';
+    const pref = params.rd3_contactPreference || params.contactPreference || 'Email';
+    const usedBefore = params.rd3_usedBefore || params.usedBefore || 'Not provided';
+    const clientType = params.rd3_clientType || params.clientType || 'Not provided';
+    const category = params.rd3_helpCategory || params.helpCategory || params.category || 'General Inquiry';
+    const userGoal = params.rd3_userGoal || params.userGoal || params.message || params.comments || 'No details provided.';
+    const selectedUrgency = params.rd3_urgency || params.urgency || params.Urgency || 'Normal';
     
-    // Extract Invisible Honeypot field
+    // Honeypot Check
     const honeypotValue = params.website_url || params.hp_comments || '';
-
-    // 2. INVISIBLE HONEYPOT BOT TRAP
     if (honeypotValue && honeypotValue.trim() !== '') {
-      Logger.log('🚫 WEB APP HONEYPOT TRIPPED: Bot submitted hidden website_url field.');
+      Logger.log('🚫 HONEYPOT TRIPPED');
       return createJsonResponse({ status: "success", message: "Form submitted successfully." });
     }
 
-    // 3. Structure field key-values for HTML email template rendering
-    const fields = [
-      { title: "Name", value: name },
-      { title: "Email Address", value: userEmail },
-      { title: "Phone", value: phone },
-      { title: "Enquiry / Details", value: userGoal },
-      { title: "Urgency Level", value: selectedUrgency }
-    ];
+    // 2. Record to Google Form
+    try {
+      const FORM_ID = '10ahsRmbXxFjcVGOY3IjZcrptctulxcS4sdQygAOp9mc';
+      const form = FormApp.openById(FORM_ID);
+      const formResponse = form.createResponse();
+      const items = form.getItems();
 
-    // 4. Run Moderation Filters
-    const reviewResult = checkReviewKeywords(userGoal, reviewConfig);
-    const spamResult = checkSpamKeywords(userGoal, spamConfig);
-    const isUrgent = (selectedUrgency.toLowerCase() === 'high');
+      const responseMap = {
+        name: name,
+        email: userEmail,
+        phone: phone,
+        pref: pref,
+        usedBefore: usedBefore,
+        clientType: clientType,
+        category: category,
+        urgency: selectedUrgency,
+        goal: userGoal
+      };
 
-    // 5. Build Subject Line Prefixes
+      let submittedAnswers = 0;
+
+      items.forEach(function(item) {
+        const itemType = item.getType();
+        const title = item.getTitle().toLowerCase().trim();
+        let valueToSubmit = null;
+
+        if (title.indexOf('name') !== -1) valueToSubmit = responseMap.name;
+        else if (title.indexOf('email') !== -1) valueToSubmit = responseMap.email;
+        else if (title.indexOf('phone') !== -1) valueToSubmit = responseMap.phone;
+        else if (title.indexOf('contact') !== -1 || title.indexOf('prefer') !== -1) valueToSubmit = responseMap.pref;
+        else if (title.indexOf('used') !== -1 || title.indexOf('before') !== -1) valueToSubmit = responseMap.usedBefore;
+        else if (title.indexOf('client') !== -1 || title.indexOf('as') !== -1) valueToSubmit = responseMap.clientType;
+        else if (title.indexOf('category') !== -1 || title.indexOf('help') !== -1) valueToSubmit = responseMap.category;
+        else if (title.indexOf('urgency') !== -1) valueToSubmit = responseMap.urgency;
+        else if (title.indexOf('goal') !== -1 || title.indexOf('enquiry') !== -1 || title.indexOf('achieve') !== -1 || title.indexOf('details') !== -1) valueToSubmit = responseMap.goal;
+
+        if (valueToSubmit) {
+          try {
+            if (itemType === FormApp.ItemType.TEXT) {
+              formResponse.withItemResponse(item.asTextItem().createResponse(valueToSubmit));
+              submittedAnswers++;
+            } else if (itemType === FormApp.ItemType.PARAGRAPH_TEXT) {
+              formResponse.withItemResponse(item.asParagraphTextItem().createResponse(valueToSubmit));
+              submittedAnswers++;
+            } else if (itemType === FormApp.ItemType.MULTIPLE_CHOICE) {
+              const mcItem = item.asMultipleChoiceItem();
+              const validChoices = mcItem.getChoices().map(c => c.getValue());
+              const match = validChoices.find(c => c.toLowerCase().includes(valueToSubmit.toLowerCase()));
+              const finalChoice = match || validChoices[0]; // Fallback to first valid option if no direct match
+              formResponse.withItemResponse(mcItem.createResponse(finalChoice));
+              submittedAnswers++;
+            } else if (itemType === FormApp.ItemType.LIST) {
+              const listItem = item.asListItem();
+              const validChoices = listItem.getChoices().map(c => c.getValue());
+              const match = validChoices.find(c => c.toLowerCase().includes(valueToSubmit.toLowerCase()));
+              const finalChoice = match || validChoices[0];
+              formResponse.withItemResponse(listItem.createResponse(finalChoice));
+              submittedAnswers++;
+            }
+          } catch(e) {
+            Logger.log("Could not set value for field [" + item.getTitle() + "]: " + e.toString());
+          }
+        }
+      });
+
+      if (submittedAnswers > 0) {
+        formResponse.submit();
+        Logger.log("✅ Successfully recorded " + submittedAnswers + " responses into Google Form.");
+      }
+
+    } catch (formErr) {
+      Logger.log('❌ Google Form logging error: ' + formErr.toString());
+    }
+
+    // 3. Moderation Checks
+    const reviewResult = (typeof checkReviewKeywords === 'function') 
+      ? checkReviewKeywords(userGoal, reviewConfig) 
+      : { needsReview: false, matchedKeywords: [] };
+
+    const spamResult = (typeof checkSpamKeywords === 'function') 
+      ? checkSpamKeywords(userGoal, spamConfig) 
+      : { isSpam: false, matchedKeywords: [] };
+
+    const isUrgent = (selectedUrgency.toLowerCase().indexOf('high') !== -1 || selectedUrgency.toLowerCase() === 'urgent');
+
+    // 4. Subject Line Prefixes
     let subjectPrefix = '';
     if (spamResult.isSpam) {
       subjectPrefix += (spamConfig.settings && spamConfig.settings.flagSubjectPrefix) 
@@ -88,6 +145,19 @@ function doPost(e) {
         ? reviewConfig.settings.flagSubjectPrefix : '[FLAGGED] ';
     }
 
+    // 5. Structure Fields Array
+    const fields = [
+      { title: "Name", value: name },
+      { title: "Email Address", value: userEmail },
+      { title: "Phone", value: phone },
+      { title: "Preferred Contact", value: pref },
+      { title: "Used RD3 Tech Before", value: usedBefore },
+      { title: "Contacting As", value: clientType },
+      { title: "Help Category", value: category },
+      { title: "Urgency Level", value: selectedUrgency },
+      { title: "Enquiry / Details", value: userGoal }
+    ];
+
     // 6. Admin Email Dispatch
     const adminTemplate = HtmlService.createTemplateFromFile('AdminEmail');
     adminTemplate.name = name;
@@ -99,38 +169,32 @@ function doPost(e) {
     adminTemplate.matchedSpamKeywords = spamResult.matchedKeywords;
     adminTemplate.isUrgent = isUrgent;
 
-    const adminHtmlBody = adminTemplate.evaluate().getContent();
-
     MailApp.sendEmail({
       to: adminEmail,
-      subject: `${subjectPrefix}[Website Enquiry] ${name ? name : 'Visitor'} — RD3 Tech`,
-      htmlBody: adminHtmlBody
+      subject: `${subjectPrefix}[Website Enquiry] ${name} — ${category}`,
+      htmlBody: adminTemplate.evaluate().getContent()
     });
 
-    // 7. Client Confirmation Email Dispatch
-    if (userEmail) {
+    // 7. Client Email Dispatch
+    if (userEmail && userEmail.indexOf('@') !== -1) {
       const clientTemplate = HtmlService.createTemplateFromFile('ClientEmail');
       clientTemplate.name = name;
       clientTemplate.fields = fields;
 
-      const clientHtmlBody = clientTemplate.evaluate().getContent();
-
       MailApp.sendEmail({
         to: userEmail,
         subject: 'We received your website request — RD3 Tech',
-        htmlBody: clientHtmlBody
+        htmlBody: clientTemplate.evaluate().getContent()
       });
     }
 
-    // 8. Return Success JSON Response to Website Front-End
     return createJsonResponse({ status: "success", message: "Enquiry sent successfully." });
 
   } catch (error) {
-    Logger.log('ERROR in doPost web app handler: ' + error.toString());
+    Logger.log('❌ FATAL ERROR in doPost: ' + error.toString());
     return createJsonResponse({ status: "error", message: error.toString() });
   }
 }
-
 /**
  * Helper to parse URL-encoded POST strings into an object
  */
