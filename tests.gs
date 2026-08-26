@@ -436,3 +436,34 @@ function test_honeypotBotTrap() {
   const response = doPost(botEvent);
   Logger.log("📥 Bot Response (Should succeed silently without form entry): " + response.getContent());
 }
+
+
+
+/**
+ * RD3 Tech Config Editor - Backend Integration Test
+ * Run `testSaveAllConfigs()` directly inside the Apps Script Editor.
+ */
+function testSaveAllConfigs() {
+  Logger.log("--- RUNNING BACKEND CONFIG SAVE TEST ---");
+  
+  const testPayload = {
+    TEST_CONFIG_KEY: { testMode: true, timestamp: new Date().toISOString() }
+  };
+  
+  try {
+    // 1. Save test payload
+    saveAllConfigs(testPayload);
+    
+    // 2. Read back from Script Properties
+    const stored = PropertiesService.getScriptProperties().getProperty("TEST_CONFIG_KEY");
+    const parsed = JSON.parse(stored);
+    
+    if (parsed && parsed.testMode === true) {
+      Logger.log("✅ SUCCESS: Script Properties successfully updated and verified!");
+    } else {
+      Logger.log("❌ FAILURE: Retrieved property did not match expected test payload.");
+    }
+  } catch (e) {
+    Logger.log("❌ ERROR during test execution: " + e.message);
+  }
+}

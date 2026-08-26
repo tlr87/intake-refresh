@@ -1,69 +1,63 @@
 /**
- * Fallback configuration for Google Form fields and system email settings.
- * Used when Script Properties ('FORM_CONFIG') is unpopulated.
- * 
- * @returns {Object} Complete FORM_CONFIG schema.
+ * Standalone fallback provider for FORM_CONFIG.
  */
 function getFallbackFormConfig() {
   return {
-    settings: {
-      adminEmail: "tom@rd3tech.com",
-      companyName: "RD3 Tech",
-      enableEmailDispatch: true
+    "settings": {
+      "adminEmail": "tom@rd3tech.com",
+      "formTitle": "RD3 Tech Contact Form",
+      "formBaseUrl": "https://docs.google.com/forms/d/e/1FAIpQLSevC9HvM8eo7dCKQzU6FUby03Khtiis_ptiiVsCxWn0__ulPA/viewform"
     },
-    fields: {
-      name: {
-        titleMatch: "name",
-        required: true,
-        type: "string"
+    "fields": {
+      "honeypot": {
+        "titleMatch": "Security Check",
+        "entryId": "entry.313042228",
+        "type": "text"
       },
-      email: {
-        titleMatch: "email",
-        required: true,
-        type: "string"
+      "name": {
+        "titleMatch": "Name",
+        "entryId": "entry.776532163",
+        "type": "text"
       },
-      phone: {
-        titleMatch: "phone",
-        required: false,
-        type: "string"
+      "email": {
+        "titleMatch": "Email",
+        "entryId": "entry.1530707551",
+        "type": "text"
       },
-      contactPreference: {
-        titleMatch: "preferred method",
-        required: false,
-        type: "string"
+      "phone": {
+        "titleMatch": "Phone",
+        "entryId": "entry.2118395637",
+        "type": "text"
       },
-      usedBefore: {
-        titleMatch: "used our services before",
-        required: false,
-        type: "string"
+      "contactPreference": {
+        "titleMatch": "How would you prefer us to contact you?",
+        "entryId": "entry.1955012690",
+        "type": "multiple_choice"
       },
-      clientType: {
-        titleMatch: "who are you getting help for",
-        required: false,
-        type: "string"
+      "usedBefore": {
+        "titleMatch": "Have you used RD3 Tech before?",
+        "entryId": "entry.1871615748",
+        "type": "multiple_choice"
       },
-      helpCategory: {
-        titleMatch: "what do you need help with",
-        required: false,
-        type: "array"
+      "clientType": {
+        "titleMatch": "contacting RD3 Tech as",
+        "entryId": "entry.480241942",
+        "type": "multiple_choice"
       },
-      userGoal: {
-        titleMatch: "what are you trying to achieve",
-        required: true,
-        type: "string"
+      "helpCategory": {
+        "titleMatch": "What can we help you with?",
+        "entryId": "entry.1402987091",
+        "type": "checkbox"
       },
-      urgency: {
-        titleMatch: "urgency",
-        required: false,
-        type: "string"
+      "userGoal": {
+        "titleMatch": "What Are You Trying To Achieve?",
+        "entryId": "entry.785917515",
+        "type": "paragraph"
       },
-
-      // HONEYPOT TRAP CONFIGURATION
-      // Matches hidden/security fields like "Security Check", "Leave blank", or "website_url"
-      honeypot: {
-        titleMatch: "leave blank",
-        required: false,
-        type: "string"
+      "urgency": {
+        "titleMatch": "How Urgent Is This For You?",
+        "entryId": "entry.790093298",
+        "type": "multiple_choice"
       }
     }
   };
