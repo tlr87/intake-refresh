@@ -795,3 +795,107 @@ function testPhoneSpamRules() {
   });
 }
 
+
+
+
+
+/**
+ * TEST: Simulates a clean submission, runs security checks,
+ * and dispatches both Admin Notification and Client Confirmation emails.
+ */
+function testSendNormalEmails() {
+  Logger.log("=== STARTING NORMAL SUBMISSION EMAIL TEST ===");
+
+  try {
+    // 1. Fetch Configuration Targets
+    const store = PropertiesService.getScriptProperties();
+    const rawConfig = store.getProperty('FORM_CONFIG');
+    const formConfig = rawConfig ? JSON.parse(rawConfig) : getFallbackFormConfig();
+
+    const adminEmail = (formConfig.settings && formConfig.settings.adminEmail)
+      ? formConfig.settings.adminEmail
+      : "tom@rd3tech.com";
+
+    // 2. Define Clean Mock Submission Payload
+    const cleanPayload = {
+      honeypot: "",
+      name: "Sarah Jenkins",
+      email: "tom.revill@gmail.com", // Set to your email to test receiving client confirmation
+      phone: "021 555 9999",
+      address: "45 Albert Street, Auckland CBD",
+      contactPreference: "Email",
+      usedBefore: "No",
+      clientType: "Business",
+      helpCategory: ["Cloud Infrastructure & Migration"],
+      userGoal: "We need assistance setting up Google Workspace and migrating our local file storage to the cloud.",
+      urgency: "Standard"
+    };
+
+    // 3. Run Security Checks
+    const spamResult = checkSpamKeywords(cleanPayload);
+    const reviewResult = checkReviewKeywords(cleanPayload);
+
+    Logger.log("Security Check -> Is Spam: " + spamResult.isSpam);
+    Logger.log("Security Check -> Needs Review: " + reviewResult.needsReview);
+
+    if (spamResult.isSpam || reviewResult.needsReview) {
+      Logger.log("⚠️ WARNING: Clean payload was unexpectedly flagged!");
+      return;
+    }
+
+    // 4. Map Submission Fields for Templates
+    const templateFields = [
+      { title: "Full Name", value: cleanPayload.name },
+      { title: "Email Address", value: cleanPayload.email },
+      { title: "Phone Number", value: cleanPayload.phone },
+      { title: "Address / Location", value: cleanPayload.address },
+      { title: "Preferred Contact Method", value: cleanPayload.contactPreference },
+      { title: "Have you used RD3 Tech before?", value: cleanPayload.usedBefore },
+      { title: "Client Type", value: cleanPayload.clientType },
+      { title: "What do you need help with?", value: cleanPayload.helpCategory.join(", ") },
+      { title: "What is your main goal or issue?", value: cleanPayload.userGoal },
+      { title: "Urgency Level", value: cleanPayload.urgency }
+    ];
+
+    // 5. Dispatch Admin Email (AdminEmail.html)
+    const adminTemplate = HtmlService.createTemplateFromFile('AdminEmail');
+    adminTemplate.name = cleanPayload.name;
+    adminTemplate.userEmail = cleanPayload.email;
+    adminTemplate.fields = templateFields;
+    adminTemplate.isSpam = false;
+    adminTemplate.matchedSpamKeywords = [];
+    adminTemplate.isUrgent = false;
+    adminTemplate.needsReview = false;
+    adminTemplate.matchedKeywords = [];
+
+    MailApp.sendEmail({
+      to: adminEmail,
+      subject: "📥 New Form Submission — RD3 Tech",
+      htmlBody: adminTemplate.evaluate().getContent()
+    });
+    Logger.log("✔ Admin email dispatched successfully to: " + adminEmail);
+
+    // 6. Dispatch Client Confirmation Email (ClientEmail.html)
+    const clientTemplate = HtmlService.createTemplateFromFile('ClientEmail');
+    clientTemplate.name = cleanPayload.name;
+    clientTemplate.userEmail = cleanPayload.email;
+    clientTemplate.helpCategory = cleanPayload.helpCategory.join(", ");
+    clientTemplate.userGoal = cleanPayload.userGoal;
+    clientTemplate.fields = templateFields;
+
+    MailApp.sendEmail({
+      to: cleanPayload.email,
+      subject: "We've received your inquiry — RD3 Tech",
+      htmlBody: clientTemplate.evaluate().getContent()
+    });
+    Logger.log("✔ Client confirmation email dispatched successfully to: " + cleanPayload.email);
+
+    Logger.log("\n=== TEST COMPLETED SUCCESSFULLY ===");
+
+  } catch (err) {
+    Logger.log("✖ ERROR during normal email test: " + err.message);
+  }
+}
+
+
+
