@@ -39,6 +39,9 @@ function doPost(e) {
     const userGoal = params.rd3_userGoal || params.userGoal || params.message || params.comments || 'No details provided.';
     const selectedUrgency = params.rd3_urgency || params.urgency || params.Urgency || 'Normal';
     
+    // Submission Timestamp
+    const submissionDate = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm:ss z");
+
     // Honeypot Check
     const honeypotValue = params.website_url || params.hp_comments || '';
     if (honeypotValue && honeypotValue.trim() !== '') {
@@ -111,7 +114,7 @@ function doPost(e) {
               const mcItem = item.asMultipleChoiceItem();
               const validChoices = mcItem.getChoices().map(c => c.getValue());
               const match = validChoices.find(c => c.toLowerCase().includes(valueToSubmit.toLowerCase()));
-              const finalChoice = match || validChoices[0]; // Fallback to first valid option if no direct match
+              const finalChoice = match || validChoices[0];
               formResponse.withItemResponse(mcItem.createResponse(finalChoice));
               submittedAnswers++;
             } else if (itemType === FormApp.ItemType.LIST) {
@@ -180,10 +183,33 @@ function doPost(e) {
     adminTemplate.name = name;
     adminTemplate.userEmail = userEmail;
     adminTemplate.fields = fields;
-    adminTemplate.needsReview = reviewResult.needsReview;
-    adminTemplate.matchedKeywords = reviewResult.matchedKeywords;
-    adminTemplate.isSpam = spamResult.isSpam;
-    adminTemplate.matchedSpamKeywords = spamResult.matchedKeywords;
+    adminTemplate.submissionDate = submissionDate;
+
+    // Provide the request object expected by AdminEmail.html
+    adminTemplate.request = {
+      situation: category,
+      goal: userGoal,
+      timeframe: selectedUrgency
+    };
+
+    // Provide the client object expected by AdminEmail.html
+    adminTemplate.client = {
+      name: name,
+      email: userEmail,
+      phone: phone,
+      preferredContact: pref,
+      contactingAs: clientType,
+      isPreviousCustomer: usedBefore
+    };
+
+    // Provide the secEval object expected by AdminEmail.html
+    adminTemplate.secEval = {
+      isSpam: spamResult.isSpam,
+      requiresReview: reviewResult.needsReview,
+      reviewFlags: reviewResult.matchedKeywords,
+      spamFlags: spamResult.matchedKeywords
+    };
+
     adminTemplate.isUrgent = isUrgent;
 
     MailApp.sendEmail({
@@ -197,6 +223,24 @@ function doPost(e) {
       const clientTemplate = HtmlService.createTemplateFromFile('ClientEmail');
       clientTemplate.name = name;
       clientTemplate.fields = fields;
+      clientTemplate.submissionDate = submissionDate;
+
+      // Provide the client object expected by ClientEmail.html
+      clientTemplate.client = {
+        name: name,
+        email: userEmail,
+        phone: phone,
+        preferredContact: pref,
+        contactingAs: clientType,
+        isPreviousCustomer: usedBefore
+      };
+
+      // Provide the request object expected by ClientEmail.html
+      clientTemplate.request = {
+        situation: category,
+        goal: userGoal,
+        timeframe: selectedUrgency
+      };
 
       MailApp.sendEmail({
         to: userEmail,

@@ -37,22 +37,22 @@ function getFallbackFormConfig() {
       "contactPreference": {
         "titleMatch": "How would you prefer us to contact you?",
         "entryId": "entry.1955012690",
-        "type": "multiple_choice"
+        "type": "list"
       },
       "usedBefore": {
         "titleMatch": "Have you used RD3 Tech before?",
         "entryId": "entry.1871615748",
-        "type": "multiple_choice"
+        "type": "list"
       },
       "clientType": {
         "titleMatch": "contacting RD3 Tech as",
         "entryId": "entry.480241942",
-        "type": "multiple_choice"
+        "type": "list"
       },
       "helpCategory": {
         "titleMatch": "What can we help you with?",
         "entryId": "entry.1402987091",
-        "type": "checkbox"
+        "type": "list"
       },
       "userGoal": {
         "titleMatch": "What Are You Trying To Achieve?",
@@ -62,7 +62,7 @@ function getFallbackFormConfig() {
       "urgency": {
         "titleMatch": "How Urgent Is This For You?",
         "entryId": "entry.790093298",
-        "type": "multiple_choice"
+        "type": "list"
       }
     }
   };
