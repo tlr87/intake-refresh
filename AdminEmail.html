@@ -1,115 +1,289 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>New Form Submission — RD3 Tech</title>
-  <style>
-    body { margin: 0; padding: 0; width: 100% !important; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
-    .wrapper { width: 100%; table-layout: fixed; background-color: #f1f5f9; padding: 24px 0; }
-    .main-table { background-color: #ffffff; margin: 0 auto; width: 100%; max-width: 600px; border-spacing: 0; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
-    .header { background-color: #0f172a; padding: 24px 32px; text-align: left; }
-    .header h1 { color: #ffffff; margin: 0; font-size: 22px; font-weight: 700; }
-    .header p { color: #38bdf8; margin: 4px 0 0 0; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; }
-    .content { padding: 32px; }
-    .intro-meta { font-size: 15px; color: #334155; line-height: 1.5; margin-top: 0; margin-bottom: 20px; }
-    
-    /* Banners */
-    .banner { padding: 14px 16px; margin-bottom: 16px; border-radius: 0 6px 6px 0; }
-    .banner-title { font-weight: 700; font-size: 12px; text-transform: uppercase; }
-    .banner-body { font-size: 13px; margin-top: 4px; }
+<html>
+  <head>
+    <base target="_top">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+      /* RESET & BASE */
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; width: 100% !important; height: 100% !important; background-color: #CADFEC !important; }
+      body {
+        background-color: #CADFEC !important;
+        color: #212529;
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 14px;
+        line-height: 1.5;
+        -webkit-text-size-adjust: 100%;
+        -ms-text-size-adjust: 100%;
+      }
+      table { border-collapse: collapse; border-spacing: 0; }
+      a { color: #993333; text-decoration: underline; }
 
-    /* Spam - Dark Red / Purple */
-    .banner-spam { background-color: #fdf2f8; border-left: 4px solid #9333ea; }
-    .banner-spam .banner-title { color: #6b21a8; }
-    .banner-spam .banner-body { color: #581c87; }
+      /* LAYOUT & CARDS */
+      .email-wrapper { 
+        width: 100%; 
+        padding: 30px 15px; 
+        background-color: #CADFEC !important; 
+      }
+      .container { width: 100%; max-width: 650px; margin: 0 auto; }
+      .card { overflow: hidden; background-color: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; }
+      .card-header { padding: 24px 30px; background-color: #993333; color: #ffffff; }
+      .card-body { padding: 30px; background-color: #ffffff; text-align: left; }
+      .card-footer { padding: 20px 30px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; }
 
-    /* Urgent - Bright Orange / Red */
-    .banner-urgent { background-color: #fff7ed; border-left: 4px solid #ea580c; }
-    .banner-urgent .banner-title { color: #c2410c; }
-    .banner-urgent .banner-body { color: #9a3412; }
+      /* BRAND & TYPOGRAPHY */
+      .brand { margin: 0; color: #ffffff; font-size: 20px; line-height: 1.2; font-weight: 800; letter-spacing: 0.5px; }
+      .subtitle { margin-top: 4px; color: #f1f5f9; font-size: 13px; line-height: 1.5; }
+      .section-title {
+        margin: 28px 0 14px;
+        padding-bottom: 7px;
+        border-bottom: 2px solid #CADFEC;
+        color: #993333;
+        font-size: 13px;
+        line-height: 1.4;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        text-align: left;
+      }
+      .section-title:first-child { margin-top: 0; }
 
-    /* Out of Scope / Flagged - Soft Red */
-    .banner-flagged { background-color: #fef2f2; border-left: 4px solid #ef4444; }
-    .banner-flagged .banner-title { color: #991b1b; }
-    .banner-flagged .banner-body { color: #7f1d1d; }
+      /* DISTINCT ALERT CONTAINERS */
+      .alert { margin-bottom: 16px; padding: 16px 20px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; text-align: left; }
+      
+      .alert-spam { background-color: #fef2f2; border-color: #fecaca; border-left: 6px solid #dc3545; }
+      .alert-review { background-color: #fff7ed; border-color: #fed7aa; border-left: 6px solid #f59e0b; }
+      .alert-urgent { background-color: #fff1f2; border-color: #fecdd3; border-left: 6px solid #b91c1c; }
+      .alert-success { background-color: #f0fdf4; border-color: #bbf7d0; border-left: 6px solid #198754; }
 
-    /* Clean - Green */
-    .banner-clean { background-color: #f0fdf4; border-left: 4px solid #22c55e; padding: 12px 16px; margin-bottom: 24px; border-radius: 0 6px 6px 0; color: #166534; font-size: 12px; font-weight: 700; }
+      .alert-header-row { margin-bottom: 8px; font-weight: 700; font-size: 14px; }
+      .alert-spam .alert-header-row { color: #991b1b; }
+      .alert-review .alert-header-row { color: #9a3412; }
+      .alert-urgent .alert-header-row { color: #881337; }
+      .alert-success .alert-header-row { color: #166534; }
 
-    .field-card { margin-bottom: 14px; background-color: #f8fafc; padding: 14px 16px; border-radius: 6px; border-left: 3px solid #0284c7; }
-    .field-title { font-weight: 700; color: #64748b; font-size: 11px; margin-bottom: 4px; text-transform: uppercase; }
-    .field-value { color: #0f172a; font-size: 14px; line-height: 1.5; }
-    .footer { background-color: #f8fafc; padding: 18px 32px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b; text-align: center; }
-  </style>
-</head>
-<body>
-  <center class="wrapper">
-    <table class="main-table" width="100%" cellpadding="0" cellspacing="0">
+      .badge { display: inline-block; margin-right: 8px; padding: 4px 8px; border-radius: 4px; color: #ffffff; font-size: 11px; line-height: 1.2; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+      .badge-spam { background-color: #dc3545; }
+      .badge-review { background-color: #f59e0b; }
+      .badge-urgent { background-color: #b91c1c; }
+      .badge-clean { background-color: #198754; }
+
+      .alert-text { margin: 0; color: #334155; font-size: 13px; line-height: 1.5; }
+      .alert-text ul { margin: 6px 0 0; padding-left: 20px; color: #475569; }
+      .alert-text li { margin-bottom: 3px; }
+
+      /* TABLES & LISTS */
+      .table { width: 100%; margin-bottom: 10px; }
+      .table th, .table td { padding: 10px 0; border-bottom: 1px solid #f1f5f9; text-align: left; vertical-align: top; font-size: 14px; line-height: 1.5; }
+      .table th { width: 190px; color: #64748b; font-weight: 600; }
+      .table td { color: #0f172a; }
+
+      .list {
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-left: 4px solid #993333;
+        border-radius: 0 6px 6px 0;
+        padding: 20px 20px 20px 35px;
+        margin: 20px 0;
+        color: #475569;
+        font-size: 13px;
+        line-height: 1.6;
+        text-align: left !important;
+      }
+      .list li { margin-bottom: 8px; text-align: left !important; }
+      .list li:last-child { margin-bottom: 0; }
+
+      .footer-text { margin: 0; color: #64748b; font-size: 12px; line-height: 1.5; text-align: center; }
+
+      /* MOBILE */
+      @media only screen and (max-width: 600px) {
+        .email-wrapper { padding: 0 !important; }
+        .container { width: 100% !important; }
+        .card { border-left: 0; border-right: 0; border-radius: 0; }
+        .card-header, .card-body, .card-footer { padding: 20px !important; }
+        .table th, .table td { display: block; width: 100%; padding: 7px 0; }
+        .table th { padding-bottom: 2px; border-bottom: 0; }
+        .table td { padding-top: 2px; }
+      }
+    </style>
+  </head>
+  <body bgcolor="#CADFEC" style="margin:0; padding:0; background-color:#CADFEC;">
+    <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#CADFEC" style="background-color: #CADFEC;">
       <tr>
-        <td class="header">
-          <h1>RD3 TECH</h1>
-          <p>Admin Notification &bull; Contact Form</p>
-        </td>
-      </tr>
-      <tr>
-        <td class="content">
-          <p class="intro-meta">
-            New contact form response received from 
-            <strong><?= name ? name : 'Website Visitor' ?></strong> 
-            (<?= userEmail ? userEmail : 'No Email Provided' ?>).
-          </p>
+        <td align="center" bgcolor="#CADFEC" style="background-color: #CADFEC;">
+          <div class="email-wrapper">
+            <div class="container">
+              <div class="card">
+                <div class="card-header">
+                  <h1 class="brand">RD3 TECH</h1>
+                  <div class="subtitle">New Form Submission Notification</div>
+                </div>
 
-          <!-- 1. SPAM BANNER -->
-          <? if (typeof isSpam !== 'undefined' && isSpam) { ?>
-            <div class="banner banner-spam">
-              <div class="banner-title">🚫 Spam Flagged</div>
-              <div class="banner-body">Matched Term(s): <strong><?= matchedSpamKeywords.join(', ') ?></strong></div>
-            </div>
-          <? } ?>
+                <div class="card-body" style="text-align: left;">
+                  
+                  <? 
+                    // Categorize flags for separate display
+                    var spamTerms = secEval.spamFlags || [];
+                    var reviewTerms = secEval.reviewFlags || (secEval.matchedKeywords ? secEval.matchedKeywords : []);
+                    
+                    // Fallback filtering if flags were passed in a single secEval.flags array
+                    if (secEval.flags && secEval.flags.length > 0) {
+                      secEval.flags.forEach(function(f) {
+                        if (f.indexOf('SPAM:') === 0 && spamTerms.indexOf(f.replace('SPAM:', '').trim()) === -1) {
+                          spamTerms.push(f.replace('SPAM:', '').trim());
+                        }
+                        if ((f.indexOf('outOfScope:') === 0 || f.indexOf('REVIEW:') === 0) && reviewTerms.indexOf(f.replace(/^(outOfScope|REVIEW):/, '').trim()) === -1) {
+                          reviewTerms.push(f.replace(/^(outOfScope|REVIEW):/, '').trim());
+                        }
+                      });
+                    }
+                    
+                    var isUrgent = request.timeframe === 'High' || request.timeframe === 'Urgent';
+                    var hasAnyFlag = secEval.isSpam || secEval.requiresReview || isUrgent;
+                  ?>
 
-          <!-- 2. URGENT BANNER -->
-          <? if (typeof isUrgent !== 'undefined' && isUrgent) { ?>
-            <div class="banner banner-urgent">
-              <div class="banner-title">⚡ High Urgency Request</div>
-              <div class="banner-body">Priority level marked as <strong>HIGH</strong>. Rapid response required.</div>
-            </div>
-          <? } ?>
+                  <? if (hasAnyFlag) { ?>
+                    
+                    <!-- 1. SPAM ALERT AREA -->
+                    <? if (secEval.isSpam) { ?>
+                      <div class="alert alert-spam">
+                        <div class="alert-header-row">
+                          <span class="badge badge-spam">SPAM DETECTED</span> Security Filter Flag
+                        </div>
+                        <div class="alert-text">
+                          <strong>Terms / Triggers setting this off:</strong>
+                          <? if (spamTerms.length > 0) { ?>
+                            <ul>
+                              <? spamTerms.forEach(function(term) { ?>
+                                <li><?= term ?></li>
+                              <? }); ?>
+                            </ul>
+                          <? } else { ?>
+                            <span>Automated spam heuristics triggered.</span>
+                          <? } ?>
+                        </div>
+                      </div>
+                    <? } ?>
 
-          <!-- 3. OUT OF SCOPE / FLAGGED BANNER -->
-          <? if (needsReview) { ?>
-            <div class="banner banner-flagged">
-              <div class="banner-title">⚠️ Review Flagged &bull; Out-of-Scope</div>
-              <div class="banner-body">Matched Keyword(s): <strong><?= matchedKeywords.join(', ') ?></strong></div>
-            </div>
-          <? } ?>
+                    <!-- 2. OUT-OF-SCOPE REVIEW ALERT AREA -->
+                    <? if (secEval.requiresReview) { ?>
+                      <div class="alert alert-review">
+                        <div class="alert-header-row">
+                          <span class="badge badge-review">REQUIRES REVIEW</span> Out-of-Scope Terms Found
+                        </div>
+                        <div class="alert-text">
+                          <strong>Terms / Triggers setting this off:</strong>
+                          <? if (reviewTerms.length > 0) { ?>
+                            <ul>
+                              <? reviewTerms.forEach(function(term) { ?>
+                                <li><?= term ?></li>
+                              <? }); ?>
+                            </ul>
+                          <? } else { ?>
+                            <span>Matched configured out-of-scope review keywords.</span>
+                          <? } ?>
+                        </div>
+                      </div>
+                    <? } ?>
 
-          <!-- 4. CLEAN BANNER (renders if no flags triggered) -->
-          <? if (!needsReview && (typeof isSpam === 'undefined' || !isSpam) && (typeof isUrgent === 'undefined' || !isUrgent)) { ?>
-            <div class="banner-clean">✓ Standard IT Request (No flags triggered)</div>
-          <? } ?>
+                    <!-- 3. URGENT ALERT AREA -->
+                    <? if (isUrgent) { ?>
+                      <div class="alert alert-urgent">
+                        <div class="alert-header-row">
+                          <span class="badge badge-urgent">URGENT REQUEST</span> High Priority Timeframe
+                        </div>
+                        <div class="alert-text">
+                          <strong>Condition setting this off:</strong> Timeframe marked as <strong><?= request.timeframe ?></strong>
+                        </div>
+                      </div>
+                    <? } ?>
 
-          <!-- SUBMISSION FIELDS -->
-          <? for (var i = 0; i < fields.length; i++) { ?>
-            <div class="field-card">
-              <div class="field-title"><?= fields[i].title ?></div>
-              <div class="field-value">
-                <? if (Array.isArray(fields[i].value)) { ?>
-                  <? for (var j = 0; j < fields[i].value.length; j++) { ?>
-                    <div>&bull; <?= fields[i].value[j] ?></div>
+                  <? } else { ?>
+                    <!-- CLEAN STATE -->
+                    <div class="alert alert-success">
+                      <div class="alert-header-row">
+                        <span class="badge badge-clean">Clean</span> Passed Automated Checks
+                      </div>
+                      <p class="alert-text">Standard submission verified through automated security and scope filters.</p>
+                    </div>
                   <? } ?>
-                <? } else { ?>
-                  <?= fields[i].value ? fields[i].value.replace(/\n/g, '<br>') : '<span style="color:#94a3b8; font-style:italic;">No answer</span>' ?>
-                <? } ?>
+
+                  <!-- Request Overview -->
+                  <div class="section-title">Submission Details:</div>
+                  <table class="table">
+                    <tr>
+                      <th>Received Date</th>
+                      <td><?= submissionDate ?></td>
+                    </tr>
+                    <tr>
+                      <th>Urgency</th>
+                      <td><strong><?= request.timeframe || 'Medium' ?></strong></td>
+                    </tr>
+                  </table>
+
+                  <!-- Client Profile Section -->
+                  <div class="section-title">Clients Details:</div>
+                  <table class="table">
+                    <tr>
+                      <th>Name</th>
+                      <td><?= client.name || 'Not provided' ?></td>
+                    </tr>
+                    <tr>
+                      <th>Email</th>
+                      <td><a href="mailto:<?= client.email ?>"><?= client.email || 'Not provided' ?></a></td>
+                    </tr>
+                    <tr>
+                      <th>Phone</th>
+                      <td><?= client.phone || 'Not provided' ?></td>
+                    </tr>
+                    <tr>
+                      <th>Address / Location</th>
+                      <td><?= client.location || 'Not provided' ?></td>
+                    </tr>
+                    <tr>
+                      <th>Preferred Contact</th>
+                      <td><?= client.preferredContact || 'Not provided' ?></td>
+                    </tr>
+                    <tr>
+                      <th>Contacting As</th>
+                      <td><?= client.contactingAs || 'Not provided' ?></td>
+                    </tr>
+                    <tr>
+                      <th>Previous Client</th>
+                      <td><?= client.isPreviousCustomer ? 'Yes' : 'No' ?></td>
+                    </tr>
+                  </table>
+
+                  <!-- How Can We Help Section -->
+                  <div class="section-title">How Can We Help?:</div>
+                  <table class="table">
+                    <tr>
+                      <th>Need Help with:</th>
+                      <td><strong><?= (request.situation || 'Not specified').replace(/^Help with\s+/i, '') ?></strong></td>
+                    </tr>
+                    <tr>
+                      <th>What Are You Trying To Achieve?</th>
+                      <td style="white-space: pre-wrap;"><?= request.goal || 'No description provided.' ?></td>
+                    </tr>
+                  </table>
+
+                  <!-- Internal Execution Principles Section -->
+                  <div class="section-title">Internal Execution Principles:</div>
+                  <ul class="list" style="text-align: left; margin: 20px 0; padding: 20px 20px 20px 35px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #993333; border-radius: 0 6px 6px 0;">
+                    <li style="text-align: left; margin-bottom: 8px;"><strong>Target Outcome:</strong> Focus on what the client is actually trying to achieve before touching the task.</li>
+                    <li style="text-align: left; margin-bottom: 8px;"><strong>Clear Scope:</strong> Ask direct questions to lock down limits, costs, and responsibilities—no assumptions.</li>
+                    <li style="text-align: left; margin-bottom: 0;"><strong>Risk Control:</strong> Spot technical, financial, and communication failure points early.</li>
+                  </ul>
+                </div>
+
+                <div class="card-footer">
+                  <p class="footer-text">RD3 Tech | Your Technology Support Journey Starts Here | <a href="mailto:tom@rd3tech.com">tom@rd3tech.com</a> | <a href="https://rd3tech.com/" target="_blank">https://rd3tech.com/</a> <br/>| Automated Notification | RD3 Tech Form Handler</p>
+                </div>
               </div>
             </div>
-          <? } ?>
+          </div>
         </td>
       </tr>
-      <tr>
-        <td class="footer">Automated notification sent via Google Apps Script.</td>
-      </tr>
     </table>
-  </center>
-</body>
+  </body>
 </html>

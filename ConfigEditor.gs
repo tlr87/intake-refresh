@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * RD3 TECH — CONFIG EDITOR & STANDALONE FALLBACK PROVIDERS
+ * RD3 TECH — CONFIG EDITOR, ROUTER & STANDALONE FALLBACK PROVIDERS
  * ============================================================================
  */
 
@@ -109,6 +109,29 @@ function resetKeyToFallback(key) {
 }
 
 /**
+ * HELPER: Direct Script Properties Wipe and Reset.
+ * Run this directly from the Apps Script editor to reset all Script Properties to default.
+ */
+function resetAllScriptPropertiesToDefault() {
+  const store = PropertiesService.getScriptProperties();
+  store.deleteAllProperties();
+  
+  const defaults = {
+    REVIEW_CONFIG: getFallbackReviewConfig(),
+    URGENCY_CONFIG: getUrgencyConfigFallback(),
+    SPAM_CONFIG: getFallbackSpamConfig(),
+    RATE_LIMIT_CONFIG: getFallbackRateLimitConfig(),
+    FORM_CONFIG: getFallbackFormConfig()
+  };
+
+  Object.keys(defaults).forEach(key => {
+    store.setProperty(key, JSON.stringify(defaults[key]));
+  });
+
+  Logger.log("✔ All Script Properties cleared and re-populated with defaults!");
+}
+
+/**
  * VALIDATION HANDLER: Validates configured form items against the live Google Form.
  */
 function runFormValidationFromUi() {
@@ -191,13 +214,72 @@ function runFormValidationFromUi() {
 }
 
 /* =========================================================================
- * YOUR STANDALONE FALLBACK PROVIDER FUNCTIONS
+ * KEYWORD EVALUATION ENGINE HANDLERS
  * ========================================================================= */
 
 /**
- * Standalone fallback provider for REVIEW_CONFIG.
- * Focuses exclusively on outOfScope filtering.
+ * Evaluates text against configured out-of-scope review keywords using regex word boundaries.
  */
+function checkReviewKeywords(text, config) {
+  if (!text || !config || !config.settings || !config.settings.enableReview) {
+    return { needsReview: false, matchedKeywords: [] };
+  }
+  
+  const keywords = config.categories ? config.categories.outOfScope || [] : [];
+  const matched = [];
+  
+  keywords.forEach(kw => {
+    const escapedKw = kw.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const pattern = new RegExp('\\b' + escapedKw + '\\b', 'i');
+    if (pattern.test(text)) {
+      matched.push(kw);
+    }
+  });
+
+  return {
+    needsReview: matched.length > 0,
+    matchedKeywords: matched
+  };
+}
+
+/**
+ * Evaluates text against configured spam keywords.
+ */
+function checkSpamKeywords(text, config) {
+  if (!text || !config || !config.settings || !config.settings.enableSpamCheck) {
+    return { isSpam: false, matchedKeywords: [] };
+  }
+
+  const keywords = config.categories ? config.categories.spam || [] : [];
+  const matched = [];
+
+  keywords.forEach(kw => {
+    const lowerKw = kw.toLowerCase().trim();
+    const lowerText = text.toLowerCase();
+    
+    if (lowerKw.startsWith('http')) {
+      if (lowerText.includes(lowerKw)) {
+        matched.push(kw);
+      }
+    } else {
+      const escapedKw = lowerKw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const pattern = new RegExp('\\b' + escapedKw + '\\b', 'i');
+      if (pattern.test(lowerText)) {
+        matched.push(kw);
+      }
+    }
+  });
+
+  return {
+    isSpam: matched.length > 0,
+    matchedKeywords: matched
+  };
+}
+
+/* =========================================================================
+ * STANDALONE FALLBACK PROVIDER FUNCTIONS
+ * ========================================================================= */
+
 function getFallbackReviewConfig() {
   return {
     "settings": {
@@ -220,10 +302,6 @@ function getFallbackReviewConfig() {
   };
 }
 
-/**
- * Standalone fallback provider for URGENCY_CONFIG.
- * Used if Script Properties are unreadable or empty.
- */
 function getUrgencyConfigFallback() {
   return {
     "levels": ["Low", "Medium", "High"],
@@ -231,10 +309,6 @@ function getUrgencyConfigFallback() {
   };
 }
 
-/**
- * Standalone fallback provider for SPAM_CONFIG.
- * Used if Script Properties are unreadable or empty.
- */
 function getFallbackSpamConfig() {
   return {
     "settings": {
@@ -252,10 +326,6 @@ function getFallbackSpamConfig() {
   };
 }
 
-/**
- * Standalone fallback provider for RATE_LIMIT_CONFIG.
- * Provides rate limit bounds for submission processing.
- */
 function getFallbackRateLimitConfig() {
   return {
     "settings": {
@@ -267,9 +337,6 @@ function getFallbackRateLimitConfig() {
   };
 }
 
-/**
- * Standalone fallback provider for FORM_CONFIG.
- */
 function getFallbackFormConfig() {
   return {
     "settings": {
@@ -279,57 +346,57 @@ function getFallbackFormConfig() {
     },
     "fields": {
       "honeypot": {
-        "titleMatch": "Security Check",
+        "titleMatch": "security check",
         "entryId": "entry.313042228",
         "type": "text"
       },
       "name": {
-        "titleMatch": "Name",
+        "titleMatch": "name",
         "entryId": "entry.776532163",
         "type": "text"
       },
       "email": {
-        "titleMatch": "Email",
+        "titleMatch": "email",
         "entryId": "entry.1530707551",
         "type": "text"
       },
       "phone": {
-        "titleMatch": "Phone",
+        "titleMatch": "phone",
         "entryId": "entry.2118395637",
         "type": "text"
       },
       "address": {
-        "titleMatch": "Address / Location",
+        "titleMatch": "address / location",
         "entryId": "entry.XXXXXXXXX",
         "type": "text"
       },
       "contactPreference": {
-        "titleMatch": "How would you prefer us to contact you?",
+        "titleMatch": "how would you prefer us to contact you?",
         "entryId": "entry.1955012690",
         "type": "multiple_choice"
       },
       "usedBefore": {
-        "titleMatch": "Have you used RD3 Tech before?",
+        "titleMatch": "have you used rd3 tech before?",
         "entryId": "entry.1871615748",
         "type": "multiple_choice"
       },
       "clientType": {
-        "titleMatch": "contacting RD3 Tech as",
+        "titleMatch": "contacting rd3 tech as",
         "entryId": "entry.480241942",
         "type": "multiple_choice"
       },
       "helpCategory": {
-        "titleMatch": "What can we help you with?",
+        "titleMatch": "what can we help you with?",
         "entryId": "entry.1402987091",
         "type": "checkbox"
       },
       "userGoal": {
-        "titleMatch": "What Are You Trying To Achieve?",
+        "titleMatch": "what are you trying to achieve?",
         "entryId": "entry.785917515",
         "type": "paragraph"
       },
       "urgency": {
-        "titleMatch": "How Urgent Is This For You?",
+        "titleMatch": "how urgent is this for you?",
         "entryId": "entry.790093298",
         "type": "multiple_choice"
       }
@@ -342,7 +409,6 @@ function getFallbackFormConfig() {
  * ========================================================================= */
 
 function doGet(e) {
-  // 1. Explicitly check ONLY if api or mode parameter is passed as 'true' or 'api'
   const isApiRequest = e && e.parameter && 
                        (e.parameter.api === 'true' || e.parameter.mode === 'api');
 
@@ -353,11 +419,10 @@ function doGet(e) {
     })).setMimeType(ContentService.MimeType.JSON);
   }
 
-  // 2. Authorize user by email
   const userEmail = Session.getActiveUser().getEmail();
   const allowedUsers = [
     "tom@rd3tech.com",
-    "tom.revill@gmail.com" // Add authorized emails here
+    "tom.revill@gmail.com"
   ];
 
   if (allowedUsers.length > 0 && allowedUsers.indexOf(userEmail) === -1) {
@@ -369,7 +434,6 @@ function doGet(e) {
     );
   }
 
-  // 3. Serve the UI Configuration Editor
   const template = HtmlService.createTemplateFromFile('Index');
   template.initialDataJson = JSON.stringify(getInitialData());
 
@@ -380,19 +444,8 @@ function doGet(e) {
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
-
-
-
-
-
-
-
-
-
-
 /**
  * CONSOLE TEST ROUTER
- * Run this function from the Apps Script editor toolbar to diagnose your doGet routing.
  */
 function testDoGetRouting() {
   const result = doGet({});

@@ -38,37 +38,28 @@ function checkReviewKeywords(inputToScan, reviewConfig) {
 
   if (outOfScopeList.length === 0) return result;
 
-  // 2. Safely extract text string from any input type
+  // 2. Safely extract all text recursively from nested objects or raw strings
   let combinedTextParts = [];
+
+  function extractValues(obj) {
+    if (obj === null || obj === undefined) return;
+    if (typeof obj === 'string' || typeof obj === 'number') {
+      combinedTextParts.push(String(obj));
+    } else if (Array.isArray(obj)) {
+      obj.forEach(item => extractValues(item));
+    } else if (typeof obj === 'object') {
+      Object.keys(obj).forEach(key => {
+        result.scannedFields.push(key);
+        extractValues(obj[key]);
+      });
+    }
+  }
 
   if (typeof inputToScan === 'string') {
     combinedTextParts.push(inputToScan);
     result.scannedFields.push('rawText');
   } else if (typeof inputToScan === 'object') {
-    const targetKeys = ['name', 'email', 'phone', 'address', 'userGoal', 'helpCategory', 'details'];
-    
-    targetKeys.forEach(key => {
-      if (inputToScan[key] !== undefined && inputToScan[key] !== null) {
-        const val = inputToScan[key];
-        if (Array.isArray(val)) {
-          combinedTextParts.push(val.join(' '));
-        } else {
-          combinedTextParts.push(String(val));
-        }
-        result.scannedFields.push(key);
-      }
-    });
-
-    // Fallback: iterate over all properties if no priority keys matched
-    if (combinedTextParts.length === 0) {
-      Object.keys(inputToScan).forEach(key => {
-        const val = inputToScan[key];
-        if (val !== undefined && val !== null) {
-          combinedTextParts.push(Array.isArray(val) ? val.join(' ') : String(val));
-          result.scannedFields.push(key);
-        }
-      });
-    }
+    extractValues(inputToScan);
   }
 
   const fullTextToScan = combinedTextParts.join(' ').toLowerCase();
@@ -76,10 +67,19 @@ function checkReviewKeywords(inputToScan, reviewConfig) {
 
   // 3. Match against out-of-scope keywords
   const matched = [];
-  const uniqueKeywords = [...new Set(outOfScopeList.map(k => String(k).toLowerCase()))];
+  const uniqueKeywords = [...new Set(outOfScopeList.map(k => String(k).trim()))];
 
   for (const keyword of uniqueKeywords) {
-    const regex = new RegExp('\\b' + escapeRegExp(keyword) + '\\b', 'i');
+    if (!keyword) continue;
+    const cleanKw = keyword.toLowerCase();
+    
+    // Multi-word phrases use explicit string matching; single words use word boundaries (\b)
+    const isMultiWord = cleanKw.includes(' ') || cleanKw.includes('-');
+    const pattern = isMultiWord 
+      ? escapeRegExp(cleanKw) 
+      : '\\b' + escapeRegExp(cleanKw) + '\\b';
+
+    const regex = new RegExp(pattern, 'i');
     if (regex.test(fullTextToScan)) {
       matched.push(keyword);
     }
@@ -92,7 +92,7 @@ function checkReviewKeywords(inputToScan, reviewConfig) {
 }
 
 /**
- * Loads REVIEW_CONFIG from Script Properties or falls back to FallbackReviewConfig.gs
+ * Loads REVIEW_CONFIG from Script Properties or falls back to getFallbackReviewConfig()
  */
 function getReviewConfig() {
   const props = PropertiesService.getScriptProperties();
@@ -117,14 +117,64 @@ function getFallbackReviewConfig() {
     },
     categories: {
       outOfScope: [
-        "crypto",
-        "bitcoin",
-        "forex",
-        "gambling",
-        "seo audit",
-        "web scraping",
-        "hacking"
+        "tv", "TV", "Tuned", "Tv Tuned", "crypto", "seo", "guest post",
+        "backlinks", "rankings", "partnership", "TV screen", "TV panel",
+        "Display fault", "TV power failure", "Internal TV component",
+        "Antenna", "TV reception", "Mobile phone screen", "Mobile phone battery",
+        "Charging port", "Water damage", "Tablet screen", "Soldering",
+        "Component-level electronics", "Console hardware", "PlayStation",
+        "Xbox", "Nintendo", "Appliance", "Whiteware", "Electrical wiring",
+        "General electronics", "Manufacturer warranty service"
       ]
     }
   };
+}
+
+/**
+ * TEST FUNCTION: Runs Review-Only test against AdminEmail template.
+ */
+function testAdminEmailReviewOnly() {
+  const rawPayload = {
+    submissionDate: new Date().toLocaleString("en-US", { timeZone: "America/New_York" }),
+    client: {
+      name: "Jane Doe (Review Test)",
+      email: "jdoe@sample-inquiry.com",
+      phone: "+1 (555) 014-9922",
+      location: "450 Market Street, San Francisco, CA 94105",
+      preferredContact: "Email",
+      contactingAs: "Potential Client",
+      isPreviousCustomer: false
+    },
+    request: {
+      situation: "Help with TV panel display fault & Mobile phone battery",
+      goal: "My TV panel has a display fault. Do you handle Xbox console hardware repairs or Mobile phone battery replacements?",
+      timeframe: "Medium"
+    }
+  };
+
+  const reviewResult = checkReviewKeywords(rawPayload, getFallbackReviewConfig());
+
+  const secEval = {
+    isSpam: false,
+    requiresReview: reviewResult.needsReview,
+    reviewFlags: reviewResult.matchedKeywords
+  };
+
+  const template = HtmlService.createTemplateFromFile('AdminEmail');
+  template.submissionDate = rawPayload.submissionDate;
+  template.client = rawPayload.client;
+  template.request = rawPayload.request;
+  template.secEval = secEval;
+
+  const htmlBody = template.evaluate().getContent();
+  const recipient = Session.getActiveUser().getEmail();
+
+  MailApp.sendEmail({
+    to: recipient,
+    subject: "⚠️ TEST REVIEW ONLY: Out-of-Scope Keywords Detected",
+    htmlBody: htmlBody
+  });
+
+  Logger.log("Review Test Executed.");
+  Logger.log("Matched Keywords: " + JSON.stringify(reviewResult.matchedKeywords));
 }

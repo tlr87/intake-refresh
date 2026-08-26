@@ -799,103 +799,235 @@ function testPhoneSpamRules() {
 
 
 
-/**
- * TEST: Simulates a clean submission, runs security checks,
- * and dispatches both Admin Notification and Client Confirmation emails.
- */
-function testSendNormalEmails() {
+function testNormalSubmissionEmail() {
   Logger.log("=== STARTING NORMAL SUBMISSION EMAIL TEST ===");
-
+  
   try {
-    // 1. Fetch Configuration Targets
-    const store = PropertiesService.getScriptProperties();
-    const rawConfig = store.getProperty('FORM_CONFIG');
-    const formConfig = rawConfig ? JSON.parse(rawConfig) : getFallbackFormConfig();
-
-    const adminEmail = (formConfig.settings && formConfig.settings.adminEmail)
-      ? formConfig.settings.adminEmail
-      : "tom@rd3tech.com";
-
-    // 2. Define Clean Mock Submission Payload
-    const cleanPayload = {
-      honeypot: "",
-      name: "Sarah Jenkins",
-      email: "tom.revill@gmail.com", // Set to your email to test receiving client confirmation
-      phone: "021 555 9999",
-      address: "45 Albert Street, Auckland CBD",
-      contactPreference: "Email",
-      usedBefore: "No",
-      clientType: "Business",
-      helpCategory: ["Cloud Infrastructure & Migration"],
-      userGoal: "We need assistance setting up Google Workspace and migrating our local file storage to the cloud.",
-      urgency: "Standard"
+    const adminTemplate = HtmlService.createTemplateFromFile('AdminEmail');
+    const clientTemplate = HtmlService.createTemplateFromFile('ClientEmail');
+    
+    // Sample test client data
+    const testClient = {
+      name: "John Doe",
+      firstName: "John",
+      email: "tom.revill@gmail.com", // Set your email here to receive the client test copy
+      phone: "021 123 4567",
+      location: "Auckland",
+      preferredContact: "Email",
+      contactingAs: "Individual",
+      isPreviousCustomer: false
     };
 
-    // 3. Run Security Checks
-    const spamResult = checkSpamKeywords(cleanPayload);
-    const reviewResult = checkReviewKeywords(cleanPayload);
+    const testRequest = {
+      timeframe: "Medium",
+      goal: "Need assistance setting up network equipment."
+    };
 
-    Logger.log("Security Check -> Is Spam: " + spamResult.isSpam);
-    Logger.log("Security Check -> Needs Review: " + reviewResult.needsReview);
+    const testSecEval = {
+      isSpam: false,
+      requiresReview: false,
+      flags: []
+    };
 
-    if (spamResult.isSpam || reviewResult.needsReview) {
-      Logger.log("⚠️ WARNING: Clean payload was unexpectedly flagged!");
-      return;
+    Logger.log("Security Check -> Is Spam: " + testSecEval.isSpam);
+    Logger.log("Security Check -> Needs Review: " + testSecEval.requiresReview);
+
+    const formattedDate = new Date().toLocaleString();
+
+    // Populate Admin Template
+    adminTemplate.client = testClient;
+    adminTemplate.request = testRequest;
+    adminTemplate.secEval = testSecEval;
+    adminTemplate.submissionDate = formattedDate;
+
+    // Populate Client Template
+    clientTemplate.client = testClient;
+    clientTemplate.request = testRequest;
+    clientTemplate.secEval = testSecEval;
+    clientTemplate.submissionDate = formattedDate;
+
+    // Render HTML bodies
+    const adminHtml = adminTemplate.evaluate().getContent();
+    const clientHtml = clientTemplate.evaluate().getContent();
+
+    // 1. Send Email to ADMIN
+    MailApp.sendEmail({
+      to: "tom@rd3tech.com",
+      subject: "RD3 Tech — New Form Submission [ADMIN]",
+      htmlBody: adminHtml
+    });
+    Logger.log("✔ Admin email dispatched!");
+
+    // 2. Send Email to CLIENT (only if valid email present)
+    if (testClient.email) {
+      MailApp.sendEmail({
+        to: testClient.email,
+        subject: "Thank you for contacting RD3 Tech",
+        htmlBody: clientHtml
+      });
+      Logger.log("✔ Client confirmation email dispatched!");
     }
 
-    // 4. Map Submission Fields for Templates
-    const templateFields = [
-      { title: "Full Name", value: cleanPayload.name },
-      { title: "Email Address", value: cleanPayload.email },
-      { title: "Phone Number", value: cleanPayload.phone },
-      { title: "Address / Location", value: cleanPayload.address },
-      { title: "Preferred Contact Method", value: cleanPayload.contactPreference },
-      { title: "Have you used RD3 Tech before?", value: cleanPayload.usedBefore },
-      { title: "Client Type", value: cleanPayload.clientType },
-      { title: "What do you need help with?", value: cleanPayload.helpCategory.join(", ") },
-      { title: "What is your main goal or issue?", value: cleanPayload.userGoal },
-      { title: "Urgency Level", value: cleanPayload.urgency }
-    ];
-
-    // 5. Dispatch Admin Email (AdminEmail.html)
-    const adminTemplate = HtmlService.createTemplateFromFile('AdminEmail');
-    adminTemplate.name = cleanPayload.name;
-    adminTemplate.userEmail = cleanPayload.email;
-    adminTemplate.fields = templateFields;
-    adminTemplate.isSpam = false;
-    adminTemplate.matchedSpamKeywords = [];
-    adminTemplate.isUrgent = false;
-    adminTemplate.needsReview = false;
-    adminTemplate.matchedKeywords = [];
-
-    MailApp.sendEmail({
-      to: adminEmail,
-      subject: "📥 New Form Submission — RD3 Tech",
-      htmlBody: adminTemplate.evaluate().getContent()
-    });
-    Logger.log("✔ Admin email dispatched successfully to: " + adminEmail);
-
-    // 6. Dispatch Client Confirmation Email (ClientEmail.html)
-    const clientTemplate = HtmlService.createTemplateFromFile('ClientEmail');
-    clientTemplate.name = cleanPayload.name;
-    clientTemplate.userEmail = cleanPayload.email;
-    clientTemplate.helpCategory = cleanPayload.helpCategory.join(", ");
-    clientTemplate.userGoal = cleanPayload.userGoal;
-    clientTemplate.fields = templateFields;
-
-    MailApp.sendEmail({
-      to: cleanPayload.email,
-      subject: "We've received your inquiry — RD3 Tech",
-      htmlBody: clientTemplate.evaluate().getContent()
-    });
-    Logger.log("✔ Client confirmation email dispatched successfully to: " + cleanPayload.email);
-
-    Logger.log("\n=== TEST COMPLETED SUCCESSFULLY ===");
-
   } catch (err) {
-    Logger.log("✖ ERROR during normal email test: " + err.message);
+    Logger.log("✖ ERROR during email test: " + err.message);
   }
 }
 
 
 
+
+function testAdminEmailOnly() {
+  Logger.log("=== STARTING REALISTIC ADMIN EMAIL TEST ===");
+  
+  try {
+    const adminTemplate = HtmlService.createTemplateFromFile('AdminEmail');
+    
+    // 1. Realistic Form Client Profile (Matching Form Fields)
+    const testClient = {
+      name: "Sarah Connor",
+      email: "tom@rd3tech.com", // Send test to yourself
+      phone: "027 987 6543",
+      location: "Whangarei, Northland",
+      preferredContact: "Email",              // Choices: 'Email' | 'Phone'
+      isPreviousCustomer: true,               // Choices: true (Yes) | false (No)
+      contactingAs: "Small Business"          // Choices: 'Home or Family' | 'Small Business' | 'Community Group'
+    };
+
+    // 2. Realistic Form Request Data (Matching Form Questions)
+    const testRequest = {
+      situation: "Help with Something Broken?", // Choices: Broken | Better | Workplace | Manage IT | Choosing Tech | Advice | Where to Start
+      goal: "Our main network router keeps disconnecting during peak operating hours. Need someone to diagnose whether it's an ISP line issue or failing hardware.",
+      timeframe: "High"                       // Choices: 'Low' | 'Medium' | 'High'
+    };
+
+    // 3. Security Evaluation State
+    const testSecEval = {
+      isSpam: false,
+      requiresReview: false,
+      flags: []
+    };
+
+    Logger.log("Testing Submission for Client: " + testClient.name);
+
+    // Bind Data to Admin Template
+    adminTemplate.client = testClient;
+    adminTemplate.request = testRequest;
+    adminTemplate.secEval = testSecEval;
+    adminTemplate.submissionDate = new Date().toLocaleString();
+
+    // Render HTML
+    const adminHtml = adminTemplate.evaluate().getContent();
+
+    // Send Admin Email Only
+    MailApp.sendEmail({
+      to: "tom@rd3tech.com",
+      subject: "RD3 TECH — New Submission: " + testClient.name + " (" + testClient.contactingAs + ")",
+      htmlBody: adminHtml
+    });
+
+    Logger.log("✔ Realistic Admin email sent successfully!");
+
+  } catch (err) {
+    Logger.log("✖ ERROR during Admin email test: " + err.message);
+  }
+}
+
+
+
+
+function testAdminEmailTripAllFlags() {
+  const rawPayload = {
+    submissionDate: new Date().toLocaleString("en-US", { timeZone: "America/New_York" }),
+    client: {
+      name: "Flag Test User (Separate Areas)",
+      email: "urgent-phish@suspicious-domain.com",
+      phone: "+1 (555) 019-9988",
+      location: "777 Risk Avenue, Suite 100, Las Vegas, NV 89101",
+      preferredContact: "Email",
+      contactingAs: "External Vendor",
+      isPreviousCustomer: false
+    },
+    request: {
+      situation: "Help with URGENT TV power failure & Crypto Transfer",
+      goal: "CRITICAL: Immediate assistance needed for TV power failure repair and Xbox hardware console fix. Also need urgent wire transfer for crypto investment. Visit http://phishing-link.example immediately.",
+      timeframe: "High"
+    }
+  };
+
+  const keywordResult = checkReviewKeywords(rawPayload, getFallbackReviewConfig());
+
+  // Pass categorized flags into secEval
+  const secEval = {
+    isSpam: true,
+    spamFlags: [
+      "Malicious Link Detected (http://phishing-link.example)",
+      "High-Risk TLD (.example)"
+    ],
+    requiresReview: keywordResult.needsReview,
+    reviewFlags: keywordResult.matchedKeywords
+  };
+
+  const template = HtmlService.createTemplateFromFile('AdminEmail');
+  template.submissionDate = rawPayload.submissionDate;
+  template.client = rawPayload.client;
+  template.request = rawPayload.request;
+  template.secEval = secEval;
+
+  const htmlBody = template.evaluate().getContent();
+  const recipient = Session.getActiveUser().getEmail();
+
+  MailApp.sendEmail({
+    to: recipient,
+    subject: "🚨 TEST SEPARATE AREAS: [SPAM] [REVIEW] [URGENT] Form Submission",
+    htmlBody: htmlBody
+  });
+
+  Logger.log("Test email sent to: " + recipient);
+}
+
+function testAdminEmailReviewOnly() {
+  const mockPayload = {
+    submissionDate: new Date().toLocaleString("en-US", { timeZone: "America/New_York" }),
+    client: {
+      name: "Jane Doe (Review Test)",
+      email: "jdoe@sample-inquiry.com",
+      phone: "+1 (555) 014-9922",
+      location: "450 Market Street, San Francisco, CA 94105",
+      preferredContact: "Email",
+      contactingAs: "Potential Client",
+      isPreviousCustomer: false
+    },
+    request: {
+      // Goal contains explicit outOfScope keywords: "TV power failure", "Mobile phone battery", "Xbox"
+      situation: "Help with TV power failure & Electronics Repair Inquiry",
+      goal: "Hello, my TV panel has a TV power failure and won't turn on. Also wondering if you do Mobile phone battery replacements or Xbox console hardware repairs?",
+      timeframe: "Medium" // Standard urgency—does NOT trip the Urgent flag
+    },
+    secEval: {
+      isSpam: false,          // Keeps the banner yellow (alert-warning)
+      requiresReview: true,  // Trips ONLY the Requires Review badge
+      flags: [
+        "outOfScope: TV power failure",
+        "outOfScope: Mobile phone battery",
+        "outOfScope: Xbox"
+      ]
+    }
+  };
+
+  const template = HtmlService.createTemplateFromFile('AdminEmail');
+  template.submissionDate = mockPayload.submissionDate;
+  template.client = mockPayload.client;
+  template.request = mockPayload.request;
+  template.secEval = mockPayload.secEval;
+
+  const htmlBody = template.evaluate().getContent();
+  const recipient = Session.getActiveUser().getEmail();
+
+  MailApp.sendEmail({
+    to: recipient,
+    subject: "[FLAGGED] ⚠️ TEST REVIEW ONLY: Out-of-Scope Submission",
+    htmlBody: htmlBody
+  });
+
+  Logger.log("Review-only out-of-scope test email sent to: " + recipient);
+}
