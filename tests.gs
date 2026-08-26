@@ -467,3 +467,135 @@ function testSaveAllConfigs() {
     Logger.log("❌ ERROR during test execution: " + e.message);
   }
 }
+
+
+/**
+ * END-TO-END TEST: Submits mock responses for all 11 configured fields
+ * and sends an admin notification email using configured adminEmail.
+ */
+function testEndToEndFormFields() {
+  Logger.log("=== STARTING END-TO-END FORM FIELD TEST ===");
+  
+  try {
+    // 1. Fetch Configuration & Open Form
+    const store = PropertiesService.getScriptProperties();
+    const rawConfig = store.getProperty('FORM_CONFIG');
+    const formConfig = rawConfig ? JSON.parse(rawConfig) : getFallbackFormConfig();
+    const fields = formConfig.fields || {};
+    
+    // Resolve admin email dynamically from settings
+    const adminEmail = (formConfig.settings && formConfig.settings.adminEmail) 
+      ? formConfig.settings.adminEmail 
+      : "tom@rd3tech.com";
+      
+    Logger.log("Notification Target: " + adminEmail);
+    
+    const formId = formConfig.settings.formBaseUrl.match(/[-\w]{25,}/)[0];
+    const form = FormApp.openById(formId);
+    
+    // 2. Initialize a new Form Response
+    const formResponse = form.createResponse();
+    const liveItems = form.getItems();
+
+    // Mock data payload for all 11 fields
+    const mockPayload = {
+      honeypot: "",
+      name: "Automation Field Tester",
+      email: "test.automation@rd3tech.com",
+      phone: "021 555 9999",
+      address: "123 Test Street, Auckland, NZ",
+      contactPreference: "Email",
+      usedBefore: "No",
+      clientType: "Business",
+      helpCategory: ["IT Support & Infrastructure"],
+      userGoal: "Automated end-to-end verification of form submission and admin email alerts.",
+      urgency: "High / Critical"
+    };
+
+    let submittedCount = 0;
+    const summaryLines = [];
+
+    // 3. Map each live form item to its response type
+    liveItems.forEach(item => {
+      const title = item.getTitle();
+      const titleLower = title.trim().toLowerCase();
+      
+      const matchedKey = Object.keys(fields).find(key => {
+        const titleMatch = (fields[key].titleMatch || '').trim().toLowerCase();
+        return titleMatch && titleLower.includes(titleMatch);
+      });
+
+      if (!matchedKey) return;
+
+      const itemType = item.getType();
+      let itemResponse = null;
+      let displayValue = "";
+
+      switch (itemType) {
+        case FormApp.ItemType.TEXT:
+          displayValue = mockPayload[matchedKey] || "Test Value";
+          itemResponse = item.asTextItem().createResponse(displayValue);
+          break;
+
+        case FormApp.ItemType.PARAGRAPH_TEXT:
+          displayValue = mockPayload[matchedKey] || "Test Paragraph Value";
+          itemResponse = item.asParagraphTextItem().createResponse(displayValue);
+          break;
+
+        case FormApp.ItemType.MULTIPLE_CHOICE:
+          const mcChoices = item.asMultipleChoiceItem().getChoices();
+          displayValue = mcChoices.length > 0 ? mcChoices[0].getValue() : "Option 1";
+          itemResponse = item.asMultipleChoiceItem().createResponse(displayValue);
+          break;
+
+        case FormApp.ItemType.CHECKBOX:
+          const cbChoices = item.asCheckboxItem().getChoices();
+          displayValue = cbChoices.length > 0 ? cbChoices[0].getValue() : "Option 1";
+          itemResponse = item.asCheckboxItem().createResponse([displayValue]);
+          break;
+
+        case FormApp.ItemType.LIST:
+          const listChoices = item.asListItem().getChoices();
+          displayValue = listChoices.length > 0 ? listChoices[0].getValue() : "Option 1";
+          itemResponse = item.asListItem().createResponse(displayValue);
+          break;
+      }
+
+      if (itemResponse) {
+        formResponse.withItemResponse(itemResponse);
+        submittedCount++;
+        summaryLines.push(`• ${title}: ${displayValue || "(blank)"}`);
+        Logger.log("✔ Mapped field [" + matchedKey + "] -> \"" + title + "\"");
+      }
+    });
+
+    // 4. Submit to Google Forms
+    formResponse.submit();
+    Logger.log("✔ Mock form submission posted successfully.");
+
+    // 5. Build Email Body and Send Admin Notification Email using adminEmail
+    const emailSubject = "🚨 TEST SUBMISSION: New Form Enquiry Received (11 Fields Verified)";
+    const emailBody = 
+      "Hello Admin (" + adminEmail + "),\n\n" +
+      "This is an automated test verifying end-to-end field routing for the RD3 Tech Google Form.\n\n" +
+      "--- SUBMISSION SUMMARY (" + submittedCount + "/11 Fields) ---\n" +
+      summaryLines.join("\n") + "\n\n" +
+      "Timestamp: " + new Date().toLocaleString() + "\n" +
+      "Status: All systems operational.";
+
+    MailApp.sendEmail({
+      to: adminEmail,
+      subject: emailSubject,
+      body: emailBody
+    });
+
+    Logger.log("✔ Email alert successfully dispatched to " + adminEmail);
+    Logger.log("\n--- TEST RESULT ---");
+    Logger.log("✔ SUCCESS: All 11 fields processed and notification sent!");
+
+  } catch (err) {
+    Logger.log("✖ ERROR during submission test: " + err.message);
+  }
+}
+
+

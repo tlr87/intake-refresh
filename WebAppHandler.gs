@@ -214,13 +214,6 @@ function doPost(e) {
 }
 
 /**
- * Handles HTTP GET Requests.
- */
-function doGet(e) {
-  return createJsonResponse({ status: "active", service: "RD3 Tech Web App API" });
-}
-
-/**
  * Saves form submission data if a Google Sheet is bound to the script.
  */
 function saveToSheet(data) {

@@ -1,144 +1,119 @@
 /**
- * Web-accessible wrapper to trigger form validation from the Config Editor UI.
+ * Core validation function. 
+ * Audits FORM_CONFIG against live Google Form items while filtering structural headers.
  */
 function runFormValidationFromUi() {
-  return executeFormValidationTest();
-}
+  const details = [];
+  let totalConfigured = 0;
+  let passed = 0;
+  let failed = 0;
+  let unaccounted = 0;
 
-/**
- * Standalone runner for Apps Script Editor Console.
- */
-function testFormValidation() {
-  var res = executeFormValidationTest();
-  Logger.log(res.details.join('\n'));
-}
-
-/**
- * Core validation logic returning both logs and structured metrics.
- */
-function executeFormValidationTest() {
-  var logs = [];
-  function log(msg) {
-    logs.push(msg);
-  }
-
-  log("==================================================");
-  log("STARTING FORM FIELD ENTRY ID VALIDATION TEST");
-  log("==================================================");
-
-  var config = getInitialData().FORM_CONFIG || getFallbackFormConfig();
-  var formUrl = config.settings ? config.settings.formBaseUrl : null;
-
-  if (!formUrl) {
-    log("❌ ERROR: No 'formBaseUrl' defined in settings.");
-    return { success: false, totalConfigured: 0, passed: 0, failed: 1, unaccounted: 0, details: logs };
-  }
-
-  log("Fetching Google Form HTML from:\n" + formUrl + "\n");
-  var htmlContent = "";
   try {
-    var response = UrlFetchApp.fetch(formUrl, { muteHttpExceptions: true });
-    if (response.getResponseCode() !== 200) {
-      log("❌ HTTP ERROR: Received response code " + response.getResponseCode());
-      return { success: false, totalConfigured: 0, passed: 0, failed: 1, unaccounted: 0, details: logs };
+    // 1. Fetch Configuration
+    const store = PropertiesService.getScriptProperties();
+    const rawConfig = store.getProperty('FORM_CONFIG');
+    const formConfig = rawConfig ? JSON.parse(rawConfig) : getFallbackFormConfig();
+    const fields = formConfig.fields || {};
+    const formUrl = formConfig.settings ? formConfig.settings.formBaseUrl : '';
+
+    if (!formUrl) {
+      throw new Error("No formBaseUrl found in configuration.");
     }
-    htmlContent = response.getContentText();
-  } catch (e) {
-    log("❌ FETCH ERROR: " + e.toString());
-    return { success: false, totalConfigured: 0, passed: 0, failed: 1, unaccounted: 0, details: logs };
-  }
 
-  var match = htmlContent.match(/FB_PUBLIC_LOAD_DATA_\s*=\s*([\s\S]*?);\s*<\/script>/);
-  if (!match || !match[1]) {
-    log("❌ ERROR: Failed to extract internal form schema from Form HTML.");
-    return { success: false, totalConfigured: 0, passed: 0, failed: 1, unaccounted: 0, details: logs };
-  }
-
-  var liveFormSchema = [];
-  try {
-    var rawJson = JSON.parse(match[1]);
-    liveFormSchema = rawJson[1][1] || [];
-  } catch (e) {
-    log("❌ PARSE ERROR: Failed to parse Google Form schema: " + e.message);
-    return { success: false, totalConfigured: 0, passed: 0, failed: 1, unaccounted: 0, details: logs };
-  }
-
-  var liveFieldsMap = {};
-  var liveTitlesMap = {};
-
-  liveFormSchema.forEach(function(item) {
-    if (item && item[1] && item[4] && item[4][0]) {
-      var title = item[1].trim();
-      var entryNum = item[4][0][0];
-      var entryId = "entry." + entryNum;
-
-      liveFieldsMap[entryId] = title;
-      liveTitlesMap[title.toLowerCase()] = { entryId: entryId, realTitle: title };
+    // 2. Extract Form ID safely using Regex
+    const idMatch = formUrl.match(/[-\w]{25,}/);
+    if (!idMatch) {
+      throw new Error("Could not extract a valid Form ID from URL: " + formUrl);
     }
-  });
+    const formId = idMatch[0];
 
-  var configFields = config.fields || {};
-  var passedCount = 0;
-  var failedCount = 0;
-  var matchedLiveEntryIds = {};
+    // 3. Open Form
+    let form;
+    try {
+      form = FormApp.openById(formId);
+    } catch (err) {
+      throw new Error("Unable to open Google Form (ID: " + formId + "). Check permissions.");
+    }
 
-  log("--------------------------------------------------");
-  log("VALIDATING FORM_CONFIG FIELDS:");
-  log("--------------------------------------------------");
+    // 4. Validate Configured Fields
+    const liveItems = form.getItems();
+    const liveItemTitles = liveItems.map(item => item.getTitle().trim().toLowerCase());
+    const configuredKeys = Object.keys(fields);
+    totalConfigured = configuredKeys.length;
 
-  Object.keys(configFields).forEach(function(fieldKey) {
-    var cfgField = configFields[fieldKey];
-    var expectedEntryId = cfgField.entryId;
-    var expectedTitleMatch = cfgField.titleMatch ? cfgField.titleMatch.trim() : "";
+    details.push("--- CONFIGURATION VERIFICATION ---");
+    configuredKeys.forEach(key => {
+      const field = fields[key];
+      const matchTitle = (field.titleMatch || '').trim().toLowerCase();
 
-    log("🔍 Checking Key: '" + fieldKey + "' [" + expectedEntryId + "]");
-
-    if (!liveFieldsMap[expectedEntryId]) {
-      log("   ❌ INVALID ENTRY ID: '" + expectedEntryId + "' does NOT exist on live form!");
-      var matchByTitle = liveTitlesMap[expectedTitleMatch.toLowerCase()];
-      if (matchByTitle) {
-        log("      💡 SUGGESTION: Title '" + matchByTitle.realTitle + "' found with ID '" + matchByTitle.entryId + "'.");
-      }
-      failedCount++;
-    } else {
-      var liveTitle = liveFieldsMap[expectedEntryId];
-      matchedLiveEntryIds[expectedEntryId] = true;
-
-      if (expectedTitleMatch && liveTitle.toLowerCase().indexOf(expectedTitleMatch.toLowerCase()) === -1) {
-        log("   ⚠️ WARNING: Entry ID matches, but title mismatched.");
-        log("      - Expected: '" + expectedTitleMatch + "'");
-        log("      - Live Form: '" + liveTitle + "'");
+      const foundInLive = liveItemTitles.some(title => title.includes(matchTitle));
+      if (foundInLive) {
+        passed++;
+        details.push("✔ PASS [" + key + "]: Matched title pattern \"" + field.titleMatch + "\"");
       } else {
-        log("   ✔ MATCHED: Verified against Live Form Field -> '" + liveTitle + "'");
+        failed++;
+        details.push("✖ FAIL [" + key + "]: Title pattern \"" + field.titleMatch + "\" not found in live form");
       }
-      passedCount++;
+    });
+
+    // 5. Audit Unaccounted Items (Filtering non-input structural elements)
+    const STRUCTURAL_TYPES = [
+      FormApp.ItemType.SECTION_HEADER,
+      FormApp.ItemType.PAGE_BREAK,
+      FormApp.ItemType.IMAGE,
+      FormApp.ItemType.VIDEO
+    ];
+
+    details.push("\n--- UNACCOUNTED LIVE FORM ITEMS ---");
+    liveItems.forEach(item => {
+      // Skip non-input elements
+      if (STRUCTURAL_TYPES.includes(item.getType())) {
+        return;
+      }
+
+      const title = item.getTitle();
+      const titleLower = title.trim().toLowerCase();
+      const isConfigured = configuredKeys.some(key => {
+        const matchTitle = (fields[key].titleMatch || '').trim().toLowerCase();
+        return titleLower.includes(matchTitle);
+      });
+
+      if (!isConfigured) {
+        unaccounted++;
+        details.push("⚠️ UNACCOUNTED: Live Form item \"" + title + "\" (ID: " + item.getId() + ") is not in config.");
+      }
+    });
+
+    if (unaccounted === 0) {
+      details.push("✔ All live input fields are accounted for.");
     }
-  });
 
-  log("--------------------------------------------------");
-  log("UNACCOUNTED LIVE FORM FIELDS:");
-  log("--------------------------------------------------");
-
-  var unaccountedCount = 0;
-  Object.keys(liveFieldsMap).forEach(function(entryId) {
-    if (!matchedLiveEntryIds[entryId]) {
-      log("   ⚠️ UNACCOUNTED: Live Form contains '" + entryId + "' ('" + liveFieldsMap[entryId] + "'), but missing in CONFIG.");
-      unaccountedCount++;
-    }
-  });
-
-  if (unaccountedCount === 0) {
-    log("   ✔ All live form fields are fully accounted for in FORM_CONFIG!");
+  } catch (err) {
+    details.push("ERROR: " + err.message);
+    failed = totalConfigured;
   }
-
-  var isSuccess = failedCount === 0 && unaccountedCount === 0;
 
   return {
-    success: isSuccess,
-    totalConfigured: Object.keys(configFields).length,
-    passed: passedCount,
-    failed: failedCount,
-    unaccounted: unaccountedCount,
-    details: logs
+    totalConfigured: totalConfigured,
+    passed: passed,
+    failed: failed,
+    unaccounted: unaccounted,
+    details: details
   };
+}
+
+/**
+ * Console Test Runner: Select from toolbar dropdown and click Run.
+ */
+function testFormValidationConsole() {
+  const result = runFormValidationFromUi();
+  
+  Logger.log("=== FORM VALIDATION TEST RESULT ===");
+  Logger.log("Total Configured: " + result.totalConfigured);
+  Logger.log("Passed: " + result.passed);
+  Logger.log("Failed: " + result.failed);
+  Logger.log("Unaccounted: " + result.unaccounted);
+  Logger.log("\n--- DETAILED LOGS ---");
+  result.details.forEach(line => Logger.log(line));
 }

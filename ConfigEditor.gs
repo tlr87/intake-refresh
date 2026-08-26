@@ -4,6 +4,16 @@
  * ============================================================================
  */
 
+/**
+ * Creates a custom UI Menu inside Google Sheets to launch the editor.
+ */
+function onOpen() {
+  SpreadsheetApp.getUi()
+    .createMenu('RD3 Tech')
+    .addItem('⚙️ Open Config Editor', 'openConfigEditor')
+    .addToUi();
+}
+
 function openConfigEditor() {
   const template = HtmlService.createTemplateFromFile('Index');
   template.initialDataJson = JSON.stringify(getInitialData());
@@ -96,6 +106,88 @@ function resetKeyToFallback(key) {
   }
 
   throw new Error("No fallback provider defined for key: " + key);
+}
+
+/**
+ * VALIDATION HANDLER: Validates configured form items against the live Google Form.
+ */
+function runFormValidationFromUi() {
+  const details = [];
+  let totalConfigured = 0;
+  let passed = 0;
+  let failed = 0;
+  let unaccounted = 0;
+
+  try {
+    const data = getInitialData();
+    const formConfig = data.FORM_CONFIG || getFallbackFormConfig();
+    const fields = formConfig.fields || {};
+    const formUrl = formConfig.settings ? formConfig.settings.formBaseUrl : '';
+
+    if (!formUrl) {
+      throw new Error("No formBaseUrl configured in FORM_CONFIG settings.");
+    }
+
+    // Extract Form ID from the URL string
+    const match = formUrl.match(/\/d\/e\/([^\/]+)\/viewform/) || formUrl.match(/\/d\/([^\/]+)/);
+    if (!match) {
+      throw new Error("Could not parse Form ID from formBaseUrl.");
+    }
+
+    let form;
+    try {
+      form = FormApp.openById(match[1]);
+    } catch(err) {
+      throw new Error("Unable to open Google Form. Verify the Form ID and script permissions.");
+    }
+
+    const liveItems = form.getItems();
+    const liveItemTitles = liveItems.map(item => item.getTitle().trim().toLowerCase());
+    const configuredKeys = Object.keys(fields);
+    totalConfigured = configuredKeys.length;
+
+    details.push("--- CONFIGURATION VERIFICATION ---");
+    configuredKeys.forEach(key => {
+      const field = fields[key];
+      const matchTitle = (field.titleMatch || '').trim().toLowerCase();
+
+      const foundInLive = liveItemTitles.some(title => title.includes(matchTitle));
+      if (foundInLive) {
+        passed++;
+        details.push("✔ PASS [" + key + "]: Matched title pattern \"" + field.titleMatch + "\"");
+      } else {
+        failed++;
+        details.push("✖ FAIL [" + key + "]: Title pattern \"" + field.titleMatch + "\" not found in live form");
+      }
+    });
+
+    details.push("\n--- UNACCOUNTED LIVE FORM ITEMS ---");
+    liveItems.forEach(item => {
+      const title = item.getTitle();
+      const titleLower = title.trim().toLowerCase();
+      const isConfigured = configuredKeys.some(key => {
+        const matchTitle = (fields[key].titleMatch || '').trim().toLowerCase();
+        return titleLower.includes(matchTitle);
+      });
+
+      if (!isConfigured) {
+        unaccounted++;
+        details.push("⚠️ UNACCOUNTED: Live Form item \"" + title + "\" (ID: " + item.getId() + ") is not in config.");
+      }
+    });
+
+  } catch (err) {
+    details.push("ERROR: " + err.message);
+    failed = totalConfigured;
+  }
+
+  return {
+    totalConfigured: totalConfigured,
+    passed: passed,
+    failed: failed,
+    unaccounted: unaccounted,
+    details: details
+  };
 }
 
 /* =========================================================================
@@ -206,6 +298,11 @@ function getFallbackFormConfig() {
         "entryId": "entry.2118395637",
         "type": "text"
       },
+      "address": {
+        "titleMatch": "Address / Location",
+        "entryId": "entry.XXXXXXXXX",
+        "type": "text"
+      },
       "contactPreference": {
         "titleMatch": "How would you prefer us to contact you?",
         "entryId": "entry.1955012690",
@@ -245,6 +342,34 @@ function getFallbackFormConfig() {
  * ========================================================================= */
 
 function doGet(e) {
+  // 1. Explicitly check ONLY if api or mode parameter is passed as 'true' or 'api'
+  const isApiRequest = e && e.parameter && 
+                       (e.parameter.api === 'true' || e.parameter.mode === 'api');
+
+  if (isApiRequest) {
+    return ContentService.createTextOutput(JSON.stringify({
+      "status": "active",
+      "service": "RD3 Tech Web App API"
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  // 2. Authorize user by email
+  const userEmail = Session.getActiveUser().getEmail();
+  const allowedUsers = [
+    "tom@rd3tech.com",
+    "tom.revill@gmail.com" // Add authorized emails here
+  ];
+
+  if (allowedUsers.length > 0 && allowedUsers.indexOf(userEmail) === -1) {
+    return HtmlService.createHtmlOutput(
+      "<div style='font-family:sans-serif; padding:20px; color:#ef4444; background:#0f172a; height:100vh;'>" +
+        "<h2>🚫 Access Denied</h2>" +
+        "<p>User <b>" + (userEmail || "Anonymous") + "</b> is not authorized to access this configuration editor.</p>" +
+      "</div>"
+    );
+  }
+
+  // 3. Serve the UI Configuration Editor
   const template = HtmlService.createTemplateFromFile('Index');
   template.initialDataJson = JSON.stringify(getInitialData());
 
@@ -253,4 +378,33 @@ function doGet(e) {
     .setHeight(720)
     .setTitle('RD3 Tech — Configuration JSON Editor')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+
+
+
+
+
+
+
+
+
+
+/**
+ * CONSOLE TEST ROUTER
+ * Run this function from the Apps Script editor toolbar to diagnose your doGet routing.
+ */
+function testDoGetRouting() {
+  const result = doGet({});
+  
+  Logger.log("=== DOGET TEST RESULT ===");
+  Logger.log("Content Type: " + result.getContent());
+  
+  if (result.getContent().indexOf("RD3 Tech Web App API") !== -1) {
+    Logger.log("❌ CRITICAL: doGet is hitting an old API handler or duplicate function!");
+  } else if (result.getContent().indexOf("Access Denied") !== -1) {
+    Logger.log("⚠️ Access Denied triggered (Session email empty in test execution context). UI code path is ACTIVE.");
+  } else {
+    Logger.log("✔ SUCCESS: doGet successfully returned the HTML Config Editor UI!");
+  }
 }

@@ -6,7 +6,7 @@ function getFallbackFormConfig() {
     "settings": {
       "adminEmail": "tom@rd3tech.com",
       "formTitle": "RD3 Tech Contact Form",
-      "formBaseUrl": "https://docs.google.com/forms/d/e/1FAIpQLSevC9HvM8eo7dCKQzU6FUby03Khtiis_ptiiVsCxWn0__ulPA/viewform"
+      "formBaseUrl": "https://docs.google.com/forms/d/10ahsRmbXxFjcVGOY3IjZcrptctulxcS4sdQygAOp9mc/" 
     },
     "fields": {
       "honeypot": {
@@ -27,6 +27,11 @@ function getFallbackFormConfig() {
       "phone": {
         "titleMatch": "Phone",
         "entryId": "entry.2118395637",
+        "type": "text"
+      },
+      "address": {
+        "titleMatch": "Address / Location",
+        "entryId": "entry.1043436112",
         "type": "text"
       },
       "contactPreference": {
