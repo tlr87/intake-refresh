@@ -20,11 +20,36 @@
     .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
     .title { font-size: 18px; font-weight: 700; color: #38bdf8; }
     
-    .tabs-nav { display: flex; gap: 4px; border-bottom: 2px solid var(--border); margin-bottom: 16px; overflow-x: auto; padding-bottom: 2px; }
-    .tab-btn { background: #090d16; color: var(--muted); border: 1px solid var(--border); border-bottom: none; border-radius: 6px 6px 0 0; padding: 10px 16px; font-weight: 600; font-size: 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+    /* Dynamic Tab Bar */
+    .tabs-nav { display: flex; gap: 4px; border-bottom: 2px solid var(--border); margin-bottom: 16px; overflow-x: auto; padding-bottom: 2px; align-items: center; }
+    .tab-wrapper { position: relative; display: flex; align-items: center; }
+    
+    .tab-btn { 
+      background: #090d16; color: var(--muted); border: 1px solid var(--border); border-bottom: none; 
+      border-radius: 6px 6px 0 0; padding: 10px 12px 10px 14px; font-weight: 600; font-size: 12px; 
+      cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; white-space: nowrap; 
+    }
     .tab-btn:hover { color: var(--text); background: var(--panel); }
     .tab-btn.active { background: var(--panel); color: #38bdf8; border-color: var(--accent); border-bottom: 2px solid var(--panel); margin-bottom: -2px; }
     
+    /* Tab Context Actions */
+    .tab-menu-trigger {
+      background: transparent; border: none; color: var(--muted); padding: 2px 4px; border-radius: 4px;
+      font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0.6;
+    }
+    .tab-btn:hover .tab-menu-trigger, .tab-btn.active .tab-menu-trigger { opacity: 1; }
+    .tab-menu-trigger:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+    
+    .dropdown-menu {
+      display: none; position: absolute; top: 100%; right: 0; background: #0f172a; border: 1px solid var(--border);
+      border-radius: 6px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5); z-index: 50; min-width: 140px; padding: 4px 0; margin-top: 4px;
+    }
+    .dropdown-menu.show { display: block; }
+    .dropdown-item {
+      padding: 8px 12px; font-size: 12px; color: var(--text); cursor: pointer; display: flex; align-items: center; gap: 8px;
+    }
+    .dropdown-item:hover { background: var(--panel); }
+
     .tab-content { display: none; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
     .tab-content.active { display: block; }
 
@@ -45,42 +70,40 @@
     .btn { background: var(--accent); color: #ffffff; border: none; padding: 10px 20px; font-size: 13px; font-weight: 600; border-radius: 6px; cursor: pointer; }
     .btn:disabled { background: #475569; cursor: not-allowed; opacity: 0.6; }
 
-    .btn-secondary { background: #334155; color: #f8fafc; padding: 6px 12px; font-size: 11px; font-weight: 600; border: none; border-radius: 4px; cursor: pointer; }
-    .btn-add { background: #166534; color: #ffffff; padding: 6px 12px; font-size: 11px; font-weight: 600; border: none; border-radius: 4px; cursor: pointer; }
-    .btn-danger { background: var(--danger); color: #ffffff; padding: 6px 12px; font-size: 11px; font-weight: 600; border: none; border-radius: 4px; cursor: pointer; }
+    .btn-secondary { background: #334155; color: #f8fafc; padding: 6px 12px; font-size: 11px; font-weight: 600; border: none; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-secondary:hover { background: #475569; }
+
     .btn-test { background: var(--info); color: #ffffff; padding: 6px 12px; font-size: 11px; font-weight: 600; border: none; border-radius: 4px; cursor: pointer; }
-    .btn-test:disabled { background: #475569; opacity: 0.7; cursor: wait; }
 
     #status { font-size: 13px; font-weight: 600; display: none; padding: 8px 14px; border-radius: 6px; }
     .status-success { background: #14532d; color: #4ade80; }
     .status-error { background: #7f1d1d; color: #fca5a5; }
 
-    /* Modal Styling for Test Results */
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); z-index: 1000; justify-content: center; align-items: center; }
-    .modal-box { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; width: 80%; max-width: 700px; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); }
+    .modal-box { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; width: 80%; max-width: 500px; display: flex; flex-direction: column; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); }
     .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border-bottom: 1px solid var(--border); }
     .modal-title { font-weight: 700; font-size: 15px; color: #38bdf8; }
     .modal-close { background: transparent; border: none; color: var(--muted); font-size: 18px; cursor: pointer; }
-    .modal-body { padding: 18px; overflow-y: auto; flex-grow: 1; }
-    .modal-footer { padding: 12px 18px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; }
-    .test-log { background: #090d16; color: #e2e8f0; font-family: monospace; font-size: 12px; padding: 12px; border-radius: 6px; white-space: pre-wrap; word-break: break-all; border: 1px solid var(--border); margin-top: 12px; }
+    .modal-body { padding: 18px; overflow-y: auto; flex-grow: 1; font-size: 13px; color: var(--text); }
+    .modal-footer { padding: 12px 18px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+
     .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; text-align: center; }
     .summary-card { background: #090d16; padding: 8px; border-radius: 6px; border: 1px solid var(--border); }
     .summary-card .num { font-size: 16px; font-weight: 700; }
     .summary-card .lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; }
+    .test-log { background: #090d16; color: #e2e8f0; font-family: monospace; font-size: 12px; padding: 12px; border-radius: 6px; white-space: pre-wrap; word-break: break-all; border: 1px solid var(--border); margin-top: 12px; max-height: 250px; overflow-y: auto; }
   </style>
 </head>
 <body>
   <div class="header">
     <div class="title">RD3 Tech — Protected Configuration Editor</div>
     <div class="action-btns">
-      <button class="btn-secondary" onclick="exportBackupJSON()">📥 Backup (JSON)</button>
-      <button class="btn-secondary" onclick="triggerImportJSON()">📤 Import (JSON)</button>
+      <button class="btn-secondary" onclick="exportBackupJSON()">📥 Backup</button>
+      <button class="btn-secondary" onclick="triggerImportJSON()">📤 Import</button>
       <input type="file" id="importFileInput" accept=".json" style="display: none;" onchange="importBackupJSON(event)">
     </div>
   </div>
 
-  <!-- Server data injected safely into hidden container -->
   <div id="rawServerData" style="display:none;"><?!= initialDataJson ?></div>
 
   <div id="tabsNav" class="tabs-nav"></div>
@@ -91,12 +114,12 @@
     <div id="status"></div>
   </div>
 
-  <!-- Modal overlay for Form Validation Results -->
+  <!-- Form Validation Test Modal -->
   <div id="testModal" class="modal-overlay">
-    <div class="modal-box">
+    <div class="modal-box" style="max-width:700px;">
       <div class="modal-header">
-        <div class="modal-title" id="modalTitle">Google Form Validation Results</div>
-        <button class="modal-close" onclick="closeModal()">&times;</button>
+        <div class="modal-title">Google Form Validation Results</div>
+        <button class="modal-close" onclick="closeModal('testModal')">&times;</button>
       </div>
       <div class="modal-body">
         <div class="summary-grid">
@@ -108,7 +131,7 @@
         <div id="modalLog" class="test-log">Running test...</div>
       </div>
       <div class="modal-footer">
-        <button class="btn-secondary" onclick="closeModal()">Close</button>
+        <button class="btn-secondary" onclick="closeModal('testModal')">Close</button>
       </div>
     </div>
   </div>
@@ -118,12 +141,7 @@
     var activeTabKey = '';
 
     function escapeHtml(str) {
-      return String(str)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
 
     function init() {
@@ -136,6 +154,12 @@
         document.getElementById('panelsContainer').innerHTML = 
           '<div style="color:var(--error); padding:20px;">Failed to render configurations: ' + escapeHtml(e.message) + '</div>';
       }
+
+      document.addEventListener('click', function(e) {
+        if (!e.target.closest('.tab-wrapper')) {
+          closeAllDropdowns();
+        }
+      });
     }
 
     function renderEditorUI() {
@@ -150,7 +174,6 @@
       if (keys.length === 0) {
         panelsContainer.innerHTML = '<div style="padding: 40px; text-align: center; background: var(--panel); border-radius: 8px;">' +
             '<p style="color: var(--muted);">No properties found in Script Properties.</p>' +
-            '<button class="btn-add" onclick="addNewProperty()">+ Add New Property</button>' +
           '</div>';
         document.getElementById('saveBtn').disabled = true;
         return;
@@ -161,11 +184,29 @@
       }
 
       keys.forEach(function(key) {
+        var wrapper = document.createElement('div');
+        wrapper.className = 'tab-wrapper';
+
         var tabBtn = document.createElement('button');
         tabBtn.className = 'tab-btn' + (key === activeTabKey ? ' active' : '');
-        tabBtn.onclick = function() { switchTab(key); };
-        tabBtn.innerHTML = escapeHtml(key) + ' <span id="dot-' + escapeHtml(key) + '" class="badge valid">Valid</span>';
-        navContainer.appendChild(tabBtn);
+        tabBtn.onclick = function(e) { 
+          if (!e.target.closest('.tab-menu-trigger')) switchTab(key); 
+        };
+        
+        tabBtn.innerHTML = '<span>' + escapeHtml(key) + '</span>' +
+          '<span id="dot-' + escapeHtml(key) + '" class="badge valid">Valid</span>' +
+          '<span class="tab-menu-trigger" onclick="toggleTabMenu(event, \'' + escapeHtml(key) + '\')">⋮</span>';
+
+        var dropdown = document.createElement('div');
+        dropdown.className = 'dropdown-menu';
+        dropdown.id = 'menu-' + key;
+        dropdown.innerHTML = 
+          '<div class="dropdown-item" onclick="formatJSON(\'' + escapeHtml(key) + '\')">✨ Format JSON</div>' +
+          '<div class="dropdown-item" onclick="restoreFallback(\'' + escapeHtml(key) + '\')">↺ Restore Default</div>';
+
+        wrapper.appendChild(tabBtn);
+        wrapper.appendChild(dropdown);
+        navContainer.appendChild(wrapper);
 
         var valStr = typeof configData[key] === 'object' 
           ? JSON.stringify(configData[key], null, 2) 
@@ -175,7 +216,6 @@
         panel.id = 'panel-' + key;
         panel.className = 'tab-content' + (key === activeTabKey ? ' active' : '');
         
-        // Conditionally show "Validate Google Form IDs" button on FORM_CONFIG tab
         var testButtonHtml = (key === 'FORM_CONFIG') 
           ? '<button class="btn-test" onclick="runFormValidationTest(this)">🔍 Validate Google Form IDs</button>' 
           : '';
@@ -184,9 +224,7 @@
             '<span class="prop-title">Script Property: ' + escapeHtml(key) + '</span>' +
             '<div class="action-btns">' +
               testButtonHtml +
-              '<button class="btn-secondary" onclick="restoreFallback(\'' + escapeHtml(key) + '\')">Restore Fallback</button>' +
-              '<button class="btn-add" onclick="addNewProperty()">+ Add Property</button>' +
-              '<button class="btn-danger" onclick="removeProperty(\'' + escapeHtml(key) + '\')">- Delete Property</button>' +
+              '<button class="btn-secondary" onclick="restoreFallback(\'' + escapeHtml(key) + '\')">Restore Default</button>' +
               '<button class="btn-secondary" onclick="formatJSON(\'' + escapeHtml(key) + '\')">Format JSON</button>' +
             '</div>' +
           '</div>' +
@@ -197,6 +235,18 @@
       });
 
       keys.forEach(function(key) { validateField(key); });
+    }
+
+    function toggleTabMenu(e, key) {
+      e.stopPropagation();
+      closeAllDropdowns();
+      var menu = document.getElementById('menu-' + key);
+      if (menu) menu.classList.toggle('show');
+    }
+
+    function closeAllDropdowns() {
+      var menus = document.querySelectorAll('.dropdown-menu');
+      menus.forEach(function(m) { m.classList.remove('show'); });
     }
 
     function switchTab(selectedKey) {
@@ -214,74 +264,76 @@
       }
     }
 
-    function runFormValidationTest(btn) {
-      var origText = btn.innerHTML;
-      btn.disabled = true;
-      btn.innerHTML = '⏳ Validating...';
-
-      google.script.run
-        .withSuccessHandler(function(res) {
-          btn.disabled = false;
-          btn.innerHTML = origText;
-          showValidationModal(res);
-        })
-        .withFailureHandler(function(err) {
-          btn.disabled = false;
-          btn.innerHTML = origText;
-          alert('Validation failed to execute: ' + err.message);
-        })
-        .runFormValidationFromUi();
+    function closeModal(id) {
+      document.getElementById(id).style.display = 'none';
     }
 
-    function showValidationModal(res) {
-      document.getElementById('statConfigured').textContent = res.totalConfigured;
-      document.getElementById('statPassed').textContent = res.passed;
-      document.getElementById('statFailed').textContent = res.failed;
-      document.getElementById('statUnaccounted').textContent = res.unaccounted;
-
-      var logContainer = document.getElementById('modalLog');
-      logContainer.textContent = res.details ? res.details.join('\n') : 'No log details available.';
-
-      document.getElementById('testModal').style.display = 'flex';
-    }
-
-    function closeModal() {
-      document.getElementById('testModal').style.display = 'none';
-    }
-
-    function addNewProperty() {
-      var propName = prompt('Enter new Script Property key name (e.g. FORM_CONFIG):');
-      if (!propName) return;
+    function validateField(key) {
+      var textarea = document.getElementById(key);
+      var dot = document.getElementById('dot-' + key);
+      var errDiv = document.getElementById('err-' + key);
+      if (!textarea) return false;
       
-      var cleanKey = propName.trim().toUpperCase().replace(/[^A-Z0-9_]/g, '_');
-      if (!cleanKey) {
-        alert('Invalid property key name.');
-        return;
-      }
+      try {
+        var parsed = JSON.parse(textarea.value);
+        if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+          throw new Error('Config must be a valid JSON Object {}');
+        }
 
-      if (configData[cleanKey]) {
-        alert('Property key "' + cleanKey + '" already exists.');
-        switchTab(cleanKey);
-        return;
+        textarea.classList.remove('has-error');
+        if (dot) {
+          dot.className = 'badge valid';
+          dot.textContent = 'Valid';
+        }
+        if (errDiv) errDiv.textContent = '';
+        checkGlobalValidity();
+        return true;
+      } catch (e) {
+        textarea.classList.add('has-error');
+        if (dot) {
+          dot.className = 'badge invalid';
+          dot.textContent = 'Error';
+        }
+        if (errDiv) errDiv.textContent = e.message;
+        checkGlobalValidity();
+        return false;
       }
-
-      configData[cleanKey] = {};
-      activeTabKey = cleanKey;
-      renderEditorUI();
     }
 
-    function removeProperty(key) {
-      if (!confirm('Are you sure you want to delete "' + key + '"?')) return;
-
-      delete configData[key];
+    function checkGlobalValidity() {
       var keys = Object.keys(configData);
-      activeTabKey = keys.length > 0 ? keys[0] : '';
-      renderEditorUI();
+      var allValid = keys.length > 0;
+      
+      keys.forEach(function(key) {
+        var textarea = document.getElementById(key);
+        if (!textarea) {
+          allValid = false;
+          return;
+        }
+        try {
+          var parsed = JSON.parse(textarea.value);
+          if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) allValid = false;
+        } catch(e) {
+          allValid = false;
+        }
+      });
+
+      document.getElementById('saveBtn').disabled = !allValid;
+    }
+
+    function formatJSON(key) {
+      closeAllDropdowns();
+      var textarea = document.getElementById(key);
+      if (!textarea) return;
+      try {
+        var parsed = JSON.parse(textarea.value);
+        textarea.value = JSON.stringify(parsed, null, 2);
+        validateField(key);
+      } catch(e) {}
     }
 
     function restoreFallback(key) {
-      if (!confirm('Reset "' + key + '" to default fallback configuration?')) return;
-
+      closeAllDropdowns();
       var statusDiv = document.getElementById('status');
       statusDiv.className = '';
       statusDiv.style.display = 'block';
@@ -291,14 +343,12 @@
         .withSuccessHandler(function(rawResponse) {
           try {
             var fallbackData = typeof rawResponse === 'string' ? JSON.parse(rawResponse) : rawResponse;
-            
             configData[key] = fallbackData;
             var textarea = document.getElementById(key);
             if (textarea) {
               textarea.value = JSON.stringify(fallbackData, null, 2);
               validateField(key);
             }
-
             statusDiv.className = 'status-success';
             statusDiv.textContent = '✔ Restored "' + key + '" from fallback provider!';
             setTimeout(function() { statusDiv.style.display = 'none'; }, 4000);
@@ -359,11 +409,6 @@
             throw new Error('Imported JSON must be a top-level key-value object.');
           }
 
-          if (!confirm('Overwrite current form state with imported backup file? Click "Save All Configurations" afterwards to commit to Google Script Properties.')) {
-            event.target.value = '';
-            return;
-          }
-
           configData = importedObj;
           activeTabKey = Object.keys(configData)[0] || '';
           renderEditorUI();
@@ -381,67 +426,32 @@
       reader.readAsText(file);
     }
 
-    function validateField(key) {
-      var textarea = document.getElementById(key);
-      var dot = document.getElementById('dot-' + key);
-      var errDiv = document.getElementById('err-' + key);
-      if (!textarea) return false;
-      
-      try {
-        var parsed = JSON.parse(textarea.value);
-        if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-          throw new Error('Config must be a valid JSON Object {}');
-        }
+    function runFormValidationTest(btn) {
+      var origText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '⏳ Validating...';
 
-        textarea.classList.remove('has-error');
-        if (dot) {
-          dot.className = 'badge valid';
-          dot.textContent = 'Valid';
-        }
-        if (errDiv) errDiv.textContent = '';
-        checkGlobalValidity();
-        return true;
-      } catch (e) {
-        textarea.classList.add('has-error');
-        if (dot) {
-          dot.className = 'badge invalid';
-          dot.textContent = 'Error';
-        }
-        if (errDiv) errDiv.textContent = e.message;
-        checkGlobalValidity();
-        return false;
-      }
+      google.script.run
+        .withSuccessHandler(function(res) {
+          btn.disabled = false;
+          btn.innerHTML = origText;
+          showValidationModal(res);
+        })
+        .withFailureHandler(function(err) {
+          btn.disabled = false;
+          btn.innerHTML = origText;
+          alert('Validation failed to execute: ' + err.message);
+        })
+        .runFormValidationFromUi();
     }
 
-    function checkGlobalValidity() {
-      var keys = Object.keys(configData);
-      var allValid = keys.length > 0;
-      
-      keys.forEach(function(key) {
-        var textarea = document.getElementById(key);
-        if (!textarea) {
-          allValid = false;
-          return;
-        }
-        try {
-          var parsed = JSON.parse(textarea.value);
-          if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) allValid = false;
-        } catch(e) {
-          allValid = false;
-        }
-      });
-
-      document.getElementById('saveBtn').disabled = !allValid;
-    }
-
-    function formatJSON(key) {
-      var textarea = document.getElementById(key);
-      if (!textarea) return;
-      try {
-        var parsed = JSON.parse(textarea.value);
-        textarea.value = JSON.stringify(parsed, null, 2);
-        validateField(key);
-      } catch(e) {}
+    function showValidationModal(res) {
+      document.getElementById('statConfigured').textContent = res.totalConfigured;
+      document.getElementById('statPassed').textContent = res.passed;
+      document.getElementById('statFailed').textContent = res.failed;
+      document.getElementById('statUnaccounted').textContent = res.unaccounted;
+      document.getElementById('modalLog').textContent = res.details ? res.details.join('\n') : 'No log details available.';
+      document.getElementById('testModal').style.display = 'flex';
     }
 
     function saveConfigs() {
