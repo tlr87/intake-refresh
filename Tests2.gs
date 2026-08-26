@@ -92,3 +92,49 @@ function test_AdminEmail_TemplateRender() {
     Logger.log("❌ ADMIN EMAIL TEMPLATE FAILED: " + err.toString());
   }
 }
+
+
+
+
+
+
+/**
+ * Test runner for doPost pipeline using exact client-facing form fields.
+ */
+function test_doPost_ClientFormSubmission() {
+  Logger.log("--- STARTING CLIENT FORM DOPOST TEST ---");
+
+  // Mock POST event payload mapping directly to your client form fields
+  const mockEvent = {
+    postData: {
+      contents: JSON.stringify({
+        // Your Details
+        rd3_name: "Jane Smith",
+        rd3_email: "tom.revill@gmail.com",
+        rd3_phone: "021-555-0199",
+        rd3_location: "Auckland, New Zealand",
+        rd3_contactPreference: "Email", // Options: "Email" | "Phone"
+        rd3_usedBefore: "No",            // Options: "Yes" | "No"
+        rd3_clientType: "Small Business", // Options: "Home or Family" | "Small Business" | "Community Group"
+
+        // How Can We Help?
+        rd3_helpCategory: "Help with Something Better?", // Matches your dropdown/radio situation
+        
+        // What Are You Trying To Achieve?
+        rd3_userGoal: "We want to upgrade our office Wi-Fi setup and sync our team files securely across remote devices.",
+        
+        // How Urgent Is This For You?
+        rd3_urgency: "Medium", // Options: "Low" | "Medium" | "High"
+
+        // Honeypot Field (Should remain empty for real submissions)
+        website_url: ""
+      })
+    }
+  };
+
+  // Execute the doPost function with mock event
+  const response = doPost(mockEvent);
+  
+  // Log the raw response output
+  Logger.log("Response Output: " + response.getContent());
+}

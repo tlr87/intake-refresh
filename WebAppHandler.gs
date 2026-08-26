@@ -32,6 +32,7 @@ function doPost(e) {
     const name = params.rd3_name || params.name || params.Name || 'Visitor';
     const userEmail = (params.rd3_email || params.email || params.Email || '').trim().toLowerCase();
     const phone = params.rd3_phone || params.phone || params.Phone || 'Not provided';
+    const location = params.rd3_location || params.location || params.Location || 'Not provided';
     const pref = params.rd3_contactPreference || params.contactPreference || 'Email';
     const usedBefore = params.rd3_usedBefore || params.usedBefore || 'Not provided';
     const clientType = params.rd3_clientType || params.clientType || 'Not provided';
@@ -77,6 +78,7 @@ function doPost(e) {
         name: name,
         email: userEmail,
         phone: phone,
+        location: location,
         pref: pref,
         usedBefore: usedBefore,
         clientType: clientType,
@@ -95,6 +97,7 @@ function doPost(e) {
         if (title.indexOf('name') !== -1) valueToSubmit = responseMap.name;
         else if (title.indexOf('email') !== -1) valueToSubmit = responseMap.email;
         else if (title.indexOf('phone') !== -1) valueToSubmit = responseMap.phone;
+        else if (title.indexOf('location') !== -1 || title.indexOf('address') !== -1) valueToSubmit = responseMap.location;
         else if (title.indexOf('contact') !== -1 || title.indexOf('prefer') !== -1) valueToSubmit = responseMap.pref;
         else if (title.indexOf('used') !== -1 || title.indexOf('before') !== -1) valueToSubmit = responseMap.usedBefore;
         else if (title.indexOf('client') !== -1 || title.indexOf('as') !== -1) valueToSubmit = responseMap.clientType;
@@ -170,6 +173,7 @@ function doPost(e) {
       { title: "Name", value: name },
       { title: "Email Address", value: userEmail },
       { title: "Phone", value: phone },
+      { title: "Address / Location", value: location },
       { title: "Preferred Contact", value: pref },
       { title: "Used RD3 Tech Before", value: usedBefore },
       { title: "Contacting As", value: clientType },
@@ -197,6 +201,7 @@ function doPost(e) {
       name: name,
       email: userEmail,
       phone: phone,
+      location: location,
       preferredContact: pref,
       contactingAs: clientType,
       isPreviousCustomer: usedBefore
@@ -212,24 +217,30 @@ function doPost(e) {
 
     adminTemplate.isUrgent = isUrgent;
 
+    // Dispatch Admin Notification with Reply-To set to the user's email
     MailApp.sendEmail({
       to: adminEmail,
+      replyTo: userEmail,
       subject: `${subjectPrefix}[Website Enquiry] ${name} — ${category}`,
       htmlBody: adminTemplate.evaluate().getContent()
     });
 
-    // 7. Client Email Dispatch
+  // 7. Client Email Dispatch
     if (userEmail && userEmail.indexOf('@') !== -1) {
       const clientTemplate = HtmlService.createTemplateFromFile('ClientEmail');
       clientTemplate.name = name;
       clientTemplate.fields = fields;
       clientTemplate.submissionDate = submissionDate;
 
+      // Clean category display name (removes leading "Help with " if present)
+      const cleanCategory = category.replace(/^Help with\s+/i, '').trim();
+
       // Provide the client object expected by ClientEmail.html
       clientTemplate.client = {
         name: name,
         email: userEmail,
         phone: phone,
+        location: location,
         preferredContact: pref,
         contactingAs: clientType,
         isPreviousCustomer: usedBefore
@@ -242,9 +253,11 @@ function doPost(e) {
         timeframe: selectedUrgency
       };
 
+      // Dispatch Client Confirmation with your specified subject format
       MailApp.sendEmail({
         to: userEmail,
-        subject: 'We received your website request — RD3 Tech',
+        replyTo: adminEmail,
+        subject: `Thanks ${name}, we’ll be in touch to help you with ${cleanCategory} | RD3 Tech`,
         htmlBody: clientTemplate.evaluate().getContent()
       });
     }
@@ -268,13 +281,13 @@ function saveToSheet(data) {
   if (!sheet) {
     sheet = ss.insertSheet('Submissions');
     sheet.appendRow([
-      'Timestamp', 'Name', 'Email', 'Phone', 'Preferred Contact',
+      'Timestamp', 'Name', 'Email', 'Phone', 'Location', 'Preferred Contact',
       'Used Before', 'Client Type', 'Category', 'Urgency', 'Goal / Outcome'
     ]);
   }
 
   sheet.appendRow([
-    data.timestamp, data.name, data.email, data.phone, data.pref,
+    data.timestamp, data.name, data.email, data.phone, data.location, data.pref,
     data.usedBefore, data.clientType, data.category, data.urgency, data.goal
   ]);
 }
