@@ -469,35 +469,34 @@ function testSaveAllConfigs() {
 }
 
 
+
+
 /**
  * END-TO-END TEST: Submits mock responses for all 11 configured fields
- * and sends an admin notification email using configured adminEmail.
+ * and sends a fully styled HTML admin notification email using AdminEmail.html.
  */
 function testEndToEndFormFields() {
   Logger.log("=== STARTING END-TO-END FORM FIELD TEST ===");
-  
+
   try {
-    // 1. Fetch Configuration & Open Form
+    // 1. Fetch Configuration & Resolve Target Admin Email
     const store = PropertiesService.getScriptProperties();
     const rawConfig = store.getProperty('FORM_CONFIG');
     const formConfig = rawConfig ? JSON.parse(rawConfig) : getFallbackFormConfig();
     const fields = formConfig.fields || {};
-    
-    // Resolve admin email dynamically from settings
-    const adminEmail = (formConfig.settings && formConfig.settings.adminEmail) 
-      ? formConfig.settings.adminEmail 
-      : "tom@rd3tech.com";
-      
-    Logger.log("Notification Target: " + adminEmail);
-    
-    const formId = formConfig.settings.formBaseUrl.match(/[-\w]{25,}/)[0];
-    const form = FormApp.openById(formId);
-    
-    // 2. Initialize a new Form Response
-    const formResponse = form.createResponse();
-    const liveItems = form.getItems();
 
-    // Mock data payload for all 11 fields
+    const adminEmail = (formConfig.settings && formConfig.settings.adminEmail)
+      ? formConfig.settings.adminEmail
+      : "tom@rd3tech.com";
+
+    Logger.log("Notification Target: " + adminEmail);
+
+    // 2. Open Form safely
+    const formUrl = formConfig.settings.formBaseUrl;
+    const formId = formUrl.match(/[-\w]{25,}/)[0];
+    const form = FormApp.openById(formId);
+
+    // 3. Define Mock Data Payload for all 11 fields
     const mockPayload = {
       honeypot: "",
       name: "Automation Field Tester",
@@ -508,18 +507,20 @@ function testEndToEndFormFields() {
       usedBefore: "No",
       clientType: "Business",
       helpCategory: ["IT Support & Infrastructure"],
-      userGoal: "Automated end-to-end verification of form submission and admin email alerts.",
+      userGoal: "Automated end-to-end verification of form submission and AdminEmail.html rendering.",
       urgency: "High / Critical"
     };
 
+    // 4. Populate Google Form Response & Array for HTML Template
+    const formResponse = form.createResponse();
+    const liveItems = form.getItems();
+    const templateFields = [];
     let submittedCount = 0;
-    const summaryLines = [];
 
-    // 3. Map each live form item to its response type
     liveItems.forEach(item => {
       const title = item.getTitle();
       const titleLower = title.trim().toLowerCase();
-      
+
       const matchedKey = Object.keys(fields).find(key => {
         const titleMatch = (fields[key].titleMatch || '').trim().toLowerCase();
         return titleMatch && titleLower.includes(titleMatch);
@@ -529,73 +530,268 @@ function testEndToEndFormFields() {
 
       const itemType = item.getType();
       let itemResponse = null;
-      let displayValue = "";
+      let rawValue = mockPayload[matchedKey];
 
       switch (itemType) {
         case FormApp.ItemType.TEXT:
-          displayValue = mockPayload[matchedKey] || "Test Value";
-          itemResponse = item.asTextItem().createResponse(displayValue);
+          rawValue = rawValue !== undefined ? rawValue : "Test Value";
+          itemResponse = item.asTextItem().createResponse(rawValue);
           break;
 
         case FormApp.ItemType.PARAGRAPH_TEXT:
-          displayValue = mockPayload[matchedKey] || "Test Paragraph Value";
-          itemResponse = item.asParagraphTextItem().createResponse(displayValue);
+          rawValue = rawValue !== undefined ? rawValue : "Test Paragraph Value";
+          itemResponse = item.asParagraphTextItem().createResponse(rawValue);
           break;
 
         case FormApp.ItemType.MULTIPLE_CHOICE:
           const mcChoices = item.asMultipleChoiceItem().getChoices();
-          displayValue = mcChoices.length > 0 ? mcChoices[0].getValue() : "Option 1";
-          itemResponse = item.asMultipleChoiceItem().createResponse(displayValue);
+          rawValue = mcChoices.length > 0 ? mcChoices[0].getValue() : "Option 1";
+          itemResponse = item.asMultipleChoiceItem().createResponse(rawValue);
           break;
 
         case FormApp.ItemType.CHECKBOX:
           const cbChoices = item.asCheckboxItem().getChoices();
-          displayValue = cbChoices.length > 0 ? cbChoices[0].getValue() : "Option 1";
-          itemResponse = item.asCheckboxItem().createResponse([displayValue]);
+          rawValue = cbChoices.length > 0 ? [cbChoices[0].getValue()] : ["Option 1"];
+          itemResponse = item.asCheckboxItem().createResponse(rawValue);
           break;
 
         case FormApp.ItemType.LIST:
           const listChoices = item.asListItem().getChoices();
-          displayValue = listChoices.length > 0 ? listChoices[0].getValue() : "Option 1";
-          itemResponse = item.asListItem().createResponse(displayValue);
+          rawValue = listChoices.length > 0 ? listChoices[0].getValue() : "Option 1";
+          itemResponse = item.asListItem().createResponse(rawValue);
           break;
       }
 
       if (itemResponse) {
         formResponse.withItemResponse(itemResponse);
         submittedCount++;
-        summaryLines.push(`• ${title}: ${displayValue || "(blank)"}`);
+        
+        // Push to templateFields array expected by AdminEmail.html
+        templateFields.push({
+          title: title,
+          value: rawValue
+        });
+        
         Logger.log("✔ Mapped field [" + matchedKey + "] -> \"" + title + "\"");
       }
     });
 
-    // 4. Submit to Google Forms
+    // 5. Submit Form Response
     formResponse.submit();
-    Logger.log("✔ Mock form submission posted successfully.");
+    Logger.log("✔ Form response submitted successfully (" + submittedCount + "/11 fields populated).");
 
-    // 5. Build Email Body and Send Admin Notification Email using adminEmail
-    const emailSubject = "🚨 TEST SUBMISSION: New Form Enquiry Received (11 Fields Verified)";
-    const emailBody = 
-      "Hello Admin (" + adminEmail + "),\n\n" +
-      "This is an automated test verifying end-to-end field routing for the RD3 Tech Google Form.\n\n" +
-      "--- SUBMISSION SUMMARY (" + submittedCount + "/11 Fields) ---\n" +
-      summaryLines.join("\n") + "\n\n" +
-      "Timestamp: " + new Date().toLocaleString() + "\n" +
-      "Status: All systems operational.";
+    // 6. Bind Data to AdminEmail.html Template
+    const htmlTemplate = HtmlService.createTemplateFromFile('AdminEmail');
+    htmlTemplate.name = mockPayload.name;
+    htmlTemplate.userEmail = mockPayload.email;
+    htmlTemplate.fields = templateFields;
+    
+    // Status flags to test banner rendering in HTML
+    htmlTemplate.isSpam = false;
+    htmlTemplate.isUrgent = true; // Displays the High Urgency orange banner
+    htmlTemplate.needsReview = false;
+    htmlTemplate.matchedSpamKeywords = [];
+    htmlTemplate.matchedKeywords = [];
 
+    const htmlOutput = htmlTemplate.evaluate().getContent();
+
+    // 7. Dispatch HTML Email via MailApp
     MailApp.sendEmail({
       to: adminEmail,
-      subject: emailSubject,
-      body: emailBody
+      subject: "🚨 TEST SUBMISSION: New Form Enquiry Received (HTML Template Verified)",
+      htmlBody: htmlOutput
     });
 
-    Logger.log("✔ Email alert successfully dispatched to " + adminEmail);
+    Logger.log("✔ Styled HTML email successfully dispatched to " + adminEmail);
     Logger.log("\n--- TEST RESULT ---");
-    Logger.log("✔ SUCCESS: All 11 fields processed and notification sent!");
+    Logger.log("✔ SUCCESS: All 11 fields processed, submitted, and rendered via AdminEmail.html!");
 
   } catch (err) {
     Logger.log("✖ ERROR during submission test: " + err.message);
   }
 }
 
+
+
+
+
+
+/**
+ * CONSOLE TEST: Verifies disposable domains, suspicious TLDs, 
+ * embedded URLs, and invalid contact character detection.
+ */
+function testSpamFilterPatterns() {
+  Logger.log("=== STARTING ADVANCED SPAM FILTER PATTERN TEST ===");
+
+  // Test Case 1: Clean/Legitimate Submission
+  const cleanSubmission = {
+    honeypot: "",
+    name: "Thomas Miller",
+    email: "tom@rd3tech.com",
+    phone: "021 555 9999",
+    address: "123 Queen Street, Auckland"
+  };
+
+  // Test Case 2: Multi-Vector Spam Submission
+  const maliciousSubmission = {
+    honeypot: "",
+    name: "John Casino http://spam-site.com", // Embedded URL in name
+    email: "spammer@mailinator.com",          // Disposable domain
+    phone: "021 ABC 9999",                    // Alphabetical characters in phone
+    address: "Visit us at claim-prize.xyz"    // Suspicious TLD (.xyz)
+  };
+
+  Logger.log("\n--- TEST 1: CLEAN SUBMISSION ---");
+  const cleanResult = checkSpamKeywords(cleanSubmission);
+  Logger.log("Is Spam: " + cleanResult.isSpam);
+  if (!cleanResult.isSpam) {
+    Logger.log("✔ PASS: Clean submission allowed through correctly.");
+  } else {
+    Logger.log("✖ FAIL: Clean submission was false-flagged!");
+  }
+
+  Logger.log("\n--- TEST 2: MALICIOUS SUBMISSION ---");
+  const spamResult = checkSpamKeywords(maliciousSubmission);
+  Logger.log("Is Spam: " + spamResult.isSpam);
+  Logger.log("Matched Keywords: [" + spamResult.matchedKeywords.join(", ") + "]");
+  Logger.log("Detection Reasons:");
+  spamResult.reasons.forEach(reason => Logger.log("  • " + reason));
+
+  if (spamResult.isSpam && spamResult.reasons.length >= 4) {
+    Logger.log("\n✔ SUCCESS: All 4 structural spam vectors successfully caught!");
+  } else {
+    Logger.log("\n✖ FAIL: Some spam vectors were missed.");
+  }
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * TEST: Simulates a spam submission, runs it through the security pipeline,
+ * and sends an Admin HTML email displaying the purple Spam Flagged banner.
+ */
+function testSendSpamAdminEmail() {
+  Logger.log("=== STARTING SPAM ADMIN EMAIL TEST ===");
+
+  try {
+    // 1. Fetch Configuration for Admin Email Target
+    const store = PropertiesService.getScriptProperties();
+    const rawConfig = store.getProperty('FORM_CONFIG');
+    const formConfig = rawConfig ? JSON.parse(rawConfig) : getFallbackFormConfig();
+
+    const adminEmail = (formConfig.settings && formConfig.settings.adminEmail)
+      ? formConfig.settings.adminEmail
+      : "tom@rd3tech.com";
+
+    Logger.log("Sending test email to: " + adminEmail);
+
+    // 2. Define Mock Spam Submission Payload
+    const mockSpamPayload = {
+      honeypot: "",
+      name: "John Casino http://spam-site.link",
+      email: "spammer.test@mailinator.com",
+      phone: "021 ABC 9999",
+      address: "Claim your prize at 123 Spam Way .xyz",
+      contactPreference: "Email",
+      usedBefore: "No",
+      clientType: "Business",
+      helpCategory: ["IT Support & Infrastructure"],
+      userGoal: "We offer top SEO rank services, wire money fast, and instant crypto rewards!",
+      urgency: "Standard"
+    };
+
+    // 3. Run Security Checks (SpamFilter & KeywordChecker)
+    const spamResult = checkSpamKeywords(mockSpamPayload);
+    const reviewResult = checkReviewKeywords(mockSpamPayload);
+
+    Logger.log("Security Check -> Is Spam: " + spamResult.isSpam);
+    Logger.log("Matched Spam Keywords: " + spamResult.matchedKeywords.join(", "));
+
+    // 4. Map Fields into Array for AdminEmail.html Template
+    const templateFields = [
+      { title: "Full Name", value: mockSpamPayload.name },
+      { title: "Email Address", value: mockSpamPayload.email },
+      { title: "Phone Number", value: mockSpamPayload.phone },
+      { title: "Address / Location", value: mockSpamPayload.address },
+      { title: "Preferred Contact Method", value: mockSpamPayload.contactPreference },
+      { title: "Have you used RD3 Tech before?", value: mockSpamPayload.usedBefore },
+      { title: "Client Type", value: mockSpamPayload.clientType },
+      { title: "What do you need help with?", value: mockSpamPayload.helpCategory },
+      { title: "What is your main goal or issue?", value: mockSpamPayload.userGoal },
+      { title: "Urgency Level", value: mockSpamPayload.urgency }
+    ];
+
+    // 5. Populate AdminEmail.html Template Bindings
+    const htmlTemplate = HtmlService.createTemplateFromFile('AdminEmail');
+    htmlTemplate.name = mockSpamPayload.name;
+    htmlTemplate.userEmail = mockSpamPayload.email;
+    htmlTemplate.fields = templateFields;
+    
+    // Explicitly set security flags from filter results
+    htmlTemplate.isSpam = spamResult.isSpam;
+    htmlTemplate.matchedSpamKeywords = spamResult.matchedKeywords;
+    htmlTemplate.isUrgent = false;
+    htmlTemplate.needsReview = reviewResult.needsReview;
+    htmlTemplate.matchedKeywords = reviewResult.matchedKeywords;
+
+    const htmlOutput = htmlTemplate.evaluate().getContent();
+
+    // 6. Dispatch Email to Admin
+    MailApp.sendEmail({
+      to: adminEmail,
+      subject: "🚫 [SPAM ALERT TEST] Form Submission Flagged — RD3 Tech",
+      htmlBody: htmlOutput
+    });
+
+    Logger.log("✔ SUCCESS: Spam alert email successfully dispatched to " + adminEmail);
+
+  } catch (err) {
+    Logger.log("✖ ERROR sending spam test email: " + err.message);
+  }
+}
+
+
+
+
+
+function testPhoneSpamRules() {
+  Logger.log("=== TESTING PHONE SPAM DETECTION RULES ===");
+
+  const testCases = [
+    { phone: "021 ABC 9999", expectedTag: "letters_in_phone" },
+    { phone: "0000000000", expectedTag: "repetitive_phone" },
+    { phone: "555", expectedTag: "fake_phone_pattern" },
+    { phone: "12345678", expectedTag: "fake_phone_pattern" },
+    { phone: "021 555 9999", expectedPass: true } // Valid NZ number
+  ];
+
+  testCases.forEach((tc, idx) => {
+    const payload = {
+      honeypot: "",
+      name: "Test User",
+      email: "test@rd3tech.com",
+      phone: tc.phone,
+      address: "Auckland"
+    };
+
+    const res = checkSpamKeywords(payload);
+    Logger.log(`\nTest ${idx + 1} [Phone: "${tc.phone}"] -> Is Spam: ${res.isSpam}`);
+    if (res.reasons.length > 0) Logger.log("Reason: " + res.reasons.join(", "));
+
+    if (tc.expectedPass && !res.isSpam) {
+      Logger.log("✔ PASS: Valid phone number allowed.");
+    } else if (res.matchedKeywords.includes(tc.expectedTag)) {
+      Logger.log(`✔ PASS: Correctly caught ${tc.expectedTag}!`);
+    } else {
+      Logger.log("✖ FAIL: Phone rule failed to trigger correctly.");
+    }
+  });
+}
 
