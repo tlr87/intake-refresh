@@ -1,14 +1,11 @@
 /**
  * Main form submission handler.
- * Reads configurations, evaluates submissions, traps bots via Honeypot,
- * and dispatches HTML emails.
- * 
- * @param {Object} [e] - Google Form submission event object.
+ * Uses Mapping.gs as the single source of truth for field extraction.
  */
 function onFormSubmit(e) {
-  // Defensive check: Provide mock event structure for manual IDE execution
+  // Defensive check for manual runs
   if (!e || !e.response) {
-    Logger.log('⚠️ Warning: Manual test run detected without event object. Injecting mock event.');
+    Logger.log('⚠️ Manual test run – injecting mock event');
     e = generateMockFormEvent();
   }
 
@@ -16,137 +13,87 @@ function onFormSubmit(e) {
   const reviewConfig = typeof getReviewConfig === 'function' ? getReviewConfig() : {};
   const spamConfig   = typeof getSpamConfig === 'function' ? getSpamConfig() : {};
 
-  const adminEmail = (formConfig.settings && formConfig.settings.adminEmail) 
-    ? formConfig.settings.adminEmail 
+  const adminEmail = (formConfig.settings && formConfig.settings.adminEmail)
+    ? formConfig.settings.adminEmail
     : 'tom@rd3tech.com';
 
-  const formResponse = e.response;
-  const itemResponses = formResponse.getItemResponses();
-  const submitterEmailFromForm = formResponse.getRespondentEmail();
-
-  // ---- variables ----
-  let name = '';
-  let extractedUserEmail = submitterEmailFromForm || '';
-  let phone = '';
-  let location = '';
-  let preferredContact = '';
-  let isPreviousCustomer = false;
-  let contactingAs = '';
-  let helpCategory = '';
-  let userGoal = '';
-  let selectedUrgency = '';
-  let honeypotValue = '';
-
-  const fields = [];
+  // ------------------------------------------------------------------
+  // 1. Turn Form itemResponses into a simple key/value object
+  // ------------------------------------------------------------------
+  const rawParams = {};
+  const itemResponses = e.response.getItemResponses();
 
   itemResponses.forEach(itemResponse => {
     const title = itemResponse.getItem().getTitle();
     const raw = itemResponse.getResponse();
-    const lowerTitle = title.toLowerCase().trim();
-    const value = Array.isArray(raw) ? raw.join(', ') : String(raw || '').trim();
-
-    // CLIENT
-    if (lowerTitle === 'name' || lowerTitle.includes('name')) {
-      if (!name) name = value;
-    }
-    if (lowerTitle === 'email' || lowerTitle.includes('email')) {
-      if (!extractedUserEmail) extractedUserEmail = value;
-    }
-    if (lowerTitle.includes('phone')) {
-      phone = value;
-    }
-    if (lowerTitle.includes('location') || lowerTitle.includes('address')) {
-      location = value;
-    }
-
-    // Preferred Contact
-    if (lowerTitle.includes('how would you prefer us to contact you') ||
-        lowerTitle.includes('prefer us to contact')) {
-      preferredContact = value;
-    }
-
-    // Previous Customer
-    if (lowerTitle.includes('have you used rd3 tech before') ||
-        lowerTitle.includes('used rd3 tech before')) {
-      isPreviousCustomer = value.toLowerCase().includes('yes');
-    }
-
-    // Contacting As
-    if (lowerTitle.includes('i am contacting rd3 tech as') ||
-        lowerTitle.includes('contacting rd3 tech as')) {
-      contactingAs = value;
-    }
-
-    // REQUEST
-    // Help Category
-    if (lowerTitle.includes('what can we help you with')) {
-      helpCategory = value;
-    }
-
-    // User Goal
-    if (lowerTitle.includes('what are you trying to achieve') ||
-        lowerTitle.includes('trying to achieve')) {
-      userGoal = value;
-    }
-
-    // Urgency
-    if (lowerTitle.includes('how urgent is this for you') ||
-        lowerTitle.includes('how urgent')) {
-      selectedUrgency = value;
-    }
-
-    // HONEYPOT
-    if (lowerTitle.includes('security check') ||
-        lowerTitle.includes('website url') ||
-        lowerTitle.includes('leave this field empty')) {
-      honeypotValue = value;
-    }
-
-    fields.push({ title: title, value: value });
+    const value = Array.isArray(raw) ? raw.join(', ') : String(raw || '');
+    rawParams[title] = value;          // title is the key – Mapping.gs aliases will match it
   });
 
-  // -------------------------------------------------------------------------
-  // 1. HONEYPOT BOT TRAP CHECK
-  // -------------------------------------------------------------------------
+  // Also keep the respondent email if the form collects it
+  const respondentEmail = e.response.getRespondentEmail();
+  if (respondentEmail) {
+    rawParams['email'] = respondentEmail;
+  }
+
+  // ------------------------------------------------------------------
+  // 2. Map everything with Mapping.gs
+  // ------------------------------------------------------------------
+  const mapped = mapFormPayload(rawParams);
+  const payload = mapped.payload;
+
+  const client = payload.client || {};
+  const request = payload.request || {};
+  const security = payload.security || {};
+
+  // ------------------------------------------------------------------
+  // 3. Honeypot check
+  // ------------------------------------------------------------------
+  const honeypotValue = security.honeypot || '';
   if (honeypotValue && honeypotValue.trim() !== '') {
-    Logger.log('🚫 HONEYPOT TRIPPED: Submission generated by bot. Content: "' + honeypotValue + '"');
+    Logger.log('🚫 HONEYPOT TRIPPED: "' + honeypotValue + '"');
     return;
   }
 
-  // -------------------------------------------------------------------------
-  // 2. MODERATION & FILTER EVALUATION
-  // -------------------------------------------------------------------------
-  const reviewResult = typeof checkReviewKeywords === 'function' 
-    ? checkReviewKeywords(userGoal, reviewConfig) 
+  // ------------------------------------------------------------------
+  // 4. Moderation
+  // ------------------------------------------------------------------
+  const userGoal = request.userGoal || '';
+
+  const reviewResult = typeof checkReviewKeywords === 'function'
+    ? checkReviewKeywords(userGoal, reviewConfig)
     : { needsReview: false, matchedKeywords: [] };
 
-  const spamResult = typeof checkSpamKeywords === 'function' 
-    ? checkSpamKeywords(userGoal, spamConfig) 
+  const spamResult = typeof checkSpamKeywords === 'function'
+    ? checkSpamKeywords(userGoal, spamConfig)
     : { isSpam: false, matchedKeywords: [] };
 
-  const isUrgent = selectedUrgency.toLowerCase() === 'high';
+  const isUrgent = (request.urgency || '').toLowerCase() === 'high';
 
+  // ------------------------------------------------------------------
+  // 5. Build the objects the email templates expect
+  // ------------------------------------------------------------------
   const formattedDate = Utilities.formatDate(
-    new Date(), 
-    Session.getScriptTimeZone() || 'Pacific/Auckland', 
-    "dd MMMM yyyy, h:mm a"
+    new Date(),
+    Session.getScriptTimeZone() || 'Pacific/Auckland',
+    'dd MMMM yyyy, h:mm a'
   );
 
   const clientData = {
-    name: name || 'Website Visitor',
-    firstName: name ? name.split(' ')[0] : 'there',
-    email: extractedUserEmail || 'N/A',
-    phone: phone || 'N/A',
-    location: location || 'N/A',
-    preferredContact: preferredContact || 'Not provided',
-    isPreviousCustomer: isPreviousCustomer,
-    contactingAs: contactingAs || 'Not provided'
+    name: client.name || 'Website Visitor',
+    firstName: client.name ? client.name.split(' ')[0] : 'there',
+    email: client.email || 'N/A',
+    phone: client.phone || 'N/A',
+    location: client.location || 'N/A',
+    preferredContact: client.contactPreference || 'Not provided',
+    isPreviousCustomer: !!client.usedBefore,
+    contactingAs: client.contactingAs || 'Not provided'
   };
 
   const requestData = {
-    helpCategory: helpCategory || 'Not specified',
-    userGoal: userGoal || 'Not specified',
-    urgency: selectedUrgency || 'Not specified'
+    helpCategory: request.helpCategory || 'Not specified',
+    userGoal: request.userGoal || 'Not specified',
+    urgency: request.urgency || 'Not specified'
   };
 
   const secEvalData = {
@@ -154,11 +101,9 @@ function onFormSubmit(e) {
     requiresReview: reviewResult.needsReview || false,
     isUrgent: isUrgent,
     spamScore: spamResult.isSpam ? 100 : 0,
-    statusText: spamResult.isSpam 
-      ? 'Flagged Spam' 
+    statusText: spamResult.isSpam
+      ? 'Flagged Spam'
       : (reviewResult.needsReview ? 'Requires Review' : 'Passed Security Check'),
-
-    // Clear lists so the AdminEmail template can show the keywords
     spamFlags: spamResult.matchedKeywords || [],
     reviewFlags: reviewResult.matchedKeywords || [],
     flags: [
@@ -167,17 +112,17 @@ function onFormSubmit(e) {
     ]
   };
 
-  // -------------------------------------------------------------------------
-  // 3. SUBJECT PREFIX CONSTRUCTION
-  // -------------------------------------------------------------------------
+  // ------------------------------------------------------------------
+  // 6. Subject prefix
+  // ------------------------------------------------------------------
   let subjectPrefix = '';
   if (spamResult.isSpam) subjectPrefix += (spamConfig.settings?.flagSubjectPrefix || '[SPAM] ');
   if (isUrgent) subjectPrefix += '[URGENT] ';
   if (reviewResult.needsReview) subjectPrefix += (reviewConfig.settings?.flagSubjectPrefix || '[FLAGGED] ');
 
-  // -------------------------------------------------------------------------
-  // 4. ADMIN HTML EMAIL DISPATCH
-  // -------------------------------------------------------------------------
+  // ------------------------------------------------------------------
+  // 7. Admin email
+  // ------------------------------------------------------------------
   try {
     const adminTemplate = HtmlService.createTemplateFromFile('AdminEmail');
     adminTemplate.submissionDate = formattedDate;
@@ -193,15 +138,15 @@ function onFormSubmit(e) {
       subject: `${subjectPrefix}[New Enquiry] ${clientData.name} — RD3 Tech`,
       htmlBody: adminHtmlBody
     });
-    Logger.log('✅ Admin notification email dispatched successfully.');
+    Logger.log('✅ Admin email sent');
   } catch (err) {
-    Logger.log('❌ Failed to send Admin Email: ' + err.stack);
+    Logger.log('❌ Admin email failed: ' + err.stack);
   }
 
-  // -------------------------------------------------------------------------
-  // 5. CLIENT CONFIRMATION HTML EMAIL DISPATCH
-  // -------------------------------------------------------------------------
-  if (extractedUserEmail && extractedUserEmail !== 'N/A') {
+  // ------------------------------------------------------------------
+  // 8. Client email
+  // ------------------------------------------------------------------
+  if (clientData.email && clientData.email !== 'N/A') {
     try {
       const clientTemplate = HtmlService.createTemplateFromFile('ClientEmail');
       clientTemplate.submissionDate = formattedDate;
@@ -211,70 +156,40 @@ function onFormSubmit(e) {
       const clientHtmlBody = clientTemplate.evaluate().getContent();
 
       MailApp.sendEmail({
-        to: extractedUserEmail,
+        to: clientData.email,
         replyTo: adminEmail,
         subject: 'We received your request — RD3 Tech',
         htmlBody: clientHtmlBody
       });
-      Logger.log('✅ Client confirmation email dispatched successfully.');
+      Logger.log('✅ Client email sent');
     } catch (err) {
-      Logger.log('⚠️ Failed to send Client Email: ' + err.message);
+      Logger.log('⚠️ Client email failed: ' + err.message);
     }
   }
 }
 
 /**
- * Fallback mock event constructor for direct script runs in Apps Script IDE.
- * Uses realistic titles that match the live form.
+ * Mock event for testing in the IDE
  */
 function generateMockFormEvent() {
   return {
     response: {
-      getRespondentEmail: function() { return 'test.client@example.com'; },
-      getItemResponses: function() {
+      getRespondentEmail: function () { return 'test.client@example.com'; },
+      getItemResponses: function () {
         return [
-          { getItem: function() { return { getTitle: function() { return 'Name'; } }; }, getResponse: function() { return 'Jane Doe'; } },
-          { getItem: function() { return { getTitle: function() { return 'Email'; } }; }, getResponse: function() { return 'jane.doe@example.com'; } },
-          { getItem: function() { return { getTitle: function() { return 'Phone'; } }; }, getResponse: function() { return '021 123 4567'; } },
-          { getItem: function() { return { getTitle: function() { return 'Address / Location:'; } }; }, getResponse: function() { return '123 Beach Road, Ngunguru'; } },
-          { getItem: function() { return { getTitle: function() { return 'How would you prefer us to contact you?'; } }; }, getResponse: function() { return 'Email'; } },
-          { getItem: function() { return { getTitle: function() { return 'Have you used RD3 Tech before?'; } }; }, getResponse: function() { return 'Yes'; } },
-          { getItem: function() { return { getTitle: function() { return 'I am contacting RD3 Tech as:'; } }; }, getResponse: function() { return 'Home or Family'; } },
-          { getItem: function() { return { getTitle: function() { return 'What can we help you with?'; } }; }, getResponse: function() { return 'Help with Something Broken?'; } },
-          { getItem: function() { return { getTitle: function() { return 'What Are You Trying To Achieve?'; } }; }, getResponse: function() { return 'Need assistance configuring automated emails.'; } },
-          { getItem: function() { return { getTitle: function() { return 'How Urgent Is This For You?'; } }; }, getResponse: function() { return 'High'; } },
-          { getItem: function() { return { getTitle: function() { return 'Website URL Security Check: Please leave this field empty.'; } }; }, getResponse: function() { return ''; } }
+          { getItem: function () { return { getTitle: function () { return 'Name'; } }; }, getResponse: function () { return 'Jane Doe'; } },
+          { getItem: function () { return { getTitle: function () { return 'Email'; } }; }, getResponse: function () { return 'jane.doe@example.com'; } },
+          { getItem: function () { return { getTitle: function () { return 'Phone'; } }; }, getResponse: function () { return '021 123 4567'; } },
+          { getItem: function () { return { getTitle: function () { return 'Address / Location:'; } }; }, getResponse: function () { return 'Whangarei'; } },
+          { getItem: function () { return { getTitle: function () { return 'How would you prefer us to contact you?'; } }; }, getResponse: function () { return 'Email'; } },
+          { getItem: function () { return { getTitle: function () { return 'Have you used RD3 Tech before?'; } }; }, getResponse: function () { return 'Yes'; } },
+          { getItem: function () { return { getTitle: function () { return 'I am contacting RD3 Tech as:'; } }; }, getResponse: function () { return 'Home or Family'; } },
+          { getItem: function () { return { getTitle: function () { return 'What can we help you with?'; } }; }, getResponse: function () { return 'Help with Something Broken?'; } },
+          { getItem: function () { return { getTitle: function () { return 'What Are You Trying To Achieve?'; } }; }, getResponse: function () { return 'Need help with TV setup'; } },
+          { getItem: function () { return { getTitle: function () { return 'How Urgent Is This For You?'; } }; }, getResponse: function () { return 'High'; } },
+          { getItem: function () { return { getTitle: function () { return 'Website URL Security Check: Please leave this field empty.'; } }; }, getResponse: function () { return ''; } }
         ];
       }
     }
   };
-}
-
-/**
- * Configuration Loaders
- */
-function getFormConfig() {
-  const props = PropertiesService.getScriptProperties();
-  const raw = props.getProperty('FORM_CONFIG');
-  if (raw) {
-    try {
-      return JSON.parse(raw);
-    } catch (e) {
-      Logger.log('Error parsing FORM_CONFIG: ' + e.message);
-    }
-  }
-  return typeof getFallbackFormConfig === 'function' ? getFallbackFormConfig() : { fields: {} };
-}
-
-function getUrgencyConfig() {
-  const props = PropertiesService.getScriptProperties();
-  const raw = props.getProperty('URGENCY_CONFIG');
-  if (raw) {
-    try {
-      return JSON.parse(raw);
-    } catch (e) {
-      Logger.log('Error parsing URGENCY_CONFIG: ' + e.message);
-    }
-  }
-  return typeof getFallbackUrgencyConfig === 'function' ? getFallbackUrgencyConfig() : {};
 }

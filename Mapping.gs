@@ -163,7 +163,8 @@ const FIELD_SCHEMA = [
       'security check',
       'please leave this field empty',
       'leave blank',
-      'honeypot'
+      'honeypot',
+      'website url security check: please leave this field empty.'
     ],
     label: 'Honeypot',
     section: 'security',
@@ -171,3 +172,170 @@ const FIELD_SCHEMA = [
   }
 
 ];
+
+/**
+ * Normalise Previous Customer
+ */
+function normalisePreviousCustomer(value) {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  const normalised = String(value || '')
+    .trim()
+    .toLowerCase();
+
+  return (
+    normalised === 'yes' ||
+    normalised === 'true' ||
+    normalised === '1'
+  );
+}
+
+/**
+ * Get mapped field value.
+ * Matches against formField, key, label and all aliases (case-insensitive).
+ * Also supports partial matching on aliases for long form titles.
+ */
+function getMappedFieldValue(rawParams, field) {
+  const p = rawParams || {};
+
+  // Possible incoming keys we want to match against
+  const keys = [
+    field.formField,
+    field.key,
+    field.label
+  ];
+
+  if (Array.isArray(field.aliases)) {
+    keys.push.apply(keys, field.aliases);
+  }
+
+  // Case-insensitive lookup
+  const incomingKeys = Object.keys(p);
+
+  for (let i = 0; i < keys.length; i++) {
+    const wanted = String(keys[i]).trim().toLowerCase();
+
+    for (let j = 0; j < incomingKeys.length; j++) {
+      const actual = incomingKeys[j].trim().toLowerCase();
+
+      // Exact match
+      if (actual === wanted) {
+        const value = p[incomingKeys[j]];
+        if (value !== undefined && value !== null && String(value).trim() !== '') {
+          return value;
+        }
+      }
+
+      // Partial match (helps with long form titles)
+      if (actual.indexOf(wanted) !== -1 || wanted.indexOf(actual) !== -1) {
+        const value = p[incomingKeys[j]];
+        if (value !== undefined && value !== null && String(value).trim() !== '') {
+          return value;
+        }
+      }
+    }
+  }
+
+  return field.default;
+}
+
+/**
+ * Map form payload.
+ */
+function mapFormPayload(rawParams) {
+  const p = rawParams || {};
+
+  const payload = {
+    submissionDate: Utilities.formatDate(
+      new Date(),
+      Session.getScriptTimeZone() || 'Pacific/Auckland',
+      'yyyy-MM-dd HH:mm:ss z'
+    ),
+    client: {},
+    request: {},
+    security: {}
+  };
+
+  const displaySchema = {
+    client: [],
+    request: [],
+    security: []
+  };
+
+  FIELD_SCHEMA.forEach(function (field) {
+    let value = getMappedFieldValue(p, field);
+
+    // Special handling for Previous Customer (boolean)
+    if (field.key === 'usedBefore') {
+      const boolValue = normalisePreviousCustomer(value);
+
+      payload[field.section][field.key] = boolValue;
+
+      displaySchema[field.section].push({
+        key: field.key,
+        label: field.label,
+        value: boolValue ? 'Yes' : 'No'
+      });
+
+      return;
+    }
+
+    // Empty → default
+    if (value === undefined || value === null || String(value).trim() === '') {
+      value = field.default;
+    }
+
+    value = String(value).trim();
+
+    payload[field.section][field.key] = value;
+
+    displaySchema[field.section].push({
+      key: field.key,
+      label: field.label,
+      value: value
+    });
+  });
+
+  // Optional debug logging
+  const debug = PropertiesService.getScriptProperties().getProperty('DEBUG_MAPPING') === 'true';
+  if (debug) {
+    Logger.log('============================================================');
+    Logger.log('RD3 FORM PAYLOAD MAPPING');
+    Logger.log('============================================================');
+    Logger.log('Raw parameters: ' + JSON.stringify(p));
+    Logger.log('Mapped payload: ' + JSON.stringify(payload));
+    Logger.log('Display schema: ' + JSON.stringify(displaySchema));
+    Logger.log('============================================================');
+  }
+
+  return {
+    payload: payload,
+    displaySchema: displaySchema
+  };
+}
+
+/**
+ * Quick test helper
+ */
+function testActualMapping() {
+  const params = {
+    'Name': 'Tom Tom',
+    'Email': 'tom.revill@gmail.com',
+    'Phone': '021 123 4567',
+    'Address / Location:': 'Whangarei',
+    'How would you prefer us to contact you?': 'Email',
+    'Have you used RD3 Tech before?': 'Yes',
+    'I am contacting RD3 Tech as:': 'Home or Family',
+    'What can we help you with?': 'Help with Something Broken?',
+    'What Are You Trying To Achieve?': 'TV',
+    'How Urgent Is This For You?': 'High',
+    'Website URL Security Check: Please leave this field empty.': ''
+  };
+
+  Logger.log('TEST INPUT: ' + JSON.stringify(params));
+
+  const result = mapFormPayload(params);
+  Logger.log('RESULT: ' + JSON.stringify(result.payload, null, 2));
+}
