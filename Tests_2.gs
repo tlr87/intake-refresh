@@ -93,11 +93,6 @@ function test_AdminEmail_TemplateRender() {
   }
 }
 
-
-
-
-
-
 /**
  * Test runner for doPost pipeline using exact client-facing form fields.
  */
@@ -138,12 +133,6 @@ function test_doPost_ClientFormSubmission() {
   // Log the raw response output
   Logger.log("Response Output: " + response.getContent());
 }
-
-
-
-
-
-
 
 
 
@@ -237,8 +226,11 @@ function testAdminEmailAllBadges() {
   // --------------------------------------------------------------------------
 
   const request = {
+    helpCategory: category,
     situation: category,
+    userGoal: userGoal,
     goal: userGoal,
+    urgency: selectedUrgency,
     timeframe: selectedUrgency
   };
 
@@ -251,23 +243,18 @@ function testAdminEmailAllBadges() {
     email: userEmail,
     phone: phone,
     location: location,
+    contactPreference: pref,
     preferredContact: pref,
     contactingAs: clientType,
+    usedBefore: false,
     isPreviousCustomer: false
   };
 
   // --------------------------------------------------------------------------
   // FORCE ALL THREE STATUS CONDITIONS
   // --------------------------------------------------------------------------
-  //
-  // IMPORTANT:
-  // This deliberately bypasses keyword detection.
-  //
-  // We are testing the EMAIL TEMPLATE and visual layout, not the taxonomy.
-  //
 
   const secEval = {
-
     // SPAM badge
     isSpam: true,
 
@@ -345,6 +332,11 @@ function testAdminEmailAllBadges() {
   Logger.log('  ✓ CLEAN');
   Logger.log('============================================================');
 }
+
+
+
+
+
 
 
 
@@ -434,8 +426,10 @@ function testClientEmailNormal() {
     email: userEmail,
     phone: phone,
     location: location,
+    contactPreference: pref,
     preferredContact: pref,
     contactingAs: clientType,
+    usedBefore: false,
     isPreviousCustomer: false
   };
 
@@ -444,8 +438,11 @@ function testClientEmailNormal() {
   // --------------------------------------------------------------------------
 
   const request = {
+    helpCategory: category,
     situation: category,
+    userGoal: userGoal,
     goal: userGoal,
+    urgency: selectedUrgency,
     timeframe: selectedUrgency
   };
 
@@ -505,6 +502,10 @@ function testClientEmailNormal() {
   Logger.log('  ✓ What happens next section displayed');
   Logger.log('============================================================');
 }
+
+
+
+
 
 
 
@@ -578,8 +579,10 @@ function testAdminEmailNormal() {
     email: userEmail,
     phone: phone,
     location: location,
+    contactPreference: pref,
     preferredContact: pref,
     contactingAs: clientType,
+    usedBefore: false,
     isPreviousCustomer: false
   };
 
@@ -588,21 +591,19 @@ function testAdminEmailNormal() {
   // --------------------------------------------------------------------------
 
   const request = {
+    helpCategory: category,
     situation: category,
+    userGoal: userGoal,
     goal: userGoal,
+    urgency: selectedUrgency,
     timeframe: selectedUrgency
   };
 
   // --------------------------------------------------------------------------
   // SECURITY / EVALUATION OBJECT
-  //
-  // IMPORTANT:
-  // AdminEmail.html explicitly expects "secEval".
-  // These properties match what the template actually uses.
   // --------------------------------------------------------------------------
 
   const secEval = {
-
     // Overall security state
     isSpam: false,
 
@@ -620,7 +621,6 @@ function testAdminEmailNormal() {
 
     // Combined flags
     flags: []
-
   };
 
   // --------------------------------------------------------------------------
@@ -659,8 +659,6 @@ function testAdminEmailNormal() {
 
   template.client = client;
   template.request = request;
-
-  // THIS WAS THE MISSING VARIABLE
   template.secEval = secEval;
 
   // --------------------------------------------------------------------------

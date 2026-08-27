@@ -378,13 +378,20 @@
                 <div class="card-body">
 
                   <?
-                    var spamTerms = secEval.spamFlags || [];
-                    var reviewTerms =
-                      secEval.reviewFlags ||
-                      (secEval.matchedKeywords ? secEval.matchedKeywords : []);
+                    // Safe property evaluation to prevent ReferenceErrors and TypeErrors
+                    var safePayload = typeof payload !== 'undefined' ? payload : {};
+                    var safeSec = (typeof secEval !== 'undefined' && secEval) ? secEval : (safePayload.secEval || {});
+                    var safeReq = (typeof request !== 'undefined' && request) ? request : (safePayload.request || {});
+                    var safeClient = (typeof client !== 'undefined' && client) ? client : (safePayload.client || {});
+                    var safeDate = (typeof submissionDate !== 'undefined' && submissionDate) ? submissionDate : (safePayload.submissionDate || new Date().toLocaleString());
 
-                    if (secEval.flags && secEval.flags.length > 0) {
-                      secEval.flags.forEach(function(f) {
+                    var spamTerms = safeSec.spamFlags || [];
+                    var reviewTerms =
+                      safeSec.reviewFlags ||
+                      (safeSec.matchedKeywords ? safeSec.matchedKeywords : []);
+
+                    if (safeSec.flags && safeSec.flags.length > 0) {
+                      safeSec.flags.forEach(function(f) {
                         if (
                           f.indexOf('SPAM:') === 0 &&
                           spamTerms.indexOf(f.replace('SPAM:', '').trim()) === -1
@@ -402,22 +409,22 @@
                     }
 
                     var isUrgent =
-                      request.timeframe === 'High' ||
-                      request.timeframe === 'Urgent';
+                      safeReq.urgency === 'High' ||
+                      safeReq.urgency === 'Urgent';
 
                     var hasAnyFlag =
-                      secEval.isSpam ||
-                      secEval.requiresReview ||
+                      safeSec.isSpam ||
+                      safeSec.requiresReview ||
                       isUrgent;
                   ?>
 
                   <!-- STATUS SUMMARY -->
                   <div class="status-summary">
-                    <? if (secEval.isSpam) { ?>
+                    <? if (safeSec.isSpam) { ?>
                       <span class="badge badge-spam">SPAM DETECTED</span>
                     <? } ?>
 
-                    <? if (secEval.requiresReview) { ?>
+                    <? if (safeSec.requiresReview) { ?>
                       <span class="badge badge-review">REQUIRES REVIEW</span>
                     <? } ?>
 
@@ -431,7 +438,7 @@
                   </div>
 
                   <!-- SECURITY / SCOPE DETAILS -->
-                  <? if (secEval.isSpam) { ?>
+                  <? if (safeSec.isSpam) { ?>
                     <div class="alert alert-spam">
                       <div class="alert-header-row">Security Filter Flag</div>
                       <div class="alert-text">
@@ -449,7 +456,7 @@
                     </div>
                   <? } ?>
 
-                  <? if (secEval.requiresReview) { ?>
+                  <? if (safeSec.requiresReview) { ?>
                     <div class="alert alert-review">
                       <div class="alert-header-row">Out-of-Scope Terms Found</div>
                       <div class="alert-text">
@@ -471,7 +478,7 @@
                     <div class="alert alert-urgent">
                       <div class="alert-header-row">High Priority Timeframe</div>
                       <div class="alert-text">
-                        <strong>Condition setting this off:</strong> Timeframe marked as <strong><?= request.timeframe ?></strong>
+                        <strong>Condition setting this off:</strong> Urgency marked as <strong><?= safeReq.urgency ?></strong>
                       </div>
                     </div>
                   <? } ?>
@@ -490,12 +497,12 @@
                   <table class="table">
                     <tr>
                       <th>Received Date</th>
-                      <td><?= submissionDate ?></td>
+                      <td><?= safeDate ?></td>
                     </tr>
                     <tr>
                       <th>Urgency</th>
                       <td>
-                        <strong><?= request.timeframe || 'Medium' ?></strong>
+                        <strong><?= safeReq.urgency || 'Medium' ?></strong>
                       </td>
                     </tr>
                   </table>
@@ -505,33 +512,33 @@
                   <table class="table">
                     <tr>
                       <th>Name</th>
-                      <td><?= client.name || 'Not provided' ?></td>
+                      <td><?= safeClient.name || 'Not provided' ?></td>
                     </tr>
                     <tr>
                       <th>Email</th>
                       <td>
-                        <a href="mailto:<?= client.email ?>"><?= client.email || 'Not provided' ?></a>
+                        <a href="mailto:<?= safeClient.email ?>"><?= safeClient.email || 'Not provided' ?></a>
                       </td>
                     </tr>
                     <tr>
                       <th>Phone</th>
-                      <td><?= client.phone || 'Not provided' ?></td>
+                      <td><?= safeClient.phone || 'Not provided' ?></td>
                     </tr>
                     <tr>
                       <th>Address / Location</th>
-                      <td><?= client.location || 'Not provided' ?></td>
+                      <td><?= safeClient.location || 'Not provided' ?></td>
                     </tr>
                     <tr>
                       <th>Preferred Contact</th>
-                      <td><?= client.preferredContact || 'Not provided' ?></td>
+                      <td><?= safeClient.preferredContact || 'Not provided' ?></td>
                     </tr>
                     <tr>
                       <th>Contacting As</th>
-                      <td><?= client.contactingAs || 'Not provided' ?></td>
+                      <td><?= safeClient.contactingAs || 'Not provided' ?></td>
                     </tr>
                     <tr>
                       <th>Previous Client</th>
-                      <td><?= client.isPreviousCustomer ? 'Yes' : 'No' ?></td>
+                      <td><?= safeClient.isPreviousCustomer ? 'Yes' : 'No' ?></td>
                     </tr>
                   </table>
 
@@ -541,12 +548,12 @@
                     <tr>
                       <th>Need Help with:</th>
                       <td>
-                        <strong><?= (request.situation || 'Not specified').replace(/^Help with\s+/i, '') ?></strong>
+                        <strong><?= (safeReq.helpCategory || 'Not specified').replace(/^Help with\s+/i, '') ?></strong>
                       </td>
                     </tr>
                     <tr>
                       <th>What Are You Trying To Achieve?</th>
-                      <td style="white-space:pre-wrap;"><?= request.goal || 'No description provided.' ?></td>
+                      <td style="white-space:pre-wrap;"><?= safeReq.userGoal || 'No description provided.' ?></td>
                     </tr>
                   </table>
 

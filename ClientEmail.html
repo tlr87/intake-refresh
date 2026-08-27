@@ -3,274 +3,274 @@
   <head>
     <base target="_top">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-  /* RESET & BASE */
-  * {
-    box-sizing: border-box;
-  }
+    <style>
+      /* RESET & BASE */
+      * {
+        box-sizing: border-box;
+      }
 
-  html,
-  body {
-    margin: 0;
-    padding: 0;
-    width: 100% !important;
-    height: 100% !important;
-    background-color: #CADFEC !important;
-  }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        width: 100% !important;
+        height: 100% !important;
+        background-color: #CADFEC !important;
+      }
 
-  body {
-    background-color: #CADFEC !important;
-    color: #212529;
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 14px;
-    line-height: 1.5;
-    -webkit-text-size-adjust: 100%;
-    -ms-text-size-adjust: 100%;
-  }
+      body {
+        background-color: #CADFEC !important;
+        color: #212529;
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 14px;
+        line-height: 1.5;
+        -webkit-text-size-adjust: 100%;
+        -ms-text-size-adjust: 100%;
+      }
 
-  table {
-    border-collapse: collapse;
-    border-spacing: 0;
-  }
+      table {
+        border-collapse: collapse;
+        border-spacing: 0;
+      }
 
-  a {
-    color: #993333;
-    text-decoration: underline;
-  }
+      a {
+        color: #993333;
+        text-decoration: underline;
+      }
 
-  /* LAYOUT & CARDS */
-  .email-wrapper {
-    width: 100%;
-    padding: 30px 15px;
-    background-color: #CADFEC !important;
-  }
+      /* LAYOUT & CARDS */
+      .email-wrapper {
+        width: 100%;
+        padding: 30px 15px;
+        background-color: #CADFEC !important;
+      }
 
-  .container {
-    width: 100%;
-    max-width: 650px;
-    margin: 0 auto;
-  }
+      .container {
+        width: 100%;
+        max-width: 650px;
+        margin: 0 auto;
+      }
 
-  .card {
-    overflow: hidden;
-    background-color: #ffffff;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-  }
+      .card {
+        overflow: hidden;
+        background-color: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+      }
 
-  /* HEADER */
-  .card-header {
-    padding: 20px 30px;
-    background-color: #993333;
-    color: #ffffff;
-    overflow: hidden;
-  }
+      /* HEADER */
+      .card-header {
+        padding: 20px 30px;
+        background-color: #993333;
+        color: #ffffff;
+        overflow: hidden;
+      }
 
-  .header-content {
-    width: 100%;
-    overflow: hidden;
-  }
+      .header-content {
+        width: 100%;
+        overflow: hidden;
+      }
 
-  .header-text {
-    float: left;
-    text-align: left;
-  }
+      .header-text {
+        float: left;
+        text-align: left;
+      }
 
-  .header-logo {
-    float: right;
-    margin-left: 20px;
-    padding: 10px 14px;
-    background-color: #ffffff;
-    border-radius: 8px;
-    text-align: left;
-  }
+      .header-logo {
+        float: right;
+        margin-left: 20px;
+        padding: 10px 14px;
+        background-color: #ffffff;
+        border-radius: 8px;
+        text-align: left;
+      }
 
-  .header-logo img {
-    display: block;
-    width: 50px;
-    max-width: 50px;
-    height: auto;
-    border: 0;
-    outline: none;
-    text-decoration: none;
-  }
+      .header-logo img {
+        display: block;
+        width: 50px;
+        max-width: 50px;
+        height: auto;
+        border: 0;
+        outline: none;
+        text-decoration: none;
+      }
 
-  .card-body {
-    padding: 30px;
-    background-color: #ffffff;
-    text-align: left;
-  }
+      .card-body {
+        padding: 30px;
+        background-color: #ffffff;
+        text-align: left;
+      }
 
-  .card-footer {
-    padding: 20px 30px;
-    background-color: #f8fafc;
-    border-top: 1px solid #e2e8f0;
-  }
+      .card-footer {
+        padding: 20px 30px;
+        background-color: #f8fafc;
+        border-top: 1px solid #e2e8f0;
+      }
 
-  /* BRAND & TYPOGRAPHY */
-  .brand {
-    margin: 0;
-    color: #ffffff;
-    font-size: 20px;
-    line-height: 2.2;
-    font-weight: 800;
-    letter-spacing: 0.5px;
-  }
+      /* BRAND & TYPOGRAPHY */
+      .brand {
+        margin: 0;
+        color: #ffffff;
+        font-size: 20px;
+        line-height: 2.2;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+      }
 
-  .subtitle {
-    margin-top: 4px;
-    color: #f1f5f9;
-    font-size: 13px;
-    line-height: 1.5;
-  }
+      .subtitle {
+        margin-top: 4px;
+        color: #f1f5f9;
+        font-size: 13px;
+        line-height: 1.5;
+      }
 
-  .section-title {
-    margin: 28px 0 14px;
-    padding-bottom: 7px;
-    border-bottom: 2px solid #CADFEC;
-    color: #993333;
-    font-size: 13px;
-    line-height: 1.4;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    text-align: left;
-  }
+      .section-title {
+        margin: 28px 0 14px;
+        padding-bottom: 7px;
+        border-bottom: 2px solid #CADFEC;
+        color: #993333;
+        font-size: 13px;
+        line-height: 1.4;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        text-align: left;
+      }
 
-  .section-title:first-child {
-    margin-top: 0;
-  }
+      .section-title:first-child {
+        margin-top: 0;
+      }
 
-  /* TABLES */
-  .table {
-    width: 100%;
-    margin-bottom: 10px;
-  }
+      /* TABLES */
+      .table {
+        width: 100%;
+        margin-bottom: 10px;
+      }
 
-  .table th,
-  .table td {
-    padding: 10px 0;
-    border-bottom: 1px solid #f1f5f9;
-    text-align: left;
-    vertical-align: top;
-    font-size: 14px;
-    line-height: 1.5;
-  }
+      .table th,
+      .table td {
+        padding: 10px 0;
+        border-bottom: 1px solid #f1f5f9;
+        text-align: left;
+        vertical-align: top;
+        font-size: 14px;
+        line-height: 1.5;
+      }
 
-  .table th {
-    width: 190px;
-    color: #64748b;
-    font-weight: 600;
-  }
+      .table th {
+        width: 190px;
+        color: #64748b;
+        font-weight: 600;
+      }
 
-  .table td {
-    color: #0f172a;
-  }
+      .table td {
+        color: #0f172a;
+      }
 
-  /* WHAT HAPPENS NEXT */
-  .steps {
-    margin: 20px 0;
-    padding: 20px 20px 20px 35px;
-    background-color: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-left: 4px solid #993333;
-    border-radius: 0 6px 6px 0;
-    color: #475569;
-    font-size: 13px;
-    line-height: 1.6;
-    text-align: left;
-  }
+      /* WHAT HAPPENS NEXT */
+      .steps {
+        margin: 20px 0;
+        padding: 20px 20px 20px 35px;
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-left: 4px solid #993333;
+        border-radius: 0 6px 6px 0;
+        color: #475569;
+        font-size: 13px;
+        line-height: 1.6;
+        text-align: left;
+      }
 
-  .step {
-    margin-bottom: 16px;
-  }
+      .step {
+        margin-bottom: 16px;
+      }
 
-  .step:last-child {
-    margin-bottom: 0;
-  }
+      .step:last-child {
+        margin-bottom: 0;
+      }
 
-  .step-title {
-    display: block;
-    margin-bottom: 3px;
-    color: #0f172a;
-    font-size: 14px;
-    line-height: 1.5;
-    font-weight: 700;
-  }
+      .step-title {
+        display: block;
+        margin-bottom: 3px;
+        color: #0f172a;
+        font-size: 14px;
+        line-height: 1.5;
+        font-weight: 700;
+      }
 
-  .step-text {
-    margin: 0;
-    color: #475569;
-    font-size: 13px;
-    line-height: 1.6;
-  }
+      .step-text {
+        margin: 0;
+        color: #475569;
+        font-size: 13px;
+        line-height: 1.6;
+      }
 
-  .closing-text {
-    margin: 20px 0 0;
-    color: #475569;
-    font-size: 13px;
-    line-height: 1.6;
-  }
+      .closing-text {
+        margin: 20px 0 0;
+        color: #475569;
+        font-size: 13px;
+        line-height: 1.6;
+      }
 
-  /* FOOTER */
-  .footer-text {
-    margin: 0;
-    color: #64748b;
-    font-size: 12px;
-    line-height: 1.5;
-    text-align: center;
-  }
+      /* FOOTER */
+      .footer-text {
+        margin: 0;
+        color: #64748b;
+        font-size: 12px;
+        line-height: 1.5;
+        text-align: center;
+      }
 
-  /* MOBILE */
-  @media only screen and (max-width: 600px) {
+      /* MOBILE */
+      @media only screen and (max-width: 600px) {
 
-    .email-wrapper {
-      padding: 0 !important;
-    }
+        .email-wrapper {
+          padding: 0 !important;
+        }
 
-    .container {
-      width: 100% !important;
-    }
+        .container {
+          width: 100% !important;
+        }
 
-    .card {
-      border-left: 0;
-      border-right: 0;
-      border-radius: 0;
-    }
+        .card {
+          border-left: 0;
+          border-right: 0;
+          border-radius: 0;
+        }
 
-    .card-header,
-    .card-body,
-    .card-footer {
-      padding: 20px !important;
-    }
+        .card-header,
+        .card-body,
+        .card-footer {
+          padding: 20px !important;
+        }
 
-    .header-logo {
-      margin-left: 10px;
-      padding: 8px 10px;
-    }
+        .header-logo {
+          margin-left: 10px;
+          padding: 8px 10px;
+        }
 
-    .header-logo img {
-      width: 90px;
-      max-width: 90px;
-    }
+        .header-logo img {
+          width: 90px;
+          max-width: 90px;
+        }
 
-    .table th,
-    .table td {
-      display: block;
-      width: 100%;
-      padding: 7px 0;
-    }
+        .table th,
+        .table td {
+          display: block;
+          width: 100%;
+          padding: 7px 0;
+        }
 
-    .table th {
-      padding-bottom: 2px;
-      border-bottom: 0;
-    }
+        .table th {
+          padding-bottom: 2px;
+          border-bottom: 0;
+        }
 
-    .table td {
-      padding-top: 2px;
-    }
-  }
-</style>
+        .table td {
+          padding-top: 2px;
+        }
+      }
+    </style>
   </head>
 
   <body bgcolor="#CADFEC" style="margin:0; padding:0; background-color:#CADFEC;">
@@ -295,28 +295,28 @@
               <div class="card">
 
                 <!-- HEADER -->
-           <div class="card-header">
-
-  <div class="header-content">
-
-    <div class="header-text">
-      <div class="brand">RD3 TECH</div>
-      <div class="subtitle">Website Enquiry</div>
-    </div>
-
-    <div class="header-logo">
-      <img
-        src="https://i0.wp.com/rd3tech.com/wp-content/uploads/2023/03/cropped-RD3Logo.png?resize=300%2C300&ssl=1"
-        alt="RD3 Tech"
-      >
-    </div>
-
-  </div>
-
-</div>
+                <div class="card-header">
+                  <div class="header-content">
+                    <div class="header-text">
+                      <div class="brand">RD3 TECH</div>
+                      <div class="subtitle">Website Enquiry</div>
+                    </div>
+                    <div class="header-logo">
+                      <img
+                        src="https://i0.wp.com/rd3tech.com/wp-content/uploads/2023/03/cropped-RD3Logo.png?resize=300%2C300&ssl=1"
+                        alt="RD3 Tech"
+                      >
+                    </div>
+                  </div>
+                </div>
 
                 <!-- BODY -->
                 <div class="card-body" style="text-align:left;">
+
+                  <?
+                    var safeClient = typeof client !== 'undefined' ? client : {};
+                    var safeReq = typeof request !== 'undefined' ? request : {};
+                  ?>
 
                   <!-- Submission Details -->
                   <div class="section-title">Your Enquiry</div>
@@ -324,7 +324,7 @@
                   <table class="table">
                     <tr>
                       <th>Received Date</th>
-                      <td><?= submissionDate ?></td>
+                      <td><?= typeof submissionDate !== 'undefined' ? submissionDate : '' ?></td>
                     </tr>
                   </table>
 
@@ -334,30 +334,29 @@
                   <table class="table">
                     <tr>
                       <th>Name</th>
-                      <td><?= client.name || 'Not provided' ?></td>
+                      <td><?= safeClient.name || 'Not provided' ?></td>
                     </tr>
 
                     <tr>
                       <th>Email</th>
                       <td>
-                        <?= client.email || 'Not provided' ?>
+                        <?= safeClient.email || 'Not provided' ?>
                       </td>
                     </tr>
 
                     <tr>
                       <th>Phone</th>
-                      <td><?= client.phone || 'Not provided' ?></td>
+                      <td><?= safeClient.phone || 'Not provided' ?></td>
                     </tr>
-                    
 
                     <tr>
                       <th>Address / Location</th>
-                      <td><?= client.location ?></td>
+                      <td><?= safeClient.location || 'Not provided' ?></td>
                     </tr>
 
                     <tr>
                       <th>Preferred Contact</th>
-                      <td><?= client.preferredContact || 'Not provided' ?></td>
+                      <td><?= safeClient.preferredContact || 'Not provided' ?></td>
                     </tr>
                   </table>
 
@@ -369,14 +368,14 @@
                       <th>Need Help With</th>
                       <td>
                         <strong>
-                          <?= (request.situation || 'Not specified').replace(/^Help with\s+/i, '') ?>
+                          <?= (safeReq.helpCategory || 'Not specified').replace(/^Help with\s+/i, '') ?>
                         </strong>
                       </td>
                     </tr>
 
                     <tr>
                       <th>What Are You Trying To Achieve?</th>
-                      <td style="white-space:pre-wrap;"><?= request.goal || 'No description provided.' ?></td>
+                      <td style="white-space:pre-wrap;"><?= safeReq.userGoal || 'No description provided.' ?></td>
                     </tr>
                   </table>
 
