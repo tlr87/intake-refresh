@@ -76,3 +76,230 @@ function createCamelCaseKey(str) {
     })
     .join("");
 }
+
+
+
+
+
+
+
+
+/**
+ * AUTOMATION FOR FIELD_SCHEMA
+ * Inspects the Google Form and generates the FIELD_SCHEMA object structure
+ * formatted specifically for Mapping.gs.
+ */
+function generateFieldSchemaFromForm() {
+  var fallbackConfig = getFallbackFormConfig();
+  var formUrl = fallbackConfig.settings.formBaseUrl;
+  
+  var formIdMatch = formUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  if (!formIdMatch) {
+    throw new Error("Invalid form URL in configuration settings.");
+  }
+  
+  var form = FormApp.openById(formIdMatch[1]);
+  var items = form.getItems();
+  
+  var schemaOutput = [];
+  schemaOutput.push("const FIELD_SCHEMA = {");
+
+  items.forEach(function(item, index) {
+    var title = item.getTitle();
+    var itemId = item.getId();
+    var itemType = item.getType();
+    
+    var schemaType = "text";
+    if (itemType === FormApp.ItemType.MULTIPLE_CHOICE || 
+        itemType === FormApp.ItemType.LIST || 
+        itemType === FormApp.ItemType.CHECKBOX) {
+      schemaType = "list";
+    } else if (itemType === FormApp.ItemType.PARAGRAPH_TEXT) {
+      schemaType = "paragraph";
+    }
+
+    var keyName = createCamelCaseKey(title);
+    var isLast = index === items.length - 1;
+
+    // Build the formatted JavaScript object entry for each question
+    var entry = [
+      '  ' + keyName + ': {',
+      '    titleMatch: "' + title.replace(/"/g, '\\"') + '",',
+      '    sourceKey: "entry.' + itemId + '",',
+      '    type: "' + schemaType + '",',
+      '    defaultValue: "Not provided"',
+      '  }' + (isLast ? '' : ',')
+    ].join('\n');
+
+    schemaOutput.push(entry);
+  });
+
+  schemaOutput.push("};");
+  var formattedCode = schemaOutput.join('\n');
+
+  Logger.log("=== AUTO-GENERATED FIELD_SCHEMA CODE ===");
+  Logger.log("\n" + formattedCode);
+  
+  return formattedCode;
+}
+
+
+
+/**
+ * AUTOMATION FOR USER REFERENCE GUIDE
+ * Inspects the Google Form and generates a human-readable Reference Guide (Markdown)
+ * showing every question, its technical Entry ID, data type, and template variable name.
+ */
+function generateFormReferenceGuide() {
+  var fallbackConfig = getFallbackFormConfig();
+  var formUrl = fallbackConfig.settings.formBaseUrl;
+  
+  var formIdMatch = formUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  if (!formIdMatch) {
+    throw new Error("Invalid form URL in configuration settings.");
+  }
+  
+  var form = FormApp.openById(formIdMatch[1]);
+  var items = form.getItems();
+  
+  var md = [];
+  md.push("# Google Form Field Reference Guide");
+  md.push("**Form Title:** " + form.getTitle());
+  md.push("**Generated On:** " + new Date().toLocaleString("en-NZ", { timeZone: "Pacific/Auckland" }));
+  md.push("\n---\n");
+  md.push("| # | Question Title | Entry ID | Schema Key | Data Type | HTML Template Tag |");
+  md.push("|---|---|---|---|---|---|");
+
+  items.forEach(function(item, index) {
+    var title = item.getTitle();
+    var itemId = item.getId();
+    var itemType = item.getType();
+    
+    var schemaType = "text";
+    if (itemType === FormApp.ItemType.MULTIPLE_CHOICE || 
+        itemType === FormApp.ItemType.LIST || 
+        itemType === FormApp.ItemType.CHECKBOX) {
+      schemaType = "list";
+    } else if (itemType === FormApp.ItemType.PARAGRAPH_TEXT) {
+      schemaType = "paragraph";
+    }
+
+    var keyName = createCamelCaseKey(title);
+    var entryId = "entry." + itemId;
+    var templateTag = "<?= request." + keyName + " ?>";
+
+    md.push("| " + (index + 1) + " | " + title + " | `" + entryId + "` | `" + keyName + "` | `" + schemaType + "` | `" + templateTag + "` |");
+  });
+
+  md.push("\n---\n");
+  md.push("### How to use these in your HTML Email Templates:");
+  md.push("- To insert an answer directly: `<?= request.keyName ?>`");
+  md.push("- For line-break formatting on paragraphs: `<span style=\"white-space: pre-wrap;\"><?= request.keyName ?></span>`");
+
+  var finalOutput = md.join("\n");
+
+  Logger.log("=== AUTO-GENERATED REFERENCE GUIDE ===");
+  Logger.log("\n" + finalOutput);
+  
+  return finalOutput;
+}
+
+
+
+/**
+ * AUTOMATION FOR SPREADSHEET REFERENCE GUIDE
+ * Inspects the Google Form and writes/overwrites a structured reference map
+ * into a tab named 'ref_guide' in the destination Google Sheet.
+ */
+function exportFormReferenceGuideToSheet() {
+  var fallbackConfig = getFallbackFormConfig();
+  var formUrl = fallbackConfig.settings.formBaseUrl;
+  
+  var formIdMatch = formUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  if (!formIdMatch) {
+    throw new Error("Invalid form URL in configuration settings.");
+  }
+  
+  // 1. Fetch Form & Destination Spreadsheet
+  var form = FormApp.openById(formIdMatch[1]);
+  var sheetId = form.getDestinationId();
+  
+  if (!sheetId) {
+    throw new Error("This Google Form is not linked to a Google Sheet destination.");
+  }
+  
+  var ss = SpreadsheetApp.openById(sheetId);
+  var tabName = "ref_guide";
+  var sheet = ss.getSheetByName(tabName);
+  
+  // 2. Check if 'ref_guide' tab exists: Create if missing, clear if present
+  if (!sheet) {
+    sheet = ss.insertSheet(tabName);
+  } else {
+    sheet.clear(); // Wipes content and formatting
+  }
+  
+// 3. Prepare Header Metadata & Table Data
+  var timeStamp = new Date().toLocaleString("en-NZ", { timeZone: "Pacific/Auckland" });
+  
+  var rows = [
+    ["Google Form Field Reference Guide", "", "", "", "", ""],
+    ["Form Title:", form.getTitle(), "", "", "", ""],
+    ["Last Updated:", timeStamp, "", "", "", ""],
+    ["", "", "", "", "", ""], // Fixed: Must contain 6 columns to match range shape
+    ["#", "Question Title", "Entry ID", "Schema Key", "Data Type", "HTML Template Tag"]
+  ];
+  
+  var items = form.getItems();
+  
+  items.forEach(function(item, index) {
+    var title = item.getTitle();
+    var itemId = item.getId();
+    var itemType = item.getType();
+    
+    var schemaType = "text";
+    if (itemType === FormApp.ItemType.MULTIPLE_CHOICE || 
+        itemType === FormApp.ItemType.LIST || 
+        itemType === FormApp.ItemType.CHECKBOX) {
+      schemaType = "list";
+    } else if (itemType === FormApp.ItemType.PARAGRAPH_TEXT) {
+      schemaType = "paragraph";
+    }
+
+    var keyName = createCamelCaseKey(title);
+    var entryId = "entry." + itemId;
+    var templateTag = "<?= request." + keyName + " ?>";
+    
+    rows.push([
+      index + 1,
+      title,
+      entryId,
+      keyName,
+      schemaType,
+      templateTag
+    ]);
+  });
+  
+  // 4. Write Data to Sheet
+  sheet.getRange(1, 1, rows.length, 6).setValues(rows);
+  
+  // 5. Apply Basic Formatting
+  // Title Formatting
+  sheet.getRange("A1").setFontWeight("bold").setFontSize(14);
+  sheet.getRange("A2:A3").setFontWeight("bold");
+  
+  // Table Header Formatting (Row 5)
+  var headerRange = sheet.getRange(5, 1, 1, 6);
+  headerRange.setBackground("#4a86e8")
+             .setFontColor("#ffffff")
+             .setFontWeight("bold");
+             
+  // Auto-fit Column Widths
+  for (var col = 1; col <= 6; col++) {
+    sheet.autoResizeColumn(col);
+  }
+  
+  Logger.log("✅ Reference Guide successfully updated in tab '" + tabName + "' inside Sheet: " + ss.getName());
+}
+
+

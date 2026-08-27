@@ -1,76 +1,394 @@
 /**
+ * ============================================================================
  * Mapping.gs
+ * ============================================================================
+ *
  * SINGLE SOURCE OF TRUTH FOR FORM FIELDS.
- * To add a new question/field, simply add a row to FIELD_SCHEMA below!
+ *
+ * The website form uses names such as:
+ *
+ *   rd3_name
+ *   rd3_email
+ *   rd3_phone
+ *   rd3_contactPreference
+ *   rd3_usedBefore
+ *   rd3_clientType
+ *   rd3_location
+ *   rd3_helpCategory
+ *   rd3_userGoal
+ *   rd3_urgency
+ *
+ * This file maps those website field names into the internal RD3 payload:
+ *
+ *   payload.client
+ *   payload.request
+ *
+ * If the website field names change, update the aliases here.
+ * ============================================================================
  */
 
-const FIELD_SCHEMA = [
-  // --- CLIENT FIELDS ---
-  { key: 'name',               aliases: ['fullName'],          label: 'Full Name',                section: 'client',  default: 'Not provided' },
-  { key: 'email',              aliases: [],                    label: 'Email Address',            section: 'client',  default: 'Not provided' },
-  { key: 'phone',              aliases: [],                    label: 'Phone Number',             section: 'client',  default: 'Not provided' },
-  { key: 'location',           aliases: ['address'],           label: 'Location / Address',       section: 'client',  default: 'Not provided' },
-  { key: 'preferredContact',   aliases: [],                    label: 'Preferred Contact Method', section: 'client',  default: 'Email' },
-  { key: 'contactingAs',       aliases: [],                    label: 'Contacting As',            section: 'client',  default: 'Potential Client' },
-  { key: 'isPreviousCustomer', aliases: [],                    label: 'Previous Customer',        section: 'client',  default: 'No' },
-
-  // --- REQUEST FIELDS ---
-  { key: 'situation',          aliases: ['details', 'problem'],label: 'Current Situation',         section: 'request', default: '' },
-  { key: 'goal',               aliases: ['userGoal'],          label: 'Desired Outcome / Goal',   section: 'request', default: '' },
-  { key: 'timeframe',          aliases: ['urgency'],           label: 'Timeframe / Priority',     section: 'request', default: 'Medium' }
-
-  // ➕ TO ADD A NEW QUESTION, JUST COPY AND PASTE A ROW HERE:
-  // { key: 'budget',          aliases: ['estBudget'],         label: 'Estimated Budget',          section: 'request', default: 'Not specified' }
-];
 
 /**
- * Automatically transforms raw form parameters into grouped sections and display labels.
- * 
- * @param {Object} rawParams - e.parameter object from form POST.
+ * ============================================================================
+ * FIELD SCHEMA
+ * ============================================================================
+ *
+ * key:
+ *   Internal field name used throughout Apps Script.
+ *
+ * aliases:
+ *   Accepted incoming names from the website/form.
+ *
+ * label:
+ *   Human-readable label used by email/display templates.
+ *
+ * section:
+ *   client or request.
+ *
+ * default:
+ *   Value used when no incoming value is supplied.
+ */
+const FIELD_SCHEMA = [
+
+  // --------------------------------------------------------------------------
+  // CLIENT FIELDS
+  // --------------------------------------------------------------------------
+
+  {
+    key: 'name',
+    aliases: [
+      'rd3_name',
+      'fullName'
+    ],
+    label: 'Full Name',
+    section: 'client',
+    default: 'Not provided'
+  },
+
+  {
+    key: 'email',
+    aliases: [
+      'rd3_email'
+    ],
+    label: 'Email Address',
+    section: 'client',
+    default: 'Not provided'
+  },
+
+  {
+    key: 'phone',
+    aliases: [
+      'rd3_phone'
+    ],
+    label: 'Phone Number',
+    section: 'client',
+    default: 'Not provided'
+  },
+
+  {
+    key: 'location',
+    aliases: [
+      'rd3_location',
+      'address'
+    ],
+    label: 'Location / Address',
+    section: 'client',
+    default: 'Not provided'
+  },
+
+  {
+    key: 'preferredContact',
+    aliases: [
+      'rd3_contactPreference'
+    ],
+    label: 'Preferred Contact Method',
+    section: 'client',
+    default: 'Email'
+  },
+
+  {
+    key: 'contactingAs',
+    aliases: [
+      'rd3_clientType'
+    ],
+    label: 'Contacting As',
+    section: 'client',
+    default: 'Potential Client'
+  },
+
+  {
+    key: 'isPreviousCustomer',
+    aliases: [
+      'rd3_usedBefore'
+    ],
+    label: 'Previous Customer',
+    section: 'client',
+    default: 'No'
+  },
+
+
+  // --------------------------------------------------------------------------
+  // REQUEST FIELDS
+  // --------------------------------------------------------------------------
+
+  {
+    key: 'situation',
+    aliases: [
+      'rd3_helpCategory',
+      'details',
+      'problem'
+    ],
+    label: 'Current Situation',
+    section: 'request',
+    default: ''
+  },
+
+  {
+    key: 'goal',
+    aliases: [
+      'rd3_userGoal',
+      'userGoal'
+    ],
+    label: 'Desired Outcome / Goal',
+    section: 'request',
+    default: ''
+  },
+
+  {
+    key: 'timeframe',
+    aliases: [
+      'rd3_urgency',
+      'urgency'
+    ],
+    label: 'Timeframe / Priority',
+    section: 'request',
+    default: 'Medium'
+  }
+
+];
+
+
+/**
+ * ============================================================================
+ * NORMALISE BOOLEAN / PREVIOUS CUSTOMER VALUE
+ * ============================================================================
+ *
+ * Converts:
+ *
+ *   Yes -> true
+ *   No  -> false
+ *
+ * This is important because the email template uses:
+ *
+ *   client.isPreviousCustomer ? 'Yes' : 'No'
+ *
+ * A string such as "No" is truthy in JavaScript, so it MUST be converted
+ * to an actual boolean.
+ */
+function normalisePreviousCustomer(value) {
+
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  const normalised = String(value || '')
+    .trim()
+    .toLowerCase();
+
+  if (
+    normalised === 'yes' ||
+    normalised === 'true' ||
+    normalised === '1'
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+
+/**
+ * ============================================================================
+ * FIND FIELD VALUE
+ * ============================================================================
+ *
+ * Looks for the primary internal key first, then checks aliases.
+ */
+function getMappedFieldValue(rawParams, field) {
+
+  const p = rawParams || {};
+
+  // --------------------------------------------------------------------------
+  // Check primary key
+  // --------------------------------------------------------------------------
+
+  if (
+    p[field.key] !== undefined &&
+    p[field.key] !== null &&
+    String(p[field.key]).trim() !== ''
+  ) {
+    return p[field.key];
+  }
+
+  // --------------------------------------------------------------------------
+  // Check aliases
+  // --------------------------------------------------------------------------
+
+  for (const alias of field.aliases || []) {
+
+    if (
+      p[alias] !== undefined &&
+      p[alias] !== null &&
+      String(p[alias]).trim() !== ''
+    ) {
+      return p[alias];
+    }
+
+  }
+
+  // --------------------------------------------------------------------------
+  // Nothing found - use default
+  // --------------------------------------------------------------------------
+
+  return field.default;
+}
+
+
+/**
+ * ============================================================================
+ * MAP FORM PAYLOAD
+ * ============================================================================
+ *
+ * Converts incoming website parameters into the standard RD3 payload.
+ *
+ * Example incoming data:
+ *
+ *   rd3_name = Tom Test
+ *   rd3_email = tom@example.com
+ *   rd3_clientType = Home or Family
+ *
+ * Becomes:
+ *
+ *   payload.client.name = Tom Test
+ *   payload.client.email = tom@example.com
+ *   payload.client.contactingAs = Home or Family
+ *
+ * @param {Object} rawParams Incoming e.parameter object.
  * @returns {Object} { payload, displaySchema }
  */
 function mapFormPayload(rawParams) {
+
   const p = rawParams || {};
+
   const payload = {
-  submissionDate: new Date().toLocaleString("en-NZ", { timeZone: "Pacific/Auckland" }),
+    submissionDate: Utilities.formatDate(
+      new Date(),
+      Session.getScriptTimeZone() || 'Pacific/Auckland',
+      'yyyy-MM-dd HH:mm:ss z'
+    ),
+
     client: {},
+
     request: {}
   };
-  
+
   const displaySchema = {
     client: [],
     request: []
   };
 
-  FIELD_SCHEMA.forEach(field => {
-    // 1. Resolve raw parameter value using primary key or fallback aliases
-    let val = p[field.key];
-    if (val === undefined || val === null || val === '') {
-      for (const alias of field.aliases) {
-        if (p[alias] !== undefined && p[alias] !== null && p[alias] !== '') {
-          val = p[alias];
-          break;
-        }
-      }
+
+  // --------------------------------------------------------------------------
+  // PROCESS FIELD SCHEMA
+  // --------------------------------------------------------------------------
+
+  FIELD_SCHEMA.forEach(function(field) {
+
+    let value = getMappedFieldValue(p, field);
+
+    // ------------------------------------------------------------------------
+    // Special handling for previous customer
+    // ------------------------------------------------------------------------
+
+    if (field.key === 'isPreviousCustomer') {
+
+      const boolValue = normalisePreviousCustomer(value);
+
+      payload.client[field.key] = boolValue;
+
+      displaySchema[field.section].push({
+        key: field.key,
+        label: field.label,
+        value: boolValue ? 'Yes' : 'No'
+      });
+
+      return;
     }
 
-    // Format boolean or use default
-    if (val === undefined || val === null || val === '') {
-      val = field.default;
-    } else if (typeof val === 'boolean') {
-      val = val ? 'Yes' : 'No';
+
+    // ------------------------------------------------------------------------
+    // Normalise all other values
+    // ------------------------------------------------------------------------
+
+    if (
+      value === undefined ||
+      value === null ||
+      String(value).trim() === ''
+    ) {
+      value = field.default;
     }
 
-    // 2. Map into structured payload for keyword scanner
-    payload[field.section][field.key] = String(val).trim();
+    value = String(value).trim();
 
-    // 3. Build ordered display schema for AdminEmail.html
+
+    // ------------------------------------------------------------------------
+    // Store in structured payload
+    // ------------------------------------------------------------------------
+
+    payload[field.section][field.key] = value;
+
+
+    // ------------------------------------------------------------------------
+    // Store in display schema
+    // ------------------------------------------------------------------------
+
     displaySchema[field.section].push({
       key: field.key,
       label: field.label,
-      value: String(val).trim()
+      value: value
     });
+
   });
 
-  return { payload, displaySchema };
+
+  // --------------------------------------------------------------------------
+  // DEBUG LOGGING
+  // --------------------------------------------------------------------------
+
+  Logger.log('============================================================');
+  Logger.log('RD3 FORM PAYLOAD MAPPING');
+  Logger.log('============================================================');
+
+  Logger.log(
+    'Raw parameters: ' +
+    JSON.stringify(p)
+  );
+
+  Logger.log(
+    'Mapped payload: ' +
+    JSON.stringify(payload)
+  );
+
+  Logger.log(
+    'Display schema: ' +
+    JSON.stringify(displaySchema)
+  );
+
+  Logger.log('============================================================');
+
+
+  return {
+    payload: payload,
+    displaySchema: displaySchema
+  };
 }

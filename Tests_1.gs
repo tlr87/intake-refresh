@@ -541,7 +541,7 @@ function testHoneypot() {
 function sendTestEmail() {
   const recipient = 'tom@rd3tech.com';
 
-  MailApp.sendEmail(
+  GmailApp.sendEmail(
     recipient,
     'RD3 Tech — Test Email',
     'This is a test email from the RD3 Tech Apps Script test suite.'
@@ -592,7 +592,7 @@ function sendAdminEmailTest() {
   const htmlBody =
     template.evaluate().getContent();
 
-  MailApp.sendEmail({
+  GmailApp.sendEmail({
     to: recipient,
     subject: 'RD3 Tech — TEST Admin Notification',
     htmlBody: htmlBody

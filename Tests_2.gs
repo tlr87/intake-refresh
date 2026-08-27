@@ -505,3 +505,248 @@ function testClientEmailNormal() {
   Logger.log('  ✓ What happens next section displayed');
   Logger.log('============================================================');
 }
+
+
+
+/**
+ * ============================================================================
+ * ADMIN EMAIL — NORMAL VISUAL TEST
+ * ============================================================================
+ *
+ * Directly renders the real AdminEmail.html template using a clean,
+ * non-spam, non-review, non-urgent test submission.
+ *
+ * DOES:
+ *   - Render AdminEmail.html
+ *   - Provide all variables required by the template
+ *   - Send the rendered email
+ *
+ * DOES NOT:
+ *   - Run doPost()
+ *   - Submit a Google Form
+ *   - Run spam detection
+ *   - Run review detection
+ *   - Run urgency evaluation
+ *   - Send ClientEmail
+ *
+ * ============================================================================
+ */
+function testAdminEmailNormal() {
+
+  Logger.log('============================================================');
+  Logger.log('RD3 TECH — ADMIN EMAIL NORMAL TEST');
+  Logger.log('============================================================');
+
+  // --------------------------------------------------------------------------
+  // TEST RECIPIENT
+  // --------------------------------------------------------------------------
+
+  const TEST_EMAIL = 'tom@rd3tech.com';
+
+  // --------------------------------------------------------------------------
+  // TEST SUBMISSION
+  // --------------------------------------------------------------------------
+
+  const name = 'Jane Smith';
+  const userEmail = 'jane.smith@example.com';
+  const phone = '021 123 4567';
+  const location = 'Whangārei';
+
+  const pref = 'Email';
+  const usedBefore = 'No';
+  const clientType = 'Small Business';
+
+  const category = 'Help with Something Better';
+
+  const userGoal =
+    'I would like to improve my current computer setup and make it easier to manage my day-to-day work.';
+
+  const selectedUrgency = 'Medium';
+
+  const submissionDate = Utilities.formatDate(
+    new Date(),
+    Session.getScriptTimeZone(),
+    'yyyy-MM-dd HH:mm:ss z'
+  );
+
+  // --------------------------------------------------------------------------
+  // CLIENT OBJECT
+  // --------------------------------------------------------------------------
+
+  const client = {
+    name: name,
+    email: userEmail,
+    phone: phone,
+    location: location,
+    preferredContact: pref,
+    contactingAs: clientType,
+    isPreviousCustomer: false
+  };
+
+  // --------------------------------------------------------------------------
+  // REQUEST OBJECT
+  // --------------------------------------------------------------------------
+
+  const request = {
+    situation: category,
+    goal: userGoal,
+    timeframe: selectedUrgency
+  };
+
+  // --------------------------------------------------------------------------
+  // SECURITY / EVALUATION OBJECT
+  //
+  // IMPORTANT:
+  // AdminEmail.html explicitly expects "secEval".
+  // These properties match what the template actually uses.
+  // --------------------------------------------------------------------------
+
+  const secEval = {
+
+    // Overall security state
+    isSpam: false,
+
+    // Scope/review state
+    requiresReview: false,
+
+    // Explicit spam keyword matches
+    spamFlags: [],
+
+    // Explicit review/out-of-scope keyword matches
+    reviewFlags: [],
+
+    // Generic matched keywords
+    matchedKeywords: [],
+
+    // Combined flags
+    flags: []
+
+  };
+
+  // --------------------------------------------------------------------------
+  // FIELDS
+  // --------------------------------------------------------------------------
+
+  const fields = [
+    { title: 'Name', value: name },
+    { title: 'Email Address', value: userEmail },
+    { title: 'Phone', value: phone },
+    { title: 'Address / Location', value: location },
+    { title: 'Preferred Contact', value: pref },
+    { title: 'Used RD3 Tech Before', value: usedBefore },
+    { title: 'Contacting As', value: clientType },
+    { title: 'Help Category', value: category },
+    { title: 'Urgency Level', value: selectedUrgency },
+    { title: 'Enquiry / Details', value: userGoal }
+  ];
+
+  // --------------------------------------------------------------------------
+  // LOAD ADMIN TEMPLATE
+  // --------------------------------------------------------------------------
+
+  Logger.log('Loading AdminEmail.html...');
+
+  const template =
+    HtmlService.createTemplateFromFile('AdminEmail');
+
+  // --------------------------------------------------------------------------
+  // PROVIDE TEMPLATE VARIABLES
+  // --------------------------------------------------------------------------
+
+  template.name = name;
+  template.fields = fields;
+  template.submissionDate = submissionDate;
+
+  template.client = client;
+  template.request = request;
+
+  // THIS WAS THE MISSING VARIABLE
+  template.secEval = secEval;
+
+  // --------------------------------------------------------------------------
+  // RENDER TEMPLATE
+  // --------------------------------------------------------------------------
+
+  Logger.log('Rendering AdminEmail.html...');
+
+  const html =
+    template
+      .evaluate()
+      .getContent();
+
+  Logger.log('Template rendered successfully.');
+  Logger.log('HTML length: ' + html.length);
+
+  // --------------------------------------------------------------------------
+  // SUBJECT
+  // --------------------------------------------------------------------------
+
+  const cleanCategory =
+    category
+      .replace(/^Help with\s+/i, '')
+      .trim();
+
+  const subject =
+    'New Enquiry — ' +
+    name +
+    ' | ' +
+    cleanCategory +
+    ' | ' +
+    selectedUrgency;
+
+  // --------------------------------------------------------------------------
+  // SEND EMAIL
+  // --------------------------------------------------------------------------
+
+  Logger.log('Sending email...');
+
+  MailApp.sendEmail({
+    to: TEST_EMAIL,
+    replyTo: userEmail,
+    subject: subject,
+    htmlBody: html
+  });
+
+  // --------------------------------------------------------------------------
+  // LOG RESULT
+  // --------------------------------------------------------------------------
+
+  Logger.log('============================================================');
+  Logger.log('ADMIN EMAIL NORMAL TEST SUCCESSFUL');
+  Logger.log('============================================================');
+
+  Logger.log('Recipient: ' + TEST_EMAIL);
+  Logger.log('Customer: ' + name);
+  Logger.log('Customer Email: ' + userEmail);
+  Logger.log('Phone: ' + phone);
+  Logger.log('Location: ' + location);
+  Logger.log('Preferred Contact: ' + pref);
+  Logger.log('Previous Client: ' + usedBefore);
+  Logger.log('Client Type: ' + clientType);
+  Logger.log('Category: ' + category);
+  Logger.log('Urgency: ' + selectedUrgency);
+
+  Logger.log('');
+  Logger.log('SECURITY TEST STATE');
+  Logger.log('Spam: ' + secEval.isSpam);
+  Logger.log('Review: ' + secEval.requiresReview);
+  Logger.log('Spam Flags: ' + JSON.stringify(secEval.spamFlags));
+  Logger.log('Review Flags: ' + JSON.stringify(secEval.reviewFlags));
+  Logger.log('Matched Keywords: ' + JSON.stringify(secEval.matchedKeywords));
+
+  Logger.log('');
+  Logger.log('Expected email appearance:');
+  Logger.log('  ✓ CLEAN badge');
+  Logger.log('  ✓ Passed Automated Checks');
+  Logger.log('  ✓ No SPAM DETECTED badge');
+  Logger.log('  ✓ No REQUIRES REVIEW badge');
+  Logger.log('  ✓ No URGENT REQUEST badge');
+  Logger.log('  ✓ Customer details');
+  Logger.log('  ✓ Submission details');
+  Logger.log('  ✓ Help category');
+  Logger.log('  ✓ Client goal');
+  Logger.log('  ✓ Internal Execution Principles');
+  Logger.log('  ✓ RD3 Tech header/footer');
+
+  Logger.log('============================================================');
+}
