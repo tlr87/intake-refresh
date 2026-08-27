@@ -135,7 +135,7 @@ function onFormSubmit(e) {
     MailApp.sendEmail({
       to: adminEmail,
       replyTo: clientData.email !== 'N/A' ? clientData.email : adminEmail,
-      subject: `${subjectPrefix}[New Enquiry] ${clientData.name} — RD3 Tech`,
+      subject: `${subjectPrefix}[New Enquiry] ${clientData.name} | ${requestData.helpCategory} — RD3 Tech`,
       htmlBody: adminHtmlBody
     });
     Logger.log('✅ Admin email sent');
@@ -154,11 +154,13 @@ function onFormSubmit(e) {
       clientTemplate.request = requestData;
 
       const clientHtmlBody = clientTemplate.evaluate().getContent();
+      // Dynamic subject line incorporating name and help category
+      const emailSubject = `Thanks ${clientData.name || 'there'}, we’ll be in touch to help | ${requestData.helpCategory} | RD3 Tech`;
 
       MailApp.sendEmail({
         to: clientData.email,
         replyTo: adminEmail,
-        subject: 'We received your request — RD3 Tech',
+        subject: emailSubject,
         htmlBody: clientHtmlBody
       });
       Logger.log('✅ Client email sent');
