@@ -58,48 +58,56 @@
         border: 1px solid #cbd5e1;
         border-radius: 8px;
       }
-.card-header {
-  padding: 20px 30px;
-  background-color: #993333;
-  color: #ffffff;
-  overflow: hidden;
-}
 
-.card-header {
-  padding: 20px 30px;
-  background-color: #993333;
-  color: #ffffff;
-  overflow: hidden;
-}
-.header-text {
-  float: left;
-  text-align: left;
-}
+      .card-header {
+        padding: 20px 30px;
+        background-color: #993333;
+        color: #ffffff;
+        overflow: hidden;
+      }
 
-.subtitle {
-  margin-top: 4px;
-  color: #f1f5f9;
-  font-size: 13px;
-  line-height: 1.5;
-}
+      .header-content {
+        display: block;
+        width: 100%;
+      }
 
-.header-logo {
-  float: right;
-  margin-left: 20px;
-  padding: 10px 14px;
-  background-color: #ffffff;
-  border-radius: 8px;
-  text-align: left;
-}
+      .header-text {
+        float: left;
+        text-align: left;
+      }
 
+      .brand {
+        margin: 0;
+        color: #ffffff;
+        font-size: 20px;
+        line-height: 1.2;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+      }
 
-.header-logo img {
-  display: block;
-  width: 50px;
-  max-width: 50px;
-  height: auto;
-  border: 0;
-}
+      .subtitle {
+        margin-top: 4px;
+        color: #f1f5f9;
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .header-logo {
+        float: right;
+        margin-left: 20px;
+        padding: 8px 12px;
+        background-color: #ffffff;
+        border-radius: 8px;
+        text-align: left;
+      }
+
+      .header-logo img {
+        display: block;
+        width: 50px;
+        max-width: 50px;
+        height: auto;
+        border: 0;
+      }
 
       .card-body {
         padding: 30px;
@@ -113,18 +121,7 @@
         border-top: 1px solid #e2e8f0;
       }
 
-      /* BRAND & TYPOGRAPHY */
-      .brand {
-        margin: 0;
-        color: #ffffff;
-        font-size: 20px;
-        line-height: 2.2;
-        font-weight: 800;
-        letter-spacing: 0.5px;
-        float: left;
-      }
-
-
+      /* TYPOGRAPHY & SECTIONS */
       .section-title {
         margin: 28px 0 14px;
         padding-bottom: 7px;
@@ -142,21 +139,16 @@
         margin-top: 0;
       }
 
-      /* STATUS SUMMARY */
-.status-summary {
-  width: 100%;
-  margin: 0 0 20px;
-  text-align: center;
-}
+      /* STATUS SUMMARY & BADGES */
+      .status-summary {
+        width: 100%;
+        margin: 0 0 20px;
+        text-align: center;
+      }
 
-      /*
-       * Top status badges.
-       * These intentionally retain the original status colours
-       * but now have a consistent black border and no dots.
-       */
       .badge {
         display: inline-block;
-        margin: 0;
+        margin: 2px;
         padding: 6px 10px;
         border: 1px solid #000000;
         border-radius: 4px;
@@ -171,30 +163,25 @@
 
       .badge-spam {
         background-color: #a235dc;
-     
       }
 
       .badge-review {
         background-color: #f59e0b;
-   
       }
 
       .badge-urgent {
         background-color: #ff0000;
-   
       }
 
       .badge-clean {
         background-color: #198754;
-    
       }
 
       /* DETAIL ALERT CONTAINERS */
       .alert {
         margin-bottom: 16px;
         padding: 16px 20px;
-        background-color: #f8fafc;
-        border: 1px solid #e2e8f0;
+        background-color: #ffffff;
         border-radius: 6px;
         text-align: left;
       }
@@ -203,29 +190,25 @@
         margin-bottom: 20px;
       }
 
-    .alert-spam {
-    background-color: #ffffff;
-    border: 1px solid #a235dc;
-    border-left: 4px solid #a235dc;
-    }
+      .alert-spam {
+        border: 1px solid #a235dc;
+        border-left: 4px solid #a235dc;
+      }
 
-    .alert-review {
-    background-color: #ffffff;
-    border: 1px solid #f59e0b;
-    border-left: 4px solid #f59e0b;
-    }
+      .alert-review {
+        border: 1px solid #f59e0b;
+        border-left: 4px solid #f59e0b;
+      }
 
-    .alert-urgent {
-    background-color: #ffffff;
-    border: 1px solid #ff0000;
-    border-left: 4px solid #ff0000;
-    }
+      .alert-urgent {
+        border: 1px solid #ff0000;
+        border-left: 4px solid #ff0000;
+      }
 
-    .alert-success {
-    background-color: #ffffff;
-    border: 1px solid #198754;
-    border-left: 4px solid #198754;
-    }
+      .alert-success {
+        border: 1px solid #198754;
+        border-left: 4px solid #198754;
+      }
 
       .alert-header-row {
         margin-bottom: 8px;
@@ -312,7 +295,7 @@
         text-align: center;
       }
 
-      /* MOBILE */
+      /* MOBILE RESPONSIVENESS */
       @media only screen and (max-width: 600px) {
         .email-wrapper {
           padding: 0 !important;
@@ -332,14 +315,6 @@
         .card-body,
         .card-footer {
           padding: 20px !important;
-        }
-
-        .status-summary {
-          gap: 8px;
-        }
-
-        .badge {
-          margin: 0;
         }
 
         .table th,
@@ -384,83 +359,46 @@
               <div class="card">
 
                 <!-- HEADER -->
-               <div class="card-header">
-
-  <div class="header-content">
-
-    <div class="header-text">
-      <div class="brand">RD3 TECH</div>
-      <div class="subtitle">Website Enquiry</div>
-    </div>
-
-    <div class="header-logo">
-      <img
-        src="https://i0.wp.com/rd3tech.com/wp-content/uploads/2023/03/cropped-RD3Logo.png?resize=300%2C300&ssl=1"
-        alt="RD3 Tech"
-      >
-    </div>
-
-  </div>
-
-</div>
+                <div class="card-header">
+                  <div class="header-content">
+                    <div class="header-text">
+                      <div class="brand">RD3 TECH</div>
+                      <div class="subtitle">Website Enquiry</div>
+                    </div>
+                    <div class="header-logo">
+                      <img
+                        src="https://i0.wp.com/rd3tech.com/wp-content/uploads/2023/03/cropped-RD3Logo.png?resize=300%2C300&ssl=1"
+                        alt="RD3 Tech"
+                      >
+                    </div>
+                  </div>
+                </div>
 
                 <!-- BODY -->
-                <div class="card-body" style="text-align:left;">
+                <div class="card-body">
 
                   <?
-                    /*
-                     * ==========================================================
-                     * SECURITY / SCOPE / PRIORITY EVALUATION
-                     * ==========================================================
-                     */
-
                     var spamTerms = secEval.spamFlags || [];
-
                     var reviewTerms =
                       secEval.reviewFlags ||
                       (secEval.matchedKeywords ? secEval.matchedKeywords : []);
 
-                    /*
-                     * Fallback filtering if flags were passed
-                     * in a single secEval.flags array.
-                     */
                     if (secEval.flags && secEval.flags.length > 0) {
-
                       secEval.flags.forEach(function(f) {
-
                         if (
                           f.indexOf('SPAM:') === 0 &&
-                          spamTerms.indexOf(
-                            f.replace('SPAM:', '').trim()
-                          ) === -1
+                          spamTerms.indexOf(f.replace('SPAM:', '').trim()) === -1
                         ) {
-                          spamTerms.push(
-                            f.replace('SPAM:', '').trim()
-                          );
+                          spamTerms.push(f.replace('SPAM:', '').trim());
                         }
 
                         if (
-                          (
-                            f.indexOf('outOfScope:') === 0 ||
-                            f.indexOf('REVIEW:') === 0
-                          ) &&
-                          reviewTerms.indexOf(
-                            f.replace(
-                              /^(outOfScope|REVIEW):/,
-                              ''
-                            ).trim()
-                          ) === -1
+                          (f.indexOf('outOfScope:') === 0 || f.indexOf('REVIEW:') === 0) &&
+                          reviewTerms.indexOf(f.replace(/^(outOfScope|REVIEW):/, '').trim()) === -1
                         ) {
-                          reviewTerms.push(
-                            f.replace(
-                              /^(outOfScope|REVIEW):/,
-                              ''
-                            ).trim()
-                          );
+                          reviewTerms.push(f.replace(/^(outOfScope|REVIEW):/, '').trim());
                         }
-
                       });
-
                     }
 
                     var isUrgent =
@@ -473,343 +411,170 @@
                       isUrgent;
                   ?>
 
-                  <!-- ==========================================================
-                       STATUS SUMMARY
-                       ========================================================== -->
-
+                  <!-- STATUS SUMMARY -->
                   <div class="status-summary">
-
                     <? if (secEval.isSpam) { ?>
-                      <span class="badge badge-spam">
-                        SPAM DETECTED
-                      </span>
+                      <span class="badge badge-spam">SPAM DETECTED</span>
                     <? } ?>
 
                     <? if (secEval.requiresReview) { ?>
-                      <span class="badge badge-review">
-                        REQUIRES REVIEW
-                      </span>
+                      <span class="badge badge-review">REQUIRES REVIEW</span>
                     <? } ?>
 
                     <? if (isUrgent) { ?>
-                      <span class="badge badge-urgent">
-                        URGENT REQUEST
-                      </span>
+                      <span class="badge badge-urgent">URGENT REQUEST</span>
                     <? } ?>
 
                     <? if (!hasAnyFlag) { ?>
-                      <span class="badge badge-clean">
-                        CLEAN
-                      </span>
+                      <span class="badge badge-clean">CLEAN</span>
                     <? } ?>
-
                   </div>
 
-
-                  <!-- ==========================================================
-                       DETAILED SECURITY / SCOPE / PRIORITY INFORMATION
-                       ========================================================== -->
-
+                  <!-- SECURITY / SCOPE DETAILS -->
                   <? if (secEval.isSpam) { ?>
-
                     <div class="alert alert-spam">
-
-                      <div class="alert-header-row">
-                        Security Filter Flag
-                      </div>
-
+                      <div class="alert-header-row">Security Filter Flag</div>
                       <div class="alert-text">
-
-                        <strong>
-                          Terms / Triggers setting this off:
-                        </strong>
-
+                        <strong>Terms / Triggers setting this off:</strong>
                         <? if (spamTerms.length > 0) { ?>
-
                           <ul>
                             <? spamTerms.forEach(function(term) { ?>
                               <li><?= term ?></li>
                             <? }); ?>
                           </ul>
-
                         <? } else { ?>
-
-                          <span>
-                            Automated spam heuristics triggered.
-                          </span>
-
+                          <span>Automated spam heuristics triggered.</span>
                         <? } ?>
-
                       </div>
-
                     </div>
-
                   <? } ?>
 
-
                   <? if (secEval.requiresReview) { ?>
-
                     <div class="alert alert-review">
-
-                      <div class="alert-header-row">
-                        Out-of-Scope Terms Found
-                      </div>
-
+                      <div class="alert-header-row">Out-of-Scope Terms Found</div>
                       <div class="alert-text">
-
-                        <strong>
-                          Terms / Triggers setting this off:
-                        </strong>
-
+                        <strong>Terms / Triggers setting this off:</strong>
                         <? if (reviewTerms.length > 0) { ?>
-
                           <ul>
                             <? reviewTerms.forEach(function(term) { ?>
                               <li><?= term ?></li>
                             <? }); ?>
                           </ul>
-
                         <? } else { ?>
-
-                          <span>
-                            Matched configured out-of-scope review keywords.
-                          </span>
-
+                          <span>Matched configured out-of-scope review keywords.</span>
                         <? } ?>
-
                       </div>
-
                     </div>
-
                   <? } ?>
-
 
                   <? if (isUrgent) { ?>
-
                     <div class="alert alert-urgent">
-
-                      <div class="alert-header-row">
-                        High Priority Timeframe
-                      </div>
-
+                      <div class="alert-header-row">High Priority Timeframe</div>
                       <div class="alert-text">
-
-                        <strong>
-                          Condition setting this off:
-                        </strong>
-
-                        Timeframe marked as
-                        <strong><?= request.timeframe ?></strong>
-
+                        <strong>Condition setting this off:</strong> Timeframe marked as <strong><?= request.timeframe ?></strong>
                       </div>
-
                     </div>
-
                   <? } ?>
-
 
                   <? if (!hasAnyFlag) { ?>
-
                     <div class="alert alert-success">
-
-                      <div class="alert-header-row">
-                        Passed Automated Checks
-                      </div>
-
+                      <div class="alert-header-row">Passed Automated Checks</div>
                       <p class="alert-text">
-                        Standard submission verified through automated
-                        security and scope filters.
+                        Standard submission verified through automated security and scope filters.
                       </p>
-
                     </div>
-
                   <? } ?>
 
-
-                  <!-- ==========================================================
-                       REQUEST OVERVIEW
-                       ========================================================== -->
-
-                  <div class="section-title">
-                    Submission Details:
-                  </div>
-
+                  <!-- SUBMISSION DETAILS -->
+                  <div class="section-title">Submission Details:</div>
                   <table class="table">
-
                     <tr>
                       <th>Received Date</th>
                       <td><?= submissionDate ?></td>
                     </tr>
-
                     <tr>
                       <th>Urgency</th>
                       <td>
-                        <strong>
-                          <?= request.timeframe || 'Medium' ?>
-                        </strong>
+                        <strong><?= request.timeframe || 'Medium' ?></strong>
                       </td>
                     </tr>
-
                   </table>
 
-
-                  <!-- ==========================================================
-                       CLIENT PROFILE
-                       ========================================================== -->
-
-                  <div class="section-title">
-                    Clients Details:
-                  </div>
-
+                  <!-- CLIENT PROFILE -->
+                  <div class="section-title">Clients Details:</div>
                   <table class="table">
-
                     <tr>
                       <th>Name</th>
-                      <td>
-                        <?= client.name || 'Not provided' ?>
-                      </td>
+                      <td><?= client.name || 'Not provided' ?></td>
                     </tr>
-
                     <tr>
                       <th>Email</th>
                       <td>
-                        <a href="mailto:<?= client.email ?>">
-                          <?= client.email || 'Not provided' ?>
-                        </a>
+                        <a href="mailto:<?= client.email ?>"><?= client.email || 'Not provided' ?></a>
                       </td>
                     </tr>
-
                     <tr>
                       <th>Phone</th>
-                      <td>
-                        <?= client.phone || 'Not provided' ?>
-                      </td>
+                      <td><?= client.phone || 'Not provided' ?></td>
                     </tr>
-
                     <tr>
                       <th>Address / Location</th>
-                      <td>
-                        <?= client.location || 'Not provided' ?>
-                      </td>
+                      <td><?= client.location || 'Not provided' ?></td>
                     </tr>
-
                     <tr>
                       <th>Preferred Contact</th>
-                      <td>
-                        <?= client.preferredContact || 'Not provided' ?>
-                      </td>
+                      <td><?= client.preferredContact || 'Not provided' ?></td>
                     </tr>
-
                     <tr>
                       <th>Contacting As</th>
-                      <td>
-                        <?= client.contactingAs || 'Not provided' ?>
-                      </td>
+                      <td><?= client.contactingAs || 'Not provided' ?></td>
                     </tr>
-
                     <tr>
                       <th>Previous Client</th>
-                      <td>
-                        <?= client.isPreviousCustomer ? 'Yes' : 'No' ?>
-                      </td>
+                      <td><?= client.isPreviousCustomer ? 'Yes' : 'No' ?></td>
                     </tr>
-
                   </table>
 
-
-                  <!-- ==========================================================
-                       HOW CAN WE HELP
-                       ========================================================== -->
-
-                  <div class="section-title">
-                    How Can We Help?:
-                  </div>
-
+                  <!-- HOW CAN WE HELP -->
+                  <div class="section-title">How Can We Help?:</div>
                   <table class="table">
-
                     <tr>
                       <th>Need Help with:</th>
                       <td>
-                        <strong>
-                          <?= (request.situation || 'Not specified')
-                            .replace(/^Help with\s+/i, '') ?>
-                        </strong>
+                        <strong><?= (request.situation || 'Not specified').replace(/^Help with\s+/i, '') ?></strong>
                       </td>
                     </tr>
-
                     <tr>
                       <th>What Are You Trying To Achieve?</th>
-                      <td style="white-space:pre-wrap;">
-                        <?= request.goal || 'No description provided.' ?>
-                      </td>
+                      <td style="white-space:pre-wrap;"><?= request.goal || 'No description provided.' ?></td>
                     </tr>
-
                   </table>
 
-
-                  <!-- ==========================================================
-                       INTERNAL EXECUTION PRINCIPLES
-                       ========================================================== -->
-
-                  <div class="section-title">
-                    Internal Execution Principles:
-                  </div>
-
-                  <ul
-                    class="list"
-                    style="
-                      text-align:left;
-                      margin:20px 0;
-                      padding:20px 20px 20px 35px;
-                      background-color:#f8fafc;
-                      border:1px solid #e2e8f0;
-                      border-left:4px solid #993333;
-                      border-radius:0 6px 6px 0;
-                    "
-                  >
-
-                    <li style="text-align:left; margin-bottom:8px;">
-                      <strong>Target Outcome:</strong>
-                      Focus on what the client is actually trying to achieve
-                      before touching the task.
+                  <!-- INTERNAL EXECUTION PRINCIPLES -->
+                  <div class="section-title">Internal Execution Principles:</div>
+                  <ul class="list">
+                    <li>
+                      <strong>Target Outcome:</strong> Focus on what the client is actually trying to achieve before touching the task.
                     </li>
-
-                    <li style="text-align:left; margin-bottom:8px;">
-                      <strong>Clear Scope:</strong>
-                      Ask direct questions to lock down limits, costs,
-                      and responsibilities—no assumptions.
+                    <li>
+                      <strong>Clear Scope:</strong> Ask direct questions to lock down limits, costs, and responsibilities—no assumptions.
                     </li>
-
-                    <li style="text-align:left; margin-bottom:0;">
-                      <strong>Risk Control:</strong>
-                      Spot technical, financial, and communication failure
-                      points early.
+                    <li>
+                      <strong>Risk Control:</strong> Spot technical, financial, and communication failure points early.
                     </li>
-
                   </ul>
 
                 </div>
 
-
                 <!-- FOOTER -->
                 <div class="card-footer">
-
                   <p class="footer-text">
-                    RD3 Tech |
-                    Your Technology Support Journey Starts Here |
-                    <a href="mailto:tom@rd3tech.com">
-                      tom@rd3tech.com
-                    </a> |
-                    <a
-                      href="https://rd3tech.com/"
-                      target="_blank"
-                    >
-                      https://rd3tech.com/
-                    </a>
+                    RD3 Tech | Your Technology Support Journey Starts Here | 
+                    <a href="mailto:tom@rd3tech.com">tom@rd3tech.com</a> | 
+                    <a href="https://rd3tech.com/" target="_blank">https://rd3tech.com/</a>
                     <br />
                     | Automated Notification | RD3 Tech Form Handler
                   </p>
-
                 </div>
 
               </div>

@@ -1,6 +1,6 @@
 /**
  * Web App HTTP POST Endpoint for RD3 Tech Website Forms.
- * Traps spam, limits repeat submissions, records to Google Form, and dispatches HTML emails.
+ * Traps spam, limits repeat submissions, records to Google Form, passes schema to HTML, and dispatches emails.
  */
 function doPost(e) {
   try {
@@ -16,42 +16,38 @@ function doPost(e) {
       ? formConfig.settings.adminEmail 
       : 'tom@rd3tech.com';
 
-    // 1. Parameter Extraction
-    let params = {};
+    // 1. Extract Raw Parameters
+    let rawParams = {};
     if (e && e.parameter && Object.keys(e.parameter).length > 0) {
-      params = e.parameter;
+      rawParams = e.parameter;
     } else if (e && e.postData && e.postData.contents) {
       try {
-        params = JSON.parse(e.postData.contents);
+        rawParams = JSON.parse(e.postData.contents);
       } catch (jsonErr) {
-        params = parseQueryString(e.postData.contents);
+        rawParams = parseQueryString(e.postData.contents);
       }
     }
 
-    // Core Fields
-    const name = params.rd3_name || params.name || params.Name || 'Visitor';
-    const userEmail = (params.rd3_email || params.email || params.Email || '').trim().toLowerCase();
-    const phone = params.rd3_phone || params.phone || params.Phone || 'Not provided';
-    const location = params.rd3_location || params.location || params.Location || 'Not provided';
-    const pref = params.rd3_contactPreference || params.contactPreference || 'Email';
-    const usedBefore = params.rd3_usedBefore || params.usedBefore || 'Not provided';
-    const clientType = params.rd3_clientType || params.clientType || 'Not provided';
-    const category = params.rd3_helpCategory || params.helpCategory || params.category || 'General Inquiry';
-    const userGoal = params.rd3_userGoal || params.userGoal || params.message || params.comments || 'No details provided.';
-    const selectedUrgency = params.rd3_urgency || params.urgency || params.Urgency || 'Normal';
-    
-    // Submission Timestamp
-    const submissionDate = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm:ss z");
+    // 2. Centralized Payload & Schema Extraction (via Mapping.gs)
+    const { payload, displaySchema } = mapFormPayload(rawParams);
+    const submissionDate = payload.submissionDate;
+
+    // Direct access to core payload values for logic checks
+    const userEmail = payload.client.email.toLowerCase();
+    const name = payload.client.name;
+    const category = payload.request.situation || 'General Inquiry';
+    const userGoal = payload.request.goal;
+    const selectedUrgency = payload.request.timeframe || 'Normal';
 
     // Honeypot Check
-    const honeypotValue = params.website_url || params.hp_comments || '';
+    const honeypotValue = rawParams.website_url || rawParams.hp_comments || '';
     if (honeypotValue && honeypotValue.trim() !== '') {
       Logger.log('🚫 HONEYPOT TRIPPED');
       return createJsonResponse({ status: "success", message: "Form submitted successfully." });
     }
 
     // Rate Limiting / Cooldown Check
-    if (rateLimitConfig.enabled && userEmail) {
+    if (rateLimitConfig.enabled && userEmail && userEmail !== 'not provided') {
       const cache = CacheService.getScriptCache();
       const cacheKey = "rl_" + Utilities.base64Encode(userEmail);
       const isCooldown = cache.get(cacheKey);
@@ -67,7 +63,7 @@ function doPost(e) {
       cache.put(cacheKey, "active", rateLimitConfig.cooldownSeconds || 60);
     }
 
-    // 2. Record to Google Form
+    // 3. Record to Google Form
     try {
       const FORM_ID = '10ahsRmbXxFjcVGOY3IjZcrptctulxcS4sdQygAOp9mc';
       const form = FormApp.openById(FORM_ID);
@@ -75,13 +71,13 @@ function doPost(e) {
       const items = form.getItems();
 
       const responseMap = {
-        name: name,
-        email: userEmail,
-        phone: phone,
-        location: location,
-        pref: pref,
-        usedBefore: usedBefore,
-        clientType: clientType,
+        name: payload.client.name,
+        email: payload.client.email,
+        phone: payload.client.phone,
+        location: payload.client.location,
+        pref: payload.client.preferredContact,
+        usedBefore: payload.client.isPreviousCustomer,
+        clientType: payload.client.contactingAs,
         category: category,
         urgency: selectedUrgency,
         goal: userGoal
@@ -143,18 +139,18 @@ function doPost(e) {
       Logger.log('❌ Google Form logging error: ' + formErr.toString());
     }
 
-    // 3. Moderation Checks
+    // 4. Moderation Checks (Passes FULL mapped payload object to review scanner)
     const reviewResult = (typeof checkReviewKeywords === 'function') 
-      ? checkReviewKeywords(userGoal, reviewConfig) 
+      ? checkReviewKeywords(payload, reviewConfig) 
       : { needsReview: false, matchedKeywords: [] };
 
     const spamResult = (typeof checkSpamKeywords === 'function') 
-      ? checkSpamKeywords(userGoal, spamConfig) 
+      ? checkSpamKeywords(payload, spamConfig) 
       : { isSpam: false, matchedKeywords: [] };
 
     const isUrgent = (selectedUrgency.toLowerCase().indexOf('high') !== -1 || selectedUrgency.toLowerCase() === 'urgent');
 
-    // 4. Subject Line Prefixes
+    // 5. Subject Line Prefixes
     let subjectPrefix = '';
     if (spamResult.isSpam) {
       subjectPrefix += (spamConfig.settings && spamConfig.settings.flagSubjectPrefix) 
@@ -168,15 +164,15 @@ function doPost(e) {
         ? reviewConfig.settings.flagSubjectPrefix : '[FLAGGED] ';
     }
 
-    // 5. Structure Fields Array
+    // Build legacy fields list fallback if templates still consume it
     const fields = [
-      { title: "Name", value: name },
-      { title: "Email Address", value: userEmail },
-      { title: "Phone", value: phone },
-      { title: "Address / Location", value: location },
-      { title: "Preferred Contact", value: pref },
-      { title: "Used RD3 Tech Before", value: usedBefore },
-      { title: "Contacting As", value: clientType },
+      { title: "Name", value: payload.client.name },
+      { title: "Email Address", value: payload.client.email },
+      { title: "Phone", value: payload.client.phone },
+      { title: "Address / Location", value: payload.client.location },
+      { title: "Preferred Contact", value: payload.client.preferredContact },
+      { title: "Used RD3 Tech Before", value: payload.client.isPreviousCustomer },
+      { title: "Contacting As", value: payload.client.contactingAs },
       { title: "Help Category", value: category },
       { title: "Urgency Level", value: selectedUrgency },
       { title: "Enquiry / Details", value: userGoal }
@@ -188,26 +184,11 @@ function doPost(e) {
     adminTemplate.userEmail = userEmail;
     adminTemplate.fields = fields;
     adminTemplate.submissionDate = submissionDate;
+    adminTemplate.displaySchema = displaySchema; // Enforces dynamic schema rendering
 
-    // Provide the request object expected by AdminEmail.html
-    adminTemplate.request = {
-      situation: category,
-      goal: userGoal,
-      timeframe: selectedUrgency
-    };
+    adminTemplate.request = payload.request;
+    adminTemplate.client = payload.client;
 
-    // Provide the client object expected by AdminEmail.html
-    adminTemplate.client = {
-      name: name,
-      email: userEmail,
-      phone: phone,
-      location: location,
-      preferredContact: pref,
-      contactingAs: clientType,
-      isPreviousCustomer: usedBefore
-    };
-
-    // Provide the secEval object expected by AdminEmail.html
     adminTemplate.secEval = {
       isSpam: spamResult.isSpam,
       requiresReview: reviewResult.needsReview,
@@ -217,43 +198,26 @@ function doPost(e) {
 
     adminTemplate.isUrgent = isUrgent;
 
-    // Dispatch Admin Notification with Reply-To set to the user's email
     MailApp.sendEmail({
       to: adminEmail,
-      replyTo: userEmail,
+      replyTo: (userEmail && userEmail !== 'not provided') ? userEmail : adminEmail,
       subject: `${subjectPrefix}[Website Enquiry] ${name} — ${category}`,
       htmlBody: adminTemplate.evaluate().getContent()
     });
 
-  // 7. Client Email Dispatch
+    // 7. Client Email Dispatch
     if (userEmail && userEmail.indexOf('@') !== -1) {
       const clientTemplate = HtmlService.createTemplateFromFile('ClientEmail');
       clientTemplate.name = name;
       clientTemplate.fields = fields;
       clientTemplate.submissionDate = submissionDate;
+      clientTemplate.displaySchema = displaySchema;
 
-      // Clean category display name (removes leading "Help with " if present)
       const cleanCategory = category.replace(/^Help with\s+/i, '').trim();
 
-      // Provide the client object expected by ClientEmail.html
-      clientTemplate.client = {
-        name: name,
-        email: userEmail,
-        phone: phone,
-        location: location,
-        preferredContact: pref,
-        contactingAs: clientType,
-        isPreviousCustomer: usedBefore
-      };
+      clientTemplate.client = payload.client;
+      clientTemplate.request = payload.request;
 
-      // Provide the request object expected by ClientEmail.html
-      clientTemplate.request = {
-        situation: category,
-        goal: userGoal,
-        timeframe: selectedUrgency
-      };
-
-      // Dispatch Client Confirmation with your specified subject format
       MailApp.sendEmail({
         to: userEmail,
         replyTo: adminEmail,
