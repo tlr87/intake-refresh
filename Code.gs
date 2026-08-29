@@ -154,13 +154,14 @@ function onFormSubmit(e) {
       clientTemplate.request = requestData;
 
       const clientHtmlBody = clientTemplate.evaluate().getContent();
-      // Dynamic subject line incorporating name and help category
-      const emailSubject = `Thanks ${clientData.name || 'there'}, we’ll be in touch to help | ${requestData.helpCategory} | RD3 Tech`;
 
       MailApp.sendEmail({
         to: clientData.email,
         replyTo: adminEmail,
-        subject: emailSubject,
+        subject: EMAIL_SUBJECTS.client(
+          clientData.name,
+          requestData.helpCategory
+        ),
         htmlBody: clientHtmlBody
       });
       Logger.log('✅ Client email sent');

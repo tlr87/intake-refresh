@@ -13,6 +13,23 @@
  * ============================================================================
  */
 
+/**
+ * ============================================================================
+ * Email subject mapping
+ * ============================================================================
+ */
+
+
+const EMAIL_SUBJECTS = {
+  admin: (subjectPrefix, clientName, helpCategory) =>
+    `${subjectPrefix || ''}[New Enquiry] ${clientName} | ${helpCategory} — RD3 Tech`,
+
+  client: (clientName, helpCategory) =>
+    `Thanks ${clientName || 'there'}, we’ll be in touch to help! | ${helpCategory} | RD3 Tech`
+};
+
+
+
 const FIELD_SCHEMA = [
 
   // ==========================================================================
@@ -409,7 +426,7 @@ function mapFormPayload(rawParams) {
   };
 
 
-  FIELD_SCHEMA.forEach(function(field) {
+  FIELD_SCHEMA.forEach(function (field) {
 
     let value = getMappedFieldValue(
       p,
@@ -522,7 +539,6 @@ function mapFormPayload(rawParams) {
     Logger.log(
       '============================================================'
     );
-
   }
 
 
@@ -533,6 +549,11 @@ function mapFormPayload(rawParams) {
     displaySchema: displaySchema
 
   };
+
+
+
+
+
 
 }
 
@@ -602,3 +623,4 @@ function testActualMapping() {
   );
 
 }
+

@@ -507,12 +507,16 @@ function sendAdminEmail(payload, displaySchema, moderation, adminEmail) {
 
   const adminHtmlBody = adminTemplate.evaluate().getContent();
 
-  MailApp.sendEmail({
-    to: adminEmail,
-    replyTo: clientData.email !== 'N/A' ? clientData.email : adminEmail,
-    subject: `${moderation.subjectPrefix || ''}[New Website Enquiry] ${clientData.name} — RD3 Tech`,
-    htmlBody: adminHtmlBody
-  });
+MailApp.sendEmail({
+  to: adminEmail,
+  replyTo: clientData.email !== 'N/A' ? clientData.email : adminEmail,
+  subject: EMAIL_SUBJECTS.admin(
+    moderation.subjectPrefix,
+    clientData.name,
+    requestData.helpCategory
+  ),
+  htmlBody: adminHtmlBody
+});
 
   return true;
 }
@@ -557,7 +561,10 @@ function sendClientConfirmation(payload, displaySchema, adminEmail) {
   MailApp.sendEmail({
     to: clientData.email,
     replyTo: adminEmail,
-    subject: 'We received your request — RD3 Tech',
+    subject: EMAIL_SUBJECTS.client(
+      clientData.name,
+      requestData.helpCategory
+    ),
     htmlBody: clientHtmlBody
   });
 
