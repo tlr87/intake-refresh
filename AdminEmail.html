@@ -548,12 +548,14 @@
                     <tr>
                       <th>Need Help with:</th>
                       <td>
-                        <strong><?= (safeReq.helpCategory || 'Not specified').replace(/^Help with\s+/i, '') ?></strong>
+                        <strong><?= (safeReq.helpCategory || 'Not specified') ?></strong>
                       </td>
                     </tr>
                     <tr>
                       <th>What Are You Trying To Achieve?</th>
-                      <td style="white-space:pre-wrap;"><?= safeReq.userGoal || 'No description provided.' ?></td>
+                      <td style="white-space:pre-wrap;">
+                        <?= safeReq.userGoal || 'No description provided.' ?>
+                      </td>
                     </tr>
                   </table>
 

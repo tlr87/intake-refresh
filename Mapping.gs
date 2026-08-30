@@ -28,8 +28,6 @@ const EMAIL_SUBJECTS = {
     `Thanks ${clientName || 'there'}, we’ll be in touch to help! | ${helpCategory} | RD3 Tech`
 };
 
-
-
 const FIELD_SCHEMA = [
 
   // ==========================================================================
@@ -42,7 +40,7 @@ const FIELD_SCHEMA = [
 
     // Google Form
     title: 'Name',
-    entryId: 'entry.776532163',
+    entryId: 'entry.943904063',
     type: 'text',
 
     // Application
@@ -61,7 +59,7 @@ const FIELD_SCHEMA = [
 
     // Google Form
     title: 'Email',
-    entryId: 'entry.1530707551',
+    entryId: 'entry.2015577610',
     type: 'text',
 
     // Application
@@ -80,7 +78,7 @@ const FIELD_SCHEMA = [
 
     // Google Form
     title: 'Phone',
-    entryId: 'entry.2118395637',
+    entryId: 'entry.38229443',
     type: 'text',
 
     // Application
@@ -98,8 +96,8 @@ const FIELD_SCHEMA = [
     formField: 'form_location',
 
     // Google Form
-    title: 'Address / Location',
-    entryId: 'entry.1366120320',
+    title: 'Address / Location:',
+    entryId: 'entry.1374165657',
     type: 'text',
 
     // Application
@@ -119,8 +117,8 @@ const FIELD_SCHEMA = [
 
     // Google Form
     title: 'How would you prefer us to contact you?',
-    entryId: 'entry.1955012690',
-    type: 'multiple_choice',
+    entryId: 'entry.786887502',
+    type: 'dropdown',
 
     // Application
     aliases: [
@@ -141,8 +139,8 @@ const FIELD_SCHEMA = [
 
     // Google Form
     title: 'I am contacting RD3 Tech as:',
-    entryId: 'entry.480241942',
-    type: 'multiple_choice',
+    entryId: 'entry.1187723509',
+    type: 'dropdown',
 
     // Application
     aliases: [
@@ -162,8 +160,8 @@ const FIELD_SCHEMA = [
 
     // Google Form
     title: 'Have you used RD3 Tech before?',
-    entryId: 'entry.1871615748',
-    type: 'multiple_choice',
+    entryId: 'entry.1059088719',
+    type: 'dropdown',
 
     // Application
     aliases: [
@@ -187,9 +185,9 @@ const FIELD_SCHEMA = [
     formField: 'form_helpCategory',
 
     // Google Form
-    title: 'What Can We Help You With?',
-    entryId: 'entry.1402987091',
-    type: 'checkbox',
+    title: 'What can we help you with?',
+    entryId: 'entry.534946962',
+    type: 'dropdown',
 
     // Application
     aliases: [
@@ -209,7 +207,7 @@ const FIELD_SCHEMA = [
 
     // Google Form
     title: 'What Are You Trying To Achieve?',
-    entryId: 'entry.785917515',
+    entryId: 'entry.1272748221',
     type: 'paragraph',
 
     // Application
@@ -232,8 +230,8 @@ const FIELD_SCHEMA = [
 
     // Google Form
     title: 'How Urgent Is This For You?',
-    entryId: 'entry.790093298',
-    type: 'multiple_choice',
+    entryId: 'entry.1183805901',
+    type: 'dropdown',
 
     // Application
     aliases: [
@@ -256,8 +254,8 @@ const FIELD_SCHEMA = [
     formField: 'form_honeypot',
 
     // Google Form
-    title: 'Security Check',
-    entryId: 'entry.313042228',
+    title: 'Website URL  \n\n\nSecurity Check: Please leave this field empty.',
+    entryId: 'entry.663587071',
     type: 'text',
 
     // Application
@@ -272,9 +270,10 @@ const FIELD_SCHEMA = [
     label: 'Honeypot',
     section: 'security',
     default: ''
-  }
+  },
 
 ];
+
 
 
 /**

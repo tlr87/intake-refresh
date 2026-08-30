@@ -363,21 +363,23 @@
                   <!-- Request -->
                   <div class="section-title">What You Asked Us About</div>
 
-                  <table class="table">
-                    <tr>
-                      <th>Need Help With</th>
-                      <td>
-                        <strong>
-                          <?= (safeReq.helpCategory || 'Not specified').replace(/^Help with\s+/i, '') ?>
-                        </strong>
-                      </td>
-                    </tr>
-
-                    <tr>
-                      <th>What Are You Trying To Achieve?</th>
-                      <td style="white-space:pre-wrap;"><?= safeReq.userGoal || 'No description provided.' ?></td>
-                    </tr>
-                  </table>
+                <table class="table">
+                  <tr>
+                    <th>Need Help With</th>
+                    <td>
+                      <strong>
+                        <?= (safeReq.helpCategory || 'Not specified') ?>
+                      </strong>
+                    </td>
+                  </tr>
+                
+                  <tr>
+                    <th>What Are You Trying To Achieve?</th>
+                    <td style="white-space:pre-wrap;">
+                      <?= safeReq.userGoal || 'No description provided.' ?>
+                    </td>
+                  </tr>
+                </table>
 
                   <!-- WHAT HAPPENS NEXT -->
                   <div class="section-title">What Happens Next?</div>
