@@ -11,7 +11,7 @@ function getFallbackReviewConfig() {
     },
     "categories": {
       "outOfScope": [
-        "tv", "TV", "Tuned", "Tv Tuned", "crypto", "seo", "guest post",
+        "TV", "Tuned", "Tv Tuned", "crypto", "seo", "guest post",
         "backlinks", "rankings", "partnership", "TV screen", "TV panel",
         "Display fault", "TV power failure", "Internal TV component",
         "Antenna", "TV reception", "Mobile phone screen", "Mobile phone battery",
