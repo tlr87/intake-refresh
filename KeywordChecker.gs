@@ -1,180 +1,376 @@
-/**
- * KeywordChecker.gs
- * Scans individual strings OR field data objects for out-of-scope keywords.
- */
 
 /**
- * Utility function to escape special Regex characters in keywords.
+ * ============================================================================
+ * KeywordChecker.gs
+ * ============================================================================
+ *
+ * Scans individual strings OR field data objects for out-of-scope keywords.
+ *
+ * REVIEW_CONFIG is loaded from Script Properties.
+ * If unavailable, getFallbackReviewConfig() is provided by:
+ *
+ *     FallbackReviewConfig.gs
+ *
+ * That file is the single source of truth for the fallback configuration.
+ * ============================================================================
+ */
+
+
+/**
+ * ============================================================================
+ * Escape special Regex characters
+ * ============================================================================
  */
 function escapeRegExp(string) {
   return String(string).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+
 /**
- * Scans user input or submission field objects for out-of-scope keywords.
- * 
- * @param {string|Object} inputToScan - Single text string OR object containing submission fields.
- * @param {Object} [reviewConfig] - Optional explicit configuration object.
- * @returns {Object} { needsReview: boolean, matchedKeywords: string[], scannedFields: string[] }
+ * ============================================================================
+ * Check Review Keywords
+ * ============================================================================
+ *
+ * Scans either:
+ *
+ *   - A single text string
+ *   - An object containing submission fields
+ *   - Nested objects / arrays
+ *
+ * Returns:
+ *
+ * {
+ *   needsReview: boolean,
+ *   matchedKeywords: string[],
+ *   scannedFields: string[]
+ * }
+ *
+ * @param {string|Object} inputToScan
+ * @param {Object} [reviewConfig]
+ * @returns {Object}
  */
 function checkReviewKeywords(inputToScan, reviewConfig) {
+
   const result = {
     needsReview: false,
     matchedKeywords: [],
     scannedFields: []
   };
 
-  if (!inputToScan) return result;
 
-  // 1. Fetch Configuration & Verify Review Flag
-  const config = reviewConfig || getReviewConfig();
-  if (config.settings && config.settings.enableReview === false) {
+  // --------------------------------------------------------------------------
+  // 1. Nothing to scan
+  // --------------------------------------------------------------------------
+
+  if (!inputToScan) {
     return result;
   }
 
-  const outOfScopeList = (config.categories && config.categories.outOfScope) 
-    ? config.categories.outOfScope 
-    : [];
 
-  if (outOfScopeList.length === 0) return result;
+  // --------------------------------------------------------------------------
+  // 2. Load configuration
+  // --------------------------------------------------------------------------
 
-  // 2. Safely extract all text recursively from nested objects or raw strings
-  let combinedTextParts = [];
+  const config =
+    reviewConfig ||
+    getReviewConfig();
+
+
+  // --------------------------------------------------------------------------
+  // 3. Check whether review checking is enabled
+  // --------------------------------------------------------------------------
+
+  if (
+    config.settings &&
+    config.settings.enableReview === false
+  ) {
+    return result;
+  }
+
+
+  // --------------------------------------------------------------------------
+  // 4. Get out-of-scope keyword list
+  // --------------------------------------------------------------------------
+
+  const outOfScopeList =
+    (
+      config.categories &&
+      Array.isArray(config.categories.outOfScope)
+    )
+      ? config.categories.outOfScope
+      : [];
+
+
+  if (outOfScopeList.length === 0) {
+    return result;
+  }
+
+
+  // --------------------------------------------------------------------------
+  // 5. Extract text recursively
+  // --------------------------------------------------------------------------
+
+  const combinedTextParts = [];
+
 
   function extractValues(obj) {
-    if (obj === null || obj === undefined) return;
-    if (typeof obj === 'string' || typeof obj === 'number') {
-      combinedTextParts.push(String(obj));
-    } else if (Array.isArray(obj)) {
-      obj.forEach(item => extractValues(item));
-    } else if (typeof obj === 'object') {
-      Object.keys(obj).forEach(key => {
+
+    if (
+      obj === null ||
+      obj === undefined
+    ) {
+      return;
+    }
+
+
+    // Strings and numbers are searchable values
+    if (
+      typeof obj === 'string' ||
+      typeof obj === 'number'
+    ) {
+
+      combinedTextParts.push(
+        String(obj)
+      );
+
+      return;
+    }
+
+
+    // Arrays may contain nested values
+    if (Array.isArray(obj)) {
+
+      obj.forEach(function (item) {
+        extractValues(item);
+      });
+
+      return;
+    }
+
+
+    // Objects may contain nested fields
+    if (typeof obj === 'object') {
+
+      Object.keys(obj).forEach(function (key) {
+
         result.scannedFields.push(key);
-        extractValues(obj[key]);
+
+        extractValues(
+          obj[key]
+        );
+
       });
     }
   }
 
+
   if (typeof inputToScan === 'string') {
-    combinedTextParts.push(inputToScan);
-    result.scannedFields.push('rawText');
+
+    combinedTextParts.push(
+      inputToScan
+    );
+
+    result.scannedFields.push(
+      'rawText'
+    );
+
   } else if (typeof inputToScan === 'object') {
-    extractValues(inputToScan);
+
+    extractValues(
+      inputToScan
+    );
   }
 
-  const fullTextToScan = combinedTextParts.join(' ').toLowerCase();
-  if (!fullTextToScan.trim()) return result;
 
-  // 3. Match against out-of-scope keywords
+  // --------------------------------------------------------------------------
+  // 6. Combine searchable text
+  // --------------------------------------------------------------------------
+
+  const fullTextToScan =
+    combinedTextParts
+      .join(' ')
+      .toLowerCase();
+
+
+  if (!fullTextToScan.trim()) {
+    return result;
+  }
+
+
+  // --------------------------------------------------------------------------
+  // 7. Normalise and de-duplicate keywords
+  // --------------------------------------------------------------------------
+
+  const uniqueKeywords = [
+    ...new Set(
+      outOfScopeList
+        .map(function (keyword) {
+          return String(keyword).trim();
+        })
+        .filter(Boolean)
+    )
+  ];
+
+
   const matched = [];
-  const uniqueKeywords = [...new Set(outOfScopeList.map(k => String(k).trim()))];
+
+
+  // --------------------------------------------------------------------------
+  // 8. Match keywords
+  // --------------------------------------------------------------------------
 
   for (const keyword of uniqueKeywords) {
-    if (!keyword) continue;
-    const cleanKw = keyword.toLowerCase();
-    
-    // Multi-word phrases use explicit string matching; single words use word boundaries (\b)
-    const isMultiWord = cleanKw.includes(' ') || cleanKw.includes('-');
-    const pattern = isMultiWord 
-      ? escapeRegExp(cleanKw) 
-      : '\\b' + escapeRegExp(cleanKw) + '\\b';
 
-    const regex = new RegExp(pattern, 'i');
-    if (regex.test(fullTextToScan)) {
-      matched.push(keyword);
+    const cleanKw =
+      keyword
+        .toLowerCase()
+        .trim();
+
+
+    if (!cleanKw) {
+      continue;
+    }
+
+
+    let pattern;
+
+
+    /*
+     * ------------------------------------------------------------------------
+     * Multi-word / hyphenated phrases
+     * ------------------------------------------------------------------------
+     *
+     * These variations are treated as equivalent:
+     *
+     *   TV panel
+     *   TV  panel
+     *   TV-panel
+     *   TV - panel
+     *   TV- panel
+     *   TV -panel
+     *
+     * The phrase must still remain contiguous.
+     */
+    const isMultiWord =
+      /\s/.test(cleanKw) ||
+      cleanKw.includes('-');
+
+
+    if (isMultiWord) {
+
+      const words =
+        cleanKw
+          .split(/[\s-]+/)
+          .filter(Boolean)
+          .map(escapeRegExp);
+
+
+      pattern =
+        '\\b' +
+        words.join('[\\s-]+') +
+        '\\b';
+
+
+    } else {
+
+      /*
+       * ----------------------------------------------------------------------
+       * Single-word phrases
+       * ----------------------------------------------------------------------
+       *
+       * Word boundaries prevent:
+       *
+       *   tv
+       *
+       * from matching:
+       *
+       *   activity
+       *   television-related text where "tv" is only part of another word
+       */
+      pattern =
+        '\\b' +
+        escapeRegExp(cleanKw) +
+        '\\b';
+    }
+
+
+    const regex =
+      new RegExp(
+        pattern,
+        'i'
+      );
+
+
+    if (
+      regex.test(fullTextToScan)
+    ) {
+
+      matched.push(
+        keyword
+      );
     }
   }
 
-  result.needsReview = matched.length > 0;
-  result.matchedKeywords = matched;
+
+  // --------------------------------------------------------------------------
+  // 9. Build final result
+  // --------------------------------------------------------------------------
+
+  result.needsReview =
+    matched.length > 0;
+
+
+  result.matchedKeywords =
+    matched;
+
 
   return result;
 }
 
+
 /**
- * Loads REVIEW_CONFIG from Script Properties or falls back to getFallbackReviewConfig()
+ * ============================================================================
+ * Load REVIEW_CONFIG
+ * ============================================================================
+ *
+ * Priority:
+ *
+ *   1. Script Properties → REVIEW_CONFIG
+ *   2. FallbackReviewConfig.gs → getFallbackReviewConfig()
+ *
+ * The fallback configuration is deliberately NOT defined in this file.
  */
 function getReviewConfig() {
-  const props = PropertiesService.getScriptProperties();
-  const raw = props.getProperty('REVIEW_CONFIG');
+
+  const props =
+    PropertiesService
+      .getScriptProperties();
+
+
+  const raw =
+    props.getProperty(
+      'REVIEW_CONFIG'
+    );
+
+
   if (raw) {
+
     try {
-      return JSON.parse(raw);
+
+      return JSON.parse(
+        raw
+      );
+
     } catch (e) {
-      Logger.log('Error parsing REVIEW_CONFIG: ' + e.message);
+
+      Logger.log(
+        'Error parsing REVIEW_CONFIG: ' +
+        e.message
+      );
     }
   }
+
+
   return getFallbackReviewConfig();
 }
 
-/**
- * Fallback configuration in case REVIEW_CONFIG is missing from ScriptProperties.
- */
-function getFallbackReviewConfig() {
-  return {
-    settings: {
-      enableReview: true
-    },
-    categories: {
-      outOfScope: [
-        "tv", "TV", "Tuned", "Tv Tuned", "crypto", "seo", "guest post",
-        "backlinks", "rankings", "partnership", "TV screen", "TV panel",
-        "Display fault", "TV power failure", "Internal TV component",
-        "Antenna", "TV reception", "Mobile phone screen", "Mobile phone battery",
-        "Charging port", "Water damage", "Tablet screen", "Soldering",
-        "Component-level electronics", "Console hardware", "PlayStation",
-        "Xbox", "Nintendo", "Appliance", "Whiteware", "Electrical wiring",
-        "General electronics", "Manufacturer warranty service"
-      ]
-    }
-  };
-}
-
-/**
- * TEST FUNCTION: Runs Review-Only test against AdminEmail template.
- */
-function testAdminEmailReviewOnly() {
-  const rawPayload = {
-    submissionDate: new Date().toLocaleString("en-US", { timeZone: "America/New_York" }),
-    client: {
-      name: "Jane Doe (Review Test)",
-      email: "jdoe@sample-inquiry.com",
-      phone: "+1 (555) 014-9922",
-      location: "450 Market Street, San Francisco, CA 94105",
-      preferredContact: "Email",
-      contactingAs: "Potential Client",
-      isPreviousCustomer: false
-    },
-    request: {
-      situation: "Help with TV panel display fault & Mobile phone battery",
-      goal: "My TV panel has a display fault. Do you handle Xbox console hardware repairs or Mobile phone battery replacements?",
-      timeframe: "Medium"
-    }
-  };
-
-  const reviewResult = checkReviewKeywords(rawPayload, getFallbackReviewConfig());
-
-  const secEval = {
-    isSpam: false,
-    requiresReview: reviewResult.needsReview,
-    reviewFlags: reviewResult.matchedKeywords
-  };
-
-  const template = HtmlService.createTemplateFromFile('AdminEmail');
-  template.submissionDate = rawPayload.submissionDate;
-  template.client = rawPayload.client;
-  template.request = rawPayload.request;
-  template.secEval = secEval;
-
-  const htmlBody = template.evaluate().getContent();
-  const recipient = Session.getActiveUser().getEmail();
-
-  MailApp.sendEmail({
-    to: recipient,
-    subject: "⚠️ TEST REVIEW ONLY: Out-of-Scope Keywords Detected",
-    htmlBody: htmlBody
-  });
-
-  Logger.log("Review Test Executed.");
-  Logger.log("Matched Keywords: " + JSON.stringify(reviewResult.matchedKeywords));
-}
