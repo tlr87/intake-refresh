@@ -112,7 +112,7 @@ function doGet(e) {
        */
       case 'reference':
       case 'ref':
-        return renderReference_();
+        return renderReference();
 
 
       /**
@@ -280,27 +280,30 @@ function renderJsonEditor_() {
  * RENDER REFERENCE
  * ============================================================================
  */
-function renderReference_() {
+function renderReference() {
 
   var template =
     HtmlService.createTemplateFromFile(
       'Reference'
     );
 
+  var data =
+    getInitialData();
+
+  template.fieldSchema =
+    data.FIELD_SCHEMA || {};
 
   template.webAppUrl =
-    getWebAppUrl_();
-
+    ScriptApp.getService().getUrl();
 
   return template
     .evaluate()
     .setTitle(
-      'RD3 Tech — Reference'
+      'RD3 Tech — Template Reference'
     )
     .setXFrameOptionsMode(
       HtmlService.XFrameOptionsMode.ALLOWALL
     );
-
 }
 
 
@@ -664,7 +667,7 @@ function testWebAppRouter() {
   try {
 
     var reference =
-      renderReference_();
+      renderReference();
 
     Logger.log(
       '✔ Reference: ' +
