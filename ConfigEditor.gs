@@ -1,12 +1,29 @@
+
 /**
  * ============================================================================
- * RD3 TECH — CONFIG EDITOR, ROUTER & STANDALONE FALLBACK PROVIDERS
+ * RD3 TECH — CONFIG EDITOR
  * ============================================================================
  *
- * FIELD_SCHEMA:
- *   - Stored in Script Properties as the PRIMARY source.
- *   - getFallbackFieldSchema() provides the DEFAULT/FALLBACK source.
- *   - The Config Editor can view, edit, save, and restore FIELD_SCHEMA.
+ * Responsibilities:
+ *
+ *   - Google Sheets custom menu
+ *   - Open Config Editor
+ *   - Read configuration
+ *   - Save configuration
+ *   - Restore individual configuration defaults
+ *   - Restore all configuration defaults
+ *
+ * Web-app routing:
+ *
+ *   WebAppRouter.gs
+ *
+ * Fallback providers:
+ *
+ *   ConfigFallbacks.gs
+ *
+ * Form automation:
+ *
+ *   FormUpdate.gs
  *
  * ============================================================================
  */
@@ -14,7 +31,7 @@
 
 /**
  * ============================================================================
- * Creates a custom UI Menu inside Google Sheets to launch the editor.
+ * GOOGLE SHEETS MENU
  * ============================================================================
  */
 function onOpen() {
@@ -33,7 +50,7 @@ function onOpen() {
 
 /**
  * ============================================================================
- * Opens the Configuration Editor.
+ * OPEN CONFIG EDITOR
  * ============================================================================
  */
 function openConfigEditor() {
@@ -79,13 +96,12 @@ function openConfigEditor() {
  * READ INITIAL CONFIGURATION DATA
  * ============================================================================
  *
- * Reads existing Script Properties WITHOUT wiping or automatically writing
- * fallback defaults.
+ * Existing Script Properties are loaded first.
  *
- * Fallbacks are supplied IN MEMORY only when the corresponding property
- * does not exist.
+ * If a known configuration property does not exist, its fallback provider
+ * supplies the value in memory only.
  *
- * FIELD_SCHEMA is included here and uses getFallbackFieldSchema().
+ * Fallback defaults are NOT automatically written here.
  * ============================================================================
  */
 function getInitialData() {
@@ -123,10 +139,6 @@ function getInitialData() {
   const parsedMap = {};
 
 
-  // --------------------------------------------------------------------------
-  // Process all existing Script Properties
-  // --------------------------------------------------------------------------
-
   Object.keys(rawProps).forEach(function(key) {
 
     try {
@@ -145,10 +157,6 @@ function getInitialData() {
 
   });
 
-
-  // --------------------------------------------------------------------------
-  // Supply fallbacks IN MEMORY ONLY if key does not exist.
-  // --------------------------------------------------------------------------
 
   Object.keys(fallbacks).forEach(function(key) {
 
@@ -171,11 +179,20 @@ function getInitialData() {
  * ============================================================================
  * SAVE CONFIGURATION DATA
  * ============================================================================
- *
- * Saves specific properties directly without calling deleteAllProperties().
- * ============================================================================
  */
 function saveAllConfigs(payload) {
+
+  if (
+    !payload ||
+    typeof payload !== 'object'
+  ) {
+
+    throw new Error(
+      'Invalid configuration payload.'
+    );
+
+  }
+
 
   const store =
     PropertiesService.getScriptProperties();
@@ -183,19 +200,15 @@ function saveAllConfigs(payload) {
 
   Object.keys(payload).forEach(function(key) {
 
-    const val =
+    const value =
       typeof payload[key] === 'string'
-
         ? payload[key]
-
-        : JSON.stringify(
-            payload[key]
-          );
+        : JSON.stringify(payload[key]);
 
 
     store.setProperty(
       key,
-      val
+      value
     );
 
   });
@@ -208,21 +221,7 @@ function saveAllConfigs(payload) {
 
 /**
  * ============================================================================
- * RESTORE HANDLER
- * ============================================================================
- *
- * Restores a configuration key from its canonical fallback provider.
- *
- * Supported fallback providers:
- *
- *   REVIEW_CONFIG
- *   URGENCY_CONFIG
- *   SPAM_CONFIG
- *   RATE_LIMIT_CONFIG
- *   FORM_CONFIG
- *   FIELD_SCHEMA
- *
- * The restored value is also written back to Script Properties.
+ * RESTORE ONE CONFIGURATION KEY
  * ============================================================================
  */
 function resetKeyToFallback(key) {
@@ -265,19 +264,19 @@ function resetKeyToFallback(key) {
 
   if (fallbackData !== null) {
 
+    const json =
+      JSON.stringify(fallbackData);
+
+
     PropertiesService
       .getScriptProperties()
       .setProperty(
         key,
-        JSON.stringify(
-          fallbackData
-        )
+        json
       );
 
 
-    return JSON.stringify(
-      fallbackData
-    );
+    return json;
 
   }
 
@@ -296,9 +295,7 @@ function resetKeyToFallback(key) {
  * ============================================================================
  *
  * WARNING:
- * This deletes ALL existing Script Properties before restoring the known
- * configuration defaults.
- *
+ * This intentionally deletes ALL Script Properties.
  * ============================================================================
  */
 function resetAllScriptPropertiesToDefault() {
@@ -349,972 +346,7 @@ function resetAllScriptPropertiesToDefault() {
     '✔ All Script Properties cleared and re-populated with defaults!'
   );
 
-}
 
-
-/**
- * ============================================================================
- * VALIDATION HANDLER
- * ============================================================================
- *
- * FIELD_SCHEMA is the single source of truth for form fields.
- *
- * FORM_CONFIG is used only for form-level settings such as formBaseUrl.
- *
- * IMPORTANT:
- * FIELD_SCHEMA is loaded from getInitialData(), meaning the validator uses
- * the same FIELD_SCHEMA that the Configuration Editor displays and edits.
- *
- * The fallback provider returns FIELD_SCHEMA as an object keyed by field name.
- * This function normalizes either:
- *
- *   Array
- *
- * or:
- *
- *   Object
- *
- * into an array for validation.
- * ============================================================================
- */
-function runFormValidationFromUi() {
-
-  const details = [];
-
-  let totalConfigured = 0;
-
-  let passed = 0;
-
-  let failed = 0;
-
-  let unaccounted = 0;
-
-
-  try {
-
-    const data =
-      getInitialData();
-
-
-    const formConfig =
-      data.FORM_CONFIG || {};
-
-
-    const formUrl =
-      formConfig.settings
-        ? formConfig.settings.formBaseUrl
-        : '';
-
-
-    if (!formUrl) {
-
-      throw new Error(
-        'No formBaseUrl configured in FORM_CONFIG settings.'
-      );
-
-    }
-
-
-    // ------------------------------------------------------------------------
-    // Load FIELD_SCHEMA from Script Properties / fallback.
-    // ------------------------------------------------------------------------
-
-    const fieldSchemaData =
-      data.FIELD_SCHEMA || {};
-
-
-    let fieldSchema;
-
-
-    if (Array.isArray(fieldSchemaData)) {
-
-      fieldSchema =
-        fieldSchemaData;
-
-    } else if (
-      typeof fieldSchemaData === 'object' &&
-      fieldSchemaData !== null
-    ) {
-
-      fieldSchema =
-        Object.keys(fieldSchemaData)
-          .map(function(key) {
-
-            return fieldSchemaData[key];
-
-          });
-
-    } else {
-
-      fieldSchema = [];
-
-    }
-
-
-    if (!Array.isArray(fieldSchema)) {
-
-      throw new Error(
-        'FIELD_SCHEMA is missing or could not be converted to an array.'
-      );
-
-    }
-
-
-    // ------------------------------------------------------------------------
-    // Extract Form ID from URL.
-    // ------------------------------------------------------------------------
-
-    const match =
-
-      formUrl.match(
-        /\/d\/e\/([^\/]+)\/viewform/
-      )
-
-      ||
-
-      formUrl.match(
-        /\/d\/([^\/]+)/
-      );
-
-
-    if (!match) {
-
-      throw new Error(
-        'Could not parse Form ID from formBaseUrl.'
-      );
-
-    }
-
-
-    let form;
-
-
-    try {
-
-      form =
-        FormApp.openById(
-          match[1]
-        );
-
-    } catch (err) {
-
-      throw new Error(
-        'Unable to open Google Form. Verify the Form ID and script permissions.'
-      );
-
-    }
-
-
-    const liveItems =
-      form.getItems();
-
-
-    const liveItemTitles =
-      liveItems.map(function(item) {
-
-        return String(
-          item.getTitle() || ''
-        )
-          .trim()
-          .toLowerCase();
-
-      });
-
-
-    totalConfigured =
-      fieldSchema.length;
-
-
-    details.push(
-      '--- FIELD_SCHEMA VERIFICATION ---'
-    );
-
-
-    details.push(
-      'Configured fields: ' +
-      totalConfigured
-    );
-
-
-    details.push(
-      'Live form items: ' +
-      liveItems.length
-    );
-
-
-    // ------------------------------------------------------------------------
-    // Validate every FIELD_SCHEMA entry against the live form.
-    // ------------------------------------------------------------------------
-
-    fieldSchema.forEach(function(field) {
-
-      if (
-        !field ||
-        typeof field !== 'object'
-      ) {
-
-        failed++;
-
-        details.push(
-          '✖ FAIL: Invalid FIELD_SCHEMA entry'
-        );
-
-        return;
-
-      }
-
-
-      const key =
-        field.key || '(missing key)';
-
-
-      const title =
-        String(
-          field.title || ''
-        )
-          .trim()
-          .toLowerCase();
-
-
-      const entryId =
-        String(
-          field.entryId || ''
-        )
-          .trim();
-
-
-      if (!title) {
-
-        failed++;
-
-
-        details.push(
-          '✖ FAIL [' +
-          key +
-          ']: Missing title'
-        );
-
-
-        return;
-
-      }
-
-
-      const foundInLive =
-        liveItemTitles.some(function(liveTitle) {
-
-          return (
-
-            liveTitle === title
-
-            ||
-
-            liveTitle.indexOf(title) !== -1
-
-            ||
-
-            title.indexOf(liveTitle) !== -1
-
-          );
-
-        });
-
-
-      if (foundInLive) {
-
-        passed++;
-
-
-        details.push(
-
-          '✔ PASS [' +
-          key +
-          ']: "' +
-          field.title +
-          '"' +
-
-          (
-
-            entryId
-              ? ' [' + entryId + ']'
-              : ''
-
-          )
-
-        );
-
-      } else {
-
-        failed++;
-
-
-        details.push(
-
-          '✖ FAIL [' +
-          key +
-          ']: "' +
-          field.title +
-          '" not found in live form'
-
-        );
-
-      }
-
-    });
-
-
-    // ------------------------------------------------------------------------
-    // Find live Form items that are not represented in FIELD_SCHEMA.
-    // ------------------------------------------------------------------------
-
-    details.push(
-      '\n--- UNACCOUNTED LIVE FORM ITEMS ---'
-    );
-
-
-    liveItems.forEach(function(item) {
-
-      const title =
-        String(
-          item.getTitle() || ''
-        );
-
-
-      const titleLower =
-        title
-          .trim()
-          .toLowerCase();
-
-
-      const isConfigured =
-        fieldSchema.some(function(field) {
-
-          if (
-            !field ||
-            typeof field !== 'object'
-          ) {
-
-            return false;
-
-          }
-
-
-          const configuredTitle =
-            String(
-              field.title || ''
-            )
-              .trim()
-              .toLowerCase();
-
-
-          if (!configuredTitle) {
-
-            return false;
-
-          }
-
-
-          return (
-
-            titleLower === configuredTitle
-
-            ||
-
-            titleLower.indexOf(
-              configuredTitle
-            ) !== -1
-
-            ||
-
-            configuredTitle.indexOf(
-              titleLower
-            ) !== -1
-
-          );
-
-        });
-
-
-      if (!isConfigured) {
-
-        unaccounted++;
-
-
-        details.push(
-
-          '⚠️ UNACCOUNTED: "' +
-          title +
-          '" (ID: ' +
-          item.getId() +
-          ')'
-
-        );
-
-      }
-
-    });
-
-
-  } catch (err) {
-
-    details.push(
-      'ERROR: ' +
-      err.message
-    );
-
-
-    failed =
-      totalConfigured;
-
-  }
-
-
-  return {
-
-    totalConfigured:
-      totalConfigured,
-
-    passed:
-      passed,
-
-    failed:
-      failed,
-
-    unaccounted:
-      unaccounted,
-
-    details:
-      details
-
-  };
-
-}
-
-
-/**
- * ============================================================================
- * KEYWORD EVALUATION ENGINE HANDLERS
- * ============================================================================
- */
-
-
-/**
- * Evaluates text against configured out-of-scope review keywords using
- * regex word boundaries.
- */
-function checkReviewKeywords(text, config) {
-
-  if (
-    !text ||
-    !config ||
-    !config.settings ||
-    !config.settings.enableReview
-  ) {
-
-    return {
-
-      needsReview:
-        false,
-
-      matchedKeywords:
-        []
-
-    };
-
-  }
-
-
-  const keywords =
-    config.categories
-      ? config.categories.outOfScope || []
-      : [];
-
-
-  const matched = [];
-
-
-  keywords.forEach(function(kw) {
-
-    const escapedKw =
-      kw.trim().replace(
-        /[.*+?^${}()|[\]\\]/g,
-        '\\$&'
-      );
-
-
-    const pattern =
-      new RegExp(
-        '\\b' +
-        escapedKw +
-        '\\b',
-        'i'
-      );
-
-
-    if (pattern.test(text)) {
-
-      matched.push(kw);
-
-    }
-
-  });
-
-
-  return {
-
-    needsReview:
-      matched.length > 0,
-
-    matchedKeywords:
-      matched
-
-  };
-
-}
-
-
-/**
- * Evaluates text against configured spam keywords.
- */
-function checkSpamKeywords(text, config) {
-
-  if (
-    !text ||
-    !config ||
-    !config.settings ||
-    !config.settings.enableSpamCheck
-  ) {
-
-    return {
-
-      isSpam:
-        false,
-
-      matchedKeywords:
-        []
-
-    };
-
-  }
-
-
-  const keywords =
-    config.categories
-      ? config.categories.spam || []
-      : [];
-
-
-  const matched = [];
-
-
-  keywords.forEach(function(kw) {
-
-    const lowerKw =
-      kw.toLowerCase().trim();
-
-
-    const lowerText =
-      text.toLowerCase();
-
-
-    if (
-      lowerKw.startsWith('http')
-    ) {
-
-      if (
-        lowerText.includes(lowerKw)
-      ) {
-
-        matched.push(kw);
-
-      }
-
-    } else {
-
-      const escapedKw =
-        lowerKw.replace(
-          /[.*+?^${}()|[\]\\]/g,
-          '\\$&'
-        );
-
-
-      const pattern =
-        new RegExp(
-          '\\b' +
-          escapedKw +
-          '\\b',
-          'i'
-        );
-
-
-      if (
-        pattern.test(lowerText)
-      ) {
-
-        matched.push(kw);
-
-      }
-
-    }
-
-  });
-
-
-  return {
-
-    isSpam:
-      matched.length > 0,
-
-    matchedKeywords:
-      matched
-
-  };
-
-}
-
-
-/**
- * ============================================================================
- * STANDALONE FALLBACK PROVIDER FUNCTIONS
- * ============================================================================
- */
-
-
-/**
- * ============================================================================
- * REVIEW CONFIG FALLBACK
- * ============================================================================
- */
-function getFallbackReviewConfig() {
-
-  return {
-
-    settings: {
-
-      enableReview:
-        true,
-
-      targetField:
-        'What Are You Trying To Achieve?',
-
-      flagSubjectPrefix:
-        '[FLAGGED] '
-
-    },
-
-    categories: {
-
-      outOfScope: [
-
-        'tv',
-        'TV',
-        'Tuned',
-        'Tv Tuned',
-        'crypto',
-        'seo',
-        'guest post',
-        'backlinks',
-        'rankings',
-        'partnership',
-        'TV screen',
-        'TV panel',
-        'Display fault',
-        'TV power failure',
-        'Internal TV component',
-        'Antenna',
-        'TV reception',
-        'Mobile phone screen',
-        'Mobile phone battery',
-        'Charging port',
-        'Water damage',
-        'Tablet screen',
-        'Soldering',
-        'Component-level electronics',
-        'Console hardware',
-        'PlayStation',
-        'Xbox',
-        'Nintendo',
-        'Appliance',
-        'Whiteware',
-        'Electrical wiring',
-        'General electronics',
-        'Manufacturer warranty service'
-
-      ]
-
-    }
-
-  };
-
-}
-
-
-/**
- * ============================================================================
- * URGENCY CONFIG FALLBACK
- * ============================================================================
- */
-function getUrgencyConfigFallback() {
-
-  return {
-
-    levels: [
-
-      'Low',
-      'Medium',
-      'High'
-
-    ],
-
-    defaultLevel:
-      'Medium'
-
-  };
-
-}
-
-
-/**
- * ============================================================================
- * SPAM CONFIG FALLBACK
- * ============================================================================
- */
-function getFallbackSpamConfig() {
-
-  return {
-
-    settings: {
-
-      enableSpamCheck:
-        true,
-
-      flagSubjectPrefix:
-        '[SPAM] '
-
-    },
-
-    categories: {
-
-      spam: [
-
-        'casino',
-        'viagra',
-        'crypto',
-        'bitcoin',
-        'guest post',
-        'backlinks',
-        'seo services',
-        'ranking #1',
-        'whatsapp',
-        'telegram',
-        'investment opportunity',
-        'make money online',
-        'http://',
-        'https://'
-
-      ]
-
-    }
-
-  };
-
-}
-
-
-/**
- * ============================================================================
- * RATE LIMIT CONFIG FALLBACK
- * ============================================================================
- */
-function getFallbackRateLimitConfig() {
-
-  return {
-
-    settings: {
-
-      enableRateLimiting:
-        true,
-
-      maxSubmissionsPerWindow:
-        5,
-
-      windowMinutes:
-        60,
-
-      lockoutMinutes:
-        120
-
-    }
-
-  };
-
-}
-
-
-/**
- * ============================================================================
- * WEB APP ROUTER
- * ============================================================================
- */
-function doGet(e) {
-
-  const isApiRequest =
-
-    e &&
-    e.parameter &&
-
-    (
-      e.parameter.api === 'true' ||
-      e.parameter.mode === 'api'
-    );
-
-
-  if (isApiRequest) {
-
-    return ContentService
-
-      .createTextOutput(
-        JSON.stringify({
-
-          status:
-            'active',
-
-          service:
-            'RD3 Tech Web App API'
-
-        })
-      )
-
-      .setMimeType(
-        ContentService.MimeType.JSON
-      );
-
-  }
-
-
-  const userEmail =
-    Session
-      .getActiveUser()
-      .getEmail();
-
-
-  const allowedUsers = [
-
-    'tom@rd3tech.com',
-
-    'tom.revill@gmail.com'
-
-  ];
-
-
-  if (
-    allowedUsers.length > 0 &&
-    allowedUsers.indexOf(userEmail) === -1
-  ) {
-
-    return HtmlService
-
-      .createHtmlOutput(
-
-        "<div style='font-family:sans-serif; padding:20px; color:#ef4444; background:#0f172a; height:100vh;'>" +
-
-          "<h2>🚫 Access Denied</h2>" +
-
-          "<p>User <b>" +
-            (userEmail || 'Anonymous') +
-            "</b> is not authorized to access this configuration editor.</p>" +
-
-        "</div>"
-
-      );
-
-  }
-
-
-  const template =
-    HtmlService
-      .createTemplateFromFile('Index');
-
-
-  template.initialDataJson =
-    JSON.stringify(
-      getInitialData()
-    );
-
-
-  return template
-
-    .evaluate()
-
-    .setWidth(920)
-
-    .setHeight(720)
-
-    .setTitle(
-      'RD3 Tech — Configuration JSON Editor'
-    )
-
-    .setXFrameOptionsMode(
-      HtmlService.XFrameOptionsMode.ALLOWALL
-    );
-
-}
-
-
-/**
- * ============================================================================
- * CONSOLE TEST ROUTER
- * ============================================================================
- */
-function testDoGetRouting() {
-
-  const result =
-    doGet({});
-
-
-  Logger.log(
-    '=== DOGET TEST RESULT ==='
-  );
-
-
-  Logger.log(
-    'Content Type: ' +
-    result.getContent()
-  );
-
-
-  if (
-    result
-      .getContent()
-      .indexOf(
-        'RD3 Tech Web App API'
-      ) !== -1
-  ) {
-
-    Logger.log(
-      '❌ CRITICAL: doGet is hitting an old API handler or duplicate function!'
-    );
-
-  } else if (
-
-    result
-      .getContent()
-      .indexOf(
-        'Access Denied'
-      ) !== -1
-
-  ) {
-
-    Logger.log(
-      '⚠️ Access Denied triggered (Session email empty in test execution context). UI code path is ACTIVE.'
-    );
-
-  } else {
-
-    Logger.log(
-      '✔ SUCCESS: doGet successfully returned the HTML Config Editor UI!'
-    );
-
-  }
+  return true;
 
 }
