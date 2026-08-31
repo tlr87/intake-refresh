@@ -3,34 +3,59 @@
  * RD3 TECH — AUTOMATION ENGINE
  * ============================================================================
  *
- * PURPOSE
- * -------
- * Read the live Google Form and compare it against DRAFT_FIELD_SCHEMA.
+ * FORM → DRAFT_FIELD_SCHEMA SYNCHRONISATION
  *
- * CURRENT STAGE
- * -------------
+ * WORKFLOW
+ * --------
  *
- *     GOOGLE FORM
- *          ↓
- *     AUTOMATION
- *          ↓
- *     DRAFT_FIELD_SCHEMA
- *          ↓
- *     COMPARISON / TEST
+ *   1. backupForm()
+ *   2. checkFormSync()
+ *   3. approveFormSync()
+ *   4. applyFormSync()
+ *   5. verifyFormSync()
+ *
+ *
+ * SCRIPT PROPERTIES
+ * -----------------
+ *
+ *   DRAFT_FIELD_SCHEMA
+ *       Current working schema stored as JSON.
+ *
+ *   BACKUP_DRAFT_FIELD_SCHEMA
+ *       Backup of DRAFT_FIELD_SCHEMA before an apply.
+ *
+ *   RD3_FORM_SYNC_PLAN
+ *       Current approved/unapproved sync plan.
+ *
  *
  * IMPORTANT
  * ---------
- * THIS VERSION DOES NOT WRITE ANYTHING.
  *
- * It does NOT modify:
- *   - FIELD_SCHEMA
- *   - Mapping.gs
- *   - MappingDraft.gs
- *   - ClientEmail
- *   - AdminEmail
- *   - email templates
- *   - Google Form
- *   - Google Sheet
+ * DRAFT_FIELD_SCHEMA is NOT rewritten in the Apps Script source.
+ *
+ * The JavaScript source contains INITIAL_DRAFT_FIELD_SCHEMA only as the
+ * initial seed if the DRAFT_FIELD_SCHEMA Script Property does not exist.
+ *
+ * Once DRAFT_FIELD_SCHEMA exists in Script Properties, that JSON is the
+ * working schema.
+ *
+ *
+ * SYNC RULES
+ * ----------
+ *
+ * 1. Existing Form questions are matched using entryId.
+ *
+ * 2. Existing application keys are preserved.
+ *
+ * 3. Changed Form titles update the schema title/label.
+ *
+ * 4. New Form questions are added to the schema.
+ *
+ * 5. Removed Form questions are removed from the working schema.
+ *
+ * 6. BACKUP_DRAFT_FIELD_SCHEMA preserves the previous schema before apply.
+ *
+ * 7. verifyFormSync() expects the Form and DRAFT_FIELD_SCHEMA to match.
  *
  * ============================================================================
  */
@@ -40,152 +65,861 @@
  * CONFIGURATION
  * ========================================================================== */
 
-const AUTOMATION_CONFIG = {
+var AUTOMATION_CONFIG = {
 
-  name: 'RD3 TECH — FORM → DRAFT SCHEMA',
+  draftPropertyKey:
+    'DRAFT_FIELD_SCHEMA',
 
-  draftSchemaName: 'DRAFT_FIELD_SCHEMA',
+  backupPropertyKey:
+    'BACKUP_DRAFT_FIELD_SCHEMA',
 
-  stopOnFirstDifference: false
+  syncPlanPropertyKey:
+    'RD3_FORM_SYNC_PLAN',
+
+  requireApproval:
+    true
 
 };
 
 
 /* ============================================================================
- * PUBLIC ENTRY POINT
+ * INITIAL DRAFT FIELD SCHEMA
+ * ============================================================================
+ *
+ * This is ONLY used if DRAFT_FIELD_SCHEMA does not yet exist in
+ * Script Properties.
+ *
+ * Once DRAFT_FIELD_SCHEMA exists, Script Properties becomes the working copy.
+ * ========================================================================== */
+
+var INITIAL_DRAFT_FIELD_SCHEMA = [
+
+  /* --------------------------------------------------------------------------
+   * CLIENT
+   * ------------------------------------------------------------------------ */
+
+  {
+    key: 'name',
+    formField: 'form_name',
+    title: 'Name',
+    entryId: 'entry.943904063',
+    type: 'text',
+    aliases: [
+      'name',
+      'full name'
+    ],
+    label: 'Full Name',
+    section: 'client',
+    default: 'Not provided'
+  },
+
+  {
+    key: 'email',
+    formField: 'form_email',
+    title: 'Email',
+    entryId: 'entry.2015577610',
+    type: 'text',
+    aliases: [
+      'email',
+      'email address'
+    ],
+    label: 'Email Address',
+    section: 'client',
+    default: 'Not provided'
+  },
+
+  {
+    key: 'phone',
+    formField: 'form_phone',
+    title: 'Phone',
+    entryId: 'entry.38229443',
+    type: 'text',
+    aliases: [
+      'phone',
+      'phone number'
+    ],
+    label: 'Phone Number',
+    section: 'client',
+    default: 'Not provided'
+  },
+
+  {
+    key: 'location',
+    formField: 'form_location',
+    title: 'Address / Location:',
+    entryId: 'entry.1374165657',
+    type: 'text',
+    aliases: [
+      'location',
+      'address',
+      'address / location'
+    ],
+    label: 'Location / Address',
+    section: 'client',
+    default: 'Not provided'
+  },
+
+  {
+    key: 'contactPreference',
+    formField: 'form_contactPreference',
+    title: 'How would you prefer us to contact you?',
+    entryId: 'entry.786887502',
+    type: 'dropdown',
+    aliases: [
+      'contactPreference',
+      'preferredContact',
+      'how would you prefer us to contact you',
+      'prefer us to contact',
+      'preferred contact'
+    ],
+    label: 'Preferred Contact',
+    section: 'client',
+    default: 'Not provided'
+  },
+
+  {
+    key: 'contactingAs',
+    formField: 'form_clientType',
+    title: 'I am contacting RD3 Tech as:',
+    entryId: 'entry.1187723509',
+    type: 'dropdown',
+    aliases: [
+      'clientType',
+      'contactingAs',
+      'i am contacting rd3 tech as',
+      'contacting as'
+    ],
+    label: 'Contacting As',
+    section: 'client',
+    default: 'Not provided'
+  },
+
+  {
+    key: 'usedBefore',
+    formField: 'form_usedBefore',
+    title: 'Have you used RD3 Tech before?',
+    entryId: 'entry.1059088719',
+    type: 'dropdown',
+    aliases: [
+      'usedBefore',
+      'have you used rd3 tech before',
+      'previous customer',
+      'used before'
+    ],
+    label: 'Previous Customer',
+    section: 'client',
+    default: 'No'
+  },
+
+
+  /* --------------------------------------------------------------------------
+   * REQUEST
+   * ------------------------------------------------------------------------ */
+
+  {
+    key: 'helpCategory',
+    formField: 'form_helpCategory',
+    title: 'What can we help you with?',
+    entryId: 'entry.534946962',
+    type: 'dropdown',
+    aliases: [
+      'helpCategory',
+      'what can we help you with',
+      'need help with',
+      'help with'
+    ],
+    label: 'Need Help With',
+    section: 'request',
+    default: 'Not specified'
+  },
+
+  {
+    key: 'userGoal',
+    formField: 'form_userGoal',
+    title: 'What Are You Trying To Achieve?',
+    entryId: 'entry.1272748221',
+    type: 'paragraph',
+    aliases: [
+      'userGoal',
+      'goal',
+      'details',
+      'what are you trying to achieve',
+      'trying to achieve',
+      'desired outcome'
+    ],
+    label: 'Desired Outcome / Goal',
+    section: 'request',
+    default: 'Not specified'
+  },
+
+  {
+    key: 'urgency',
+    formField: 'form_urgency',
+    title: 'How Urgent Is This For You?',
+    entryId: 'entry.1183805901',
+    type: 'dropdown',
+    aliases: [
+      'urgency',
+      'how urgent is this for you',
+      'how urgent'
+    ],
+    label: 'How Urgent Is This?',
+    section: 'request',
+    default: 'Medium'
+  },
+
+
+  /* --------------------------------------------------------------------------
+   * HONEYPOT
+   * ------------------------------------------------------------------------ */
+
+  {
+    key: 'honeypot',
+    formField: 'form_honeypot',
+    title:
+      'Website URL  \n\n\nSecurity Check: Please leave this field empty.',
+    entryId: 'entry.663587071',
+    type: 'text',
+    aliases: [
+      'website url',
+      'security check',
+      'please leave this field empty',
+      'leave blank',
+      'honeypot'
+    ],
+    label: 'Honeypot',
+    section: 'security',
+    default: ''
+  }
+
+];
+
+
+/* ============================================================================
+ * PUBLIC FUNCTION #1
+ * BACKUP FORM
  * ========================================================================== */
 
 /**
- * ============================================================================
- * SYNC FORM TO DRAFT SCHEMA — DRY RUN
- * ============================================================================
+ * Creates a JSON backup of the current DRAFT_FIELD_SCHEMA.
  *
- * Reads the live Google Form.
+ * Run this before applying a sync if you want an explicit backup.
  *
- * Reads DRAFT_FIELD_SCHEMA.
- *
- * Compares:
- *   - title
- *   - entryId
- *   - type
- *
- * Nothing is written.
+ * applyFormSync() also performs a backup automatically.
  */
-function syncFormToDraftSchema() {
+function backupForm() {
 
-  Logger.log('============================================================');
-  Logger.log('RD3 TECH — FORM → DRAFT SCHEMA DRY RUN');
-  Logger.log('============================================================');
+  Logger.log('');
+  Logger.log(
+    '============================================================'
+  );
+  Logger.log(
+    'RD3 TECH — BACKUP FORM'
+  );
+  Logger.log(
+    '============================================================'
+  );
+  Logger.log('');
+
+  var currentSchema =
+    getDraftFieldSchema_();
+
+  if (!Array.isArray(currentSchema)) {
+
+    throw new Error(
+      'Cannot create backup because DRAFT_FIELD_SCHEMA is not an array.'
+    );
+
+  }
+
+  var backup =
+    JSON.stringify(
+      currentSchema
+    );
+
+  PropertiesService
+    .getScriptProperties()
+    .setProperty(
+      AUTOMATION_CONFIG.backupPropertyKey,
+      backup
+    );
+
+  Logger.log(
+    '✅ BACKUP CREATED'
+  );
+
+  Logger.log(
+    'Property: ' +
+    AUTOMATION_CONFIG.backupPropertyKey
+  );
+
+  Logger.log(
+    'Fields backed up: ' +
+    currentSchema.length
+  );
+
+  Logger.log(
+    'JSON size: ' +
+    backup.length +
+    ' characters'
+  );
+
+  Logger.log(
+    '============================================================'
+  );
+
+  return currentSchema;
+}
+
+
+/* ============================================================================
+ * PUBLIC FUNCTION #2
+ * CHECK FORM SYNC
+ * ========================================================================== */
+
+function checkFormSync() {
+
+  Logger.log('');
+  Logger.log(
+    '============================================================'
+  );
+  Logger.log(
+    'RD3 TECH — CHECK FORM SYNC'
+  );
+  Logger.log(
+    '============================================================'
+  );
+
+  var formData =
+    readCurrentForm_();
+
+  var draftSchema =
+    getDraftFieldSchema_();
+
+  var comparison =
+    compareFormToDraftSchema_(
+      formData.fields,
+      draftSchema
+    );
+
+  logSyncPlan_(
+    comparison
+  );
+
+  saveSyncPlan_(
+    comparison
+  );
+
+  Logger.log('');
+
+  if (comparison.passed) {
+
+    Logger.log(
+      '✅ FORM AND DRAFT_FIELD_SCHEMA ARE ALIGNED'
+    );
+
+  } else {
+
+    Logger.log(
+      '⚠️ SYNC REQUIRED'
+    );
+
+    Logger.log(
+      'Review the changes.'
+    );
+
+    Logger.log(
+      'Then run approveFormSync().'
+    );
+
+  }
+
+  Logger.log(
+    '============================================================'
+  );
+
+  return comparison;
+}
+
+
+/* ============================================================================
+ * PUBLIC FUNCTION #3
+ * APPROVE
+ * ========================================================================== */
+
+function approveFormSync() {
+
+  Logger.log('');
+  Logger.log(
+    '============================================================'
+  );
+  Logger.log(
+    'RD3 TECH — APPROVE FORM SYNC'
+  );
+  Logger.log(
+    '============================================================'
+  );
+
+  var plan =
+    getSavedSyncPlan_();
+
+  if (!plan) {
+
+    throw new Error(
+      'No sync plan exists. Run checkFormSync() first.'
+    );
+
+  }
+
+  if (plan.passed) {
+
+    Logger.log(
+      '✅ NO CHANGES REQUIRE APPROVAL'
+    );
+
+    return plan;
+
+  }
+
+  plan.approved =
+    true;
+
+  plan.approvedAt =
+    new Date().toISOString();
+
+  saveSyncPlan_(
+    plan
+  );
+
+  Logger.log('');
+  Logger.log(
+    '✅ FORM SYNC APPROVED'
+  );
+
+  Logger.log(
+    'You can now run applyFormSync().'
+  );
+
+  Logger.log(
+    '============================================================'
+  );
+
+  return plan;
+}
+
+
+/* ============================================================================
+ * PUBLIC FUNCTION #4
+ * APPLY
+ * ========================================================================== */
+
+function applyFormSync() {
+
+  Logger.log('');
+  Logger.log(
+    '============================================================'
+  );
+  Logger.log(
+    'RD3 TECH — APPLY FORM SYNC'
+  );
+  Logger.log(
+    '============================================================'
+  );
+
+  var plan =
+    getSavedSyncPlan_();
+
+  if (!plan) {
+
+    throw new Error(
+      'No sync plan exists. Run checkFormSync() first.'
+    );
+
+  }
+
+  if (plan.passed) {
+
+    Logger.log(
+      '✅ NO CHANGES REQUIRED'
+    );
+
+    return getDraftFieldSchema_();
+
+  }
+
+  if (
+    AUTOMATION_CONFIG.requireApproval &&
+    plan.approved !== true
+  ) {
+
+    throw new Error(
+      'FORM SYNC HAS NOT BEEN APPROVED. ' +
+      'Run approveFormSync() first.'
+    );
+
+  }
+
+
+  /* --------------------------------------------------------------------------
+   * STEP 1 — BACKUP CURRENT SCHEMA
+   * ------------------------------------------------------------------------ */
+
+  backupForm();
+
+
+  /* --------------------------------------------------------------------------
+   * STEP 2 — VERIFY BACKUP
+   * ------------------------------------------------------------------------ */
+
+  var backup =
+    getBackupDraftFieldSchema_();
+
+  var currentSchema =
+    getDraftFieldSchema_();
+
+  if (
+    JSON.stringify(backup) !==
+    JSON.stringify(currentSchema)
+  ) {
+
+    throw new Error(
+      'Backup verification failed. ' +
+      'DRAFT_FIELD_SCHEMA was NOT changed.'
+    );
+
+  }
+
+  Logger.log('');
+  Logger.log(
+    '✅ CURRENT SCHEMA BACKUP VERIFIED'
+  );
+
+
+  /* --------------------------------------------------------------------------
+   * STEP 3 — BUILD UPDATED SCHEMA
+   * ------------------------------------------------------------------------ */
+
+  var updatedSchema =
+    buildUpdatedDraftSchema_(
+      currentSchema,
+      plan
+    );
+
+
+  /* --------------------------------------------------------------------------
+   * STEP 4 — SAVE DIRECTLY TO SCRIPT PROPERTY
+   * ------------------------------------------------------------------------ */
+
+  saveDraftFieldSchema_(
+    updatedSchema
+  );
+
+
+  /* --------------------------------------------------------------------------
+   * STEP 5 — READ BACK AND VERIFY WRITE
+   * ------------------------------------------------------------------------ */
+
+  var savedSchema =
+    getDraftFieldSchema_();
+
+  if (
+    JSON.stringify(savedSchema) !==
+    JSON.stringify(updatedSchema)
+  ) {
+
+    throw new Error(
+      'DRAFT_FIELD_SCHEMA write verification failed.'
+    );
+
+  }
+
+
+  /* --------------------------------------------------------------------------
+   * STEP 6 — MARK PLAN APPLIED
+   * ------------------------------------------------------------------------ */
+
+  plan.applied =
+    true;
+
+  plan.appliedAt =
+    new Date().toISOString();
+
+  saveSyncPlan_(
+    plan
+  );
+
+
+  Logger.log('');
+  Logger.log(
+    '============================================================'
+  );
+
+  Logger.log(
+    '✅ DRAFT_FIELD_SCHEMA UPDATED'
+  );
+
+  Logger.log(
+    'Fields now stored: ' +
+    savedSchema.length
+  );
+
+  Logger.log(
+    'Property: DRAFT_FIELD_SCHEMA'
+  );
+
+  Logger.log('');
+
+  Logger.log(
+    'No Apps Script source code was modified.'
+  );
+
+  Logger.log(
+    'No UrlFetchApp was used.'
+  );
+
+  Logger.log(
+    'No Apps Script API was used.'
+  );
+
+  Logger.log(
+    '============================================================'
+  );
+
+  return savedSchema;
+}
+
+
+/* ============================================================================
+ * PUBLIC FUNCTION #5
+ * VERIFY
+ * ========================================================================== */
+
+function verifyFormSync() {
+
+  Logger.log('');
+  Logger.log(
+    '============================================================'
+  );
+  Logger.log(
+    'RD3 TECH — VERIFY FORM SYNC'
+  );
+  Logger.log(
+    '============================================================'
+  );
+
+  var formData =
+    readCurrentForm_();
+
+  var draftSchema =
+    getDraftFieldSchema_();
+
+  var comparison =
+    compareFormToDraftSchema_(
+      formData.fields,
+      draftSchema
+    );
+
+  logSyncPlan_(
+    comparison
+  );
+
+  Logger.log('');
+
+  if (comparison.passed) {
+
+    Logger.log(
+      '============================================================'
+    );
+
+    Logger.log(
+      '✅ VERIFY PASSED'
+    );
+
+    Logger.log(
+      'FORM AND DRAFT_FIELD_SCHEMA ARE ALIGNED'
+    );
+
+    Logger.log(
+      '============================================================'
+    );
+
+  } else {
+
+    Logger.log(
+      '============================================================'
+    );
+
+    Logger.log(
+      '❌ VERIFY FAILED'
+    );
+
+    Logger.log(
+      'FORM AND DRAFT_FIELD_SCHEMA ARE STILL DIFFERENT'
+    );
+
+    Logger.log(
+      '============================================================'
+    );
+
+  }
+
+  return comparison;
+}
+
+
+/* ============================================================================
+ * GET DRAFT FIELD SCHEMA
+ * ========================================================================== */
+
+function getDraftFieldSchema_() {
+
+  var properties =
+    PropertiesService
+      .getScriptProperties();
+
+  var stored =
+    properties.getProperty(
+      AUTOMATION_CONFIG.draftPropertyKey
+    );
+
+
+  /* --------------------------------------------------------------------------
+   * EXISTING SCRIPT PROPERTY
+   * ------------------------------------------------------------------------ */
+
+  if (stored) {
+
+    try {
+
+      var parsed =
+        JSON.parse(
+          stored
+        );
+
+      if (!Array.isArray(parsed)) {
+
+        throw new Error(
+          'DRAFT_FIELD_SCHEMA JSON is not an array.'
+        );
+
+      }
+
+      return parsed;
+
+    } catch (error) {
+
+      throw new Error(
+        'Unable to parse DRAFT_FIELD_SCHEMA.\n' +
+        error.message
+      );
+
+    }
+
+  }
+
+
+  /* --------------------------------------------------------------------------
+   * FIRST RUN
+   * ------------------------------------------------------------------------ */
+
+  var initial =
+    JSON.parse(
+      JSON.stringify(
+        INITIAL_DRAFT_FIELD_SCHEMA
+      )
+    );
+
+  saveDraftFieldSchema_(
+    initial
+  );
+
+  Logger.log(
+    'ℹ️ DRAFT_FIELD_SCHEMA did not exist.'
+  );
+
+  Logger.log(
+    'Initial schema copied into Script Properties.'
+  );
+
+  return initial;
+}
+
+
+/* ============================================================================
+ * SAVE DRAFT FIELD SCHEMA
+ * ========================================================================== */
+
+function saveDraftFieldSchema_(
+  schema
+) {
+
+  if (!Array.isArray(schema)) {
+
+    throw new Error(
+      'DRAFT_FIELD_SCHEMA must be an array.'
+    );
+
+  }
+
+  var json =
+    JSON.stringify(
+      schema
+    );
+
+  PropertiesService
+    .getScriptProperties()
+    .setProperty(
+      AUTOMATION_CONFIG.draftPropertyKey,
+      json
+    );
+}
+
+
+/* ============================================================================
+ * GET BACKUP
+ * ========================================================================== */
+
+function getBackupDraftFieldSchema_() {
+
+  var stored =
+    PropertiesService
+      .getScriptProperties()
+      .getProperty(
+        AUTOMATION_CONFIG.backupPropertyKey
+      );
+
+  if (!stored) {
+
+    throw new Error(
+      'BACKUP_DRAFT_FIELD_SCHEMA does not exist.'
+    );
+
+  }
 
   try {
 
-    /* ------------------------------------------------------------------------
-     * READ LIVE FORM
-     * ---------------------------------------------------------------------- */
-
-    var formData = readCurrentFormForAutomation_();
-
-    Logger.log(
-      'Google Form title: ' + formData.formTitle
-    );
-
-    Logger.log(
-      'Google Form questions found: ' + formData.fields.length
-    );
-
-
-    /* ------------------------------------------------------------------------
-     * READ DRAFT SCHEMA
-     * ---------------------------------------------------------------------- */
-
-    var draftSchema = getDraftFieldSchema_();
-
-    Logger.log(
-      'DRAFT_FIELD_SCHEMA fields found: ' +
-      draftSchema.length
-    );
-
-
-    /* ------------------------------------------------------------------------
-     * COMPARE
-     * ---------------------------------------------------------------------- */
-
-    var comparison =
-      compareFormToDraftSchema_(
-        formData.fields,
-        draftSchema
+    var parsed =
+      JSON.parse(
+        stored
       );
 
+    if (!Array.isArray(parsed)) {
 
-    /* ------------------------------------------------------------------------
-     * LOG RESULTS
-     * ---------------------------------------------------------------------- */
-
-    logSchemaComparison_(comparison);
-
-
-    /* ------------------------------------------------------------------------
-     * DETERMINE PASS
-     * ---------------------------------------------------------------------- */
-
-    var passed =
-      comparison.added.length === 0 &&
-      comparison.removed.length === 0 &&
-      comparison.changed.length === 0 &&
-      comparison.duplicateKeys.length === 0 &&
-      comparison.duplicateTitles.length === 0;
-
-    comparison.passed = passed;
-
-
-    Logger.log('============================================================');
-
-    if (passed) {
-
-      Logger.log(
-        '✅ DRY RUN PASSED — FORM AND DRAFT_FIELD_SCHEMA MATCH'
-      );
-
-    } else {
-
-      Logger.log(
-        '⚠️ DRY RUN FOUND DIFFERENCES — NO FILES WERE CHANGED'
+      throw new Error(
+        'Backup JSON is not an array.'
       );
 
     }
 
-    Logger.log('============================================================');
-
-    Logger.log('FIELD_SCHEMA: NOT CHANGED');
-    Logger.log('EMAIL TEMPLATES: NOT CHANGED');
-    Logger.log('MAPPING.GS: NOT CHANGED');
-    Logger.log('GOOGLE SHEET: NOT CHANGED');
-
-    Logger.log('============================================================');
-
-
-    return comparison;
-
+    return parsed;
 
   } catch (error) {
 
-    Logger.log('============================================================');
-    Logger.log('❌ AUTOMATION DRY RUN FAILED');
-    Logger.log('============================================================');
-
-    Logger.log(
-      error && error.message
-        ? error.message
-        : String(error)
+    throw new Error(
+      'Unable to parse BACKUP_DRAFT_FIELD_SCHEMA.\n' +
+      error.message
     );
 
-    if (error && error.stack) {
-      Logger.log(error.stack);
-    }
-
-    Logger.log('============================================================');
-
-    throw error;
   }
 }
 
@@ -194,24 +928,12 @@ function syncFormToDraftSchema() {
  * FORM ACCESS
  * ========================================================================== */
 
-/**
- * Opens the configured Google Form.
- *
- * Supports:
- *
- * https://docs.google.com/forms/d/FORM_ID/edit
- *
- * and
- *
- * https://docs.google.com/forms/d/e/FORM_ID/viewform
- */
 function getAutomationForm_() {
 
   var config =
     typeof getFallbackFormConfig === 'function'
       ? getFallbackFormConfig()
       : null;
-
 
   if (
     !config ||
@@ -220,22 +942,15 @@ function getAutomationForm_() {
   ) {
 
     throw new Error(
-      'Automation could not find settings.formBaseUrl in getFallbackFormConfig().'
+      'Automation could not find settings.formBaseUrl.'
     );
 
   }
-
 
   var formUrl =
     String(
       config.settings.formBaseUrl
     ).trim();
-
-
-  Logger.log(
-    'Automation Form URL: ' + formUrl
-  );
-
 
   if (!formUrl) {
 
@@ -245,94 +960,39 @@ function getAutomationForm_() {
 
   }
 
+  Logger.log(
+    'Automation Form URL: ' +
+    formUrl
+  );
 
-  var formId = null;
-
-
-  /* --------------------------------------------------------------------------
-   * /forms/d/e/FORM_ID/
-   * ------------------------------------------------------------------------ */
-
-  var match =
-    formUrl.match(
-      /\/forms\/d\/e\/([a-zA-Z0-9_-]+)/
+  var formId =
+    extractFormId_(
+      formUrl
     );
-
-
-  if (match && match[1]) {
-
-    formId = match[1];
-
-  }
-
-
-  /* --------------------------------------------------------------------------
-   * /forms/d/FORM_ID/
-   * ------------------------------------------------------------------------ */
-
-  if (!formId) {
-
-    match =
-      formUrl.match(
-        /\/forms\/d\/([a-zA-Z0-9_-]+)/
-      );
-
-
-    if (match && match[1]) {
-
-      formId = match[1];
-
-    }
-
-  }
-
-
-  /* --------------------------------------------------------------------------
-   * SAFETY CHECK
-   * ------------------------------------------------------------------------ */
-
-  if (
-    !formId ||
-    formId === 'e'
-  ) {
-
-    throw new Error(
-      'Unable to extract a valid Google Form ID from settings.formBaseUrl.\n' +
-      'URL: ' + formUrl
-    );
-
-  }
-
 
   Logger.log(
     'Automation opening Google Form ID: ' +
     formId
   );
 
-
-  /* --------------------------------------------------------------------------
-   * OPEN FORM
-   * ------------------------------------------------------------------------ */
-
   try {
 
     var form =
-      FormApp.openById(formId);
-
+      FormApp.openById(
+        formId
+      );
 
     Logger.log(
       'Automation successfully opened form: ' +
       form.getTitle()
     );
 
-
     return form;
-
 
   } catch (error) {
 
     throw new Error(
-      'Unable to open Google Form from settings.formBaseUrl.\n' +
+      'Unable to open Google Form.\n' +
       'Form ID: ' +
       formId +
       '\n' +
@@ -345,47 +1005,76 @@ function getAutomationForm_() {
 
 
 /* ============================================================================
- * READ LIVE FORM
+ * EXTRACT FORM ID
  * ========================================================================== */
 
-/**
- * Reads all actual question fields from the Google Form.
- *
- * Non-question items are ignored.
- */
-function readCurrentFormForAutomation_() {
+function extractFormId_(
+  formUrl
+) {
+
+  var match =
+    formUrl.match(
+      /\/forms\/d\/e\/([a-zA-Z0-9_-]+)/
+    );
+
+  if (match && match[1]) {
+
+    return match[1];
+
+  }
+
+  match =
+    formUrl.match(
+      /\/forms\/d\/([a-zA-Z0-9_-]+)/
+    );
+
+  if (match && match[1]) {
+
+    return match[1];
+
+  }
+
+  throw new Error(
+    'Unable to extract Google Form ID from:\n' +
+    formUrl
+  );
+}
+
+
+/* ============================================================================
+ * READ CURRENT FORM
+ * ========================================================================== */
+
+function readCurrentForm_() {
 
   var form =
     getAutomationForm_();
 
-
   var items =
     form.getItems();
 
-
   var fields =
     [];
-
 
   items.forEach(
     function(item, index) {
 
       var field =
-        convertFormItemToAutomationField_(
+        convertFormItemToField_(
           item,
           index
         );
 
-
       if (field) {
 
-        fields.push(field);
+        fields.push(
+          field
+        );
 
       }
 
     }
   );
-
 
   return {
 
@@ -402,7 +1091,6 @@ function readCurrentFormForAutomation_() {
       fields
 
   };
-
 }
 
 
@@ -410,10 +1098,7 @@ function readCurrentFormForAutomation_() {
  * CONVERT FORM ITEM
  * ========================================================================== */
 
-/**
- * Converts one Google Form item into an automation field.
- */
-function convertFormItemToAutomationField_(
+function convertFormItemToField_(
   item,
   index
 ) {
@@ -421,9 +1106,8 @@ function convertFormItemToAutomationField_(
   var itemType =
     item.getType();
 
-
-  var title = '';
-
+  var title =
+    '';
 
   try {
 
@@ -436,7 +1120,6 @@ function convertFormItemToAutomationField_(
 
   }
 
-
   if (
     title === null ||
     title === undefined ||
@@ -447,12 +1130,10 @@ function convertFormItemToAutomationField_(
 
   }
 
-
   var schemaType =
     getAutomationSchemaType_(
       itemType
     );
-
 
   if (!schemaType) {
 
@@ -460,16 +1141,15 @@ function convertFormItemToAutomationField_(
 
   }
 
-
   var itemId =
-    item.getId();
-
-
-  var key =
-    createCamelCaseKey(
-      title
+    String(
+      item.getId()
     );
 
+  var generatedKey =
+    generateApplicationKey_(
+      title
+    );
 
   return {
 
@@ -477,7 +1157,7 @@ function convertFormItemToAutomationField_(
       index + 1,
 
     key:
-      key,
+      generatedKey,
 
     title:
       String(title),
@@ -486,7 +1166,7 @@ function convertFormItemToAutomationField_(
       'entry.' + itemId,
 
     itemId:
-      String(itemId),
+      itemId,
 
     itemType:
       String(itemType),
@@ -495,7 +1175,7 @@ function convertFormItemToAutomationField_(
       schemaType,
 
     formField:
-      'form_' + key,
+      'form_' + generatedKey,
 
     label:
       createDisplayLabel_(
@@ -505,32 +1185,28 @@ function convertFormItemToAutomationField_(
     aliases:
       createAutomaticAliases_(
         title,
-        key
+        generatedKey
       ),
 
     section:
       inferAutomationSection_(
-        key
+        generatedKey
       ),
 
     default:
       getAutomationDefaultValue_(
-        key,
+        generatedKey,
         schemaType
       )
 
   };
-
 }
 
 
 /* ============================================================================
- * FORM TYPE MAPPING
+ * FORM TYPE → SCHEMA TYPE
  * ========================================================================== */
 
-/**
- * Converts Google Form item types into schema types.
- */
 function getAutomationSchemaType_(
   itemType
 ) {
@@ -540,249 +1216,645 @@ function getAutomationSchemaType_(
     case FormApp.ItemType.TEXT:
       return 'text';
 
-
     case FormApp.ItemType.PARAGRAPH_TEXT:
       return 'paragraph';
-
 
     case FormApp.ItemType.MULTIPLE_CHOICE:
       return 'dropdown';
 
-
     case FormApp.ItemType.LIST:
       return 'dropdown';
-
 
     case FormApp.ItemType.CHECKBOX:
       return 'list';
 
-
     case FormApp.ItemType.CHECKBOX_GRID:
       return 'list';
 
-
     case FormApp.ItemType.MULTIPLE_CHOICE_GRID:
       return 'list';
-
 
     default:
       return null;
 
   }
-
 }
 
 
 /* ============================================================================
- * DRAFT SCHEMA
+ * COMPARISON ENGINE
  * ========================================================================== */
 
-/**
- * Returns DRAFT_FIELD_SCHEMA from MappingDraft.gs.
- */
-function getDraftFieldSchema_() {
-
-  if (
-    typeof DRAFT_FIELD_SCHEMA === 'undefined'
-  ) {
-
-    throw new Error(
-      'DRAFT_FIELD_SCHEMA was not found. ' +
-      'Make sure MappingDraft.gs exists and defines DRAFT_FIELD_SCHEMA.'
-    );
-
-  }
-
-
-  if (
-    !Array.isArray(
-      DRAFT_FIELD_SCHEMA
-    )
-  ) {
-
-    throw new Error(
-      'DRAFT_FIELD_SCHEMA must be an array.'
-    );
-
-  }
-
-
-  return DRAFT_FIELD_SCHEMA;
-
-}
-
-function compareFormToDraftSchema_(formFields, draftFields) {
+function compareFormToDraftSchema_(
+  formFields,
+  draftFields
+) {
 
   var result = {
-    passed: false,
-    formFieldCount: formFields.length,
-    draftFieldCount: draftFields.length,
-    added: [],
-    removed: [],
-    changed: [],
-    unchanged: [],
-    duplicateKeys: [],
-    duplicateTitles: [],
-    duplicateEntryIds: []
+
+    passed:
+      false,
+
+    formFieldCount:
+      formFields.length,
+
+    draftFieldCount:
+      draftFields.length,
+
+    added:
+      [],
+
+    removed:
+      [],
+
+    changed:
+      [],
+
+    unchanged:
+      [],
+
+    duplicateKeys:
+      [],
+
+    duplicateTitles:
+      [],
+
+    duplicateEntryIds:
+      []
+
   };
 
-  // --------------------------------------------------------------------------
-  // DUPLICATE CHECKS
-  // --------------------------------------------------------------------------
 
-  result.duplicateKeys = findDuplicateValues_(
-    formFields.map(function(field) {
-      return field.key;
-    })
+  /* --------------------------------------------------------------------------
+   * DUPLICATES
+   * ------------------------------------------------------------------------ */
+
+  result.duplicateKeys =
+    findDuplicateValues_(
+      formFields.map(
+        function(field) {
+
+          return normaliseText_(
+            field.key
+          );
+
+        }
+      )
+    );
+
+  result.duplicateTitles =
+    findDuplicateValues_(
+      formFields.map(
+        function(field) {
+
+          return normaliseText_(
+            field.title
+          );
+
+        }
+      )
+    );
+
+  result.duplicateEntryIds =
+    findDuplicateValues_(
+      formFields.map(
+        function(field) {
+
+          return field.entryId;
+
+        }
+      )
+    );
+
+
+  /* --------------------------------------------------------------------------
+   * LOOKUPS
+   * ------------------------------------------------------------------------ */
+
+  var formByEntryId =
+    createEntryIdLookup_(
+      formFields
+    );
+
+  var draftByEntryId =
+    createEntryIdLookup_(
+      draftFields
+    );
+
+
+  /* --------------------------------------------------------------------------
+   * FORM → DRAFT
+   * ------------------------------------------------------------------------ */
+
+  formFields.forEach(
+    function(formField) {
+
+      var draftField =
+        draftByEntryId[
+          formField.entryId
+        ];
+
+
+      /* ----------------------------------------------------------------------
+       * NEW FORM QUESTION
+       * -------------------------------------------------------------------- */
+
+      if (!draftField) {
+
+        result.added.push({
+
+          form:
+            formField,
+
+          suggestedKey:
+            suggestApplicationKey_(
+              formField,
+              draftFields
+            )
+
+        });
+
+        return;
+
+      }
+
+
+      /* ----------------------------------------------------------------------
+       * EXISTING QUESTION
+       * -------------------------------------------------------------------- */
+
+      var differences =
+        compareFieldProperties_(
+          formField,
+          draftField
+        );
+
+      if (
+        differences.length > 0
+      ) {
+
+        result.changed.push({
+
+          key:
+            draftField.key,
+
+          entryId:
+            draftField.entryId,
+
+          differences:
+            differences,
+
+          form:
+            formField,
+
+          draft:
+            draftField
+
+        });
+
+      } else {
+
+        result.unchanged.push({
+
+          key:
+            draftField.key,
+
+          title:
+            formField.title,
+
+          entryId:
+            formField.entryId
+
+        });
+
+      }
+
+    }
   );
 
-  result.duplicateTitles = findDuplicateValues_(
-    formFields.map(function(field) {
-      return normaliseText_(field.title);
-    })
+
+  /* --------------------------------------------------------------------------
+   * DRAFT → FORM
+   *
+   * Anything in DRAFT_FIELD_SCHEMA that no longer exists in the Form is
+   * classified as removed.
+   * ------------------------------------------------------------------------ */
+
+  draftFields.forEach(
+    function(draftField) {
+
+      if (
+        !formByEntryId[
+          draftField.entryId
+        ]
+      ) {
+
+        result.removed.push({
+
+          key:
+            draftField.key,
+
+          title:
+            draftField.title ||
+            draftField.label ||
+            draftField.key,
+
+          entryId:
+            draftField.entryId || '',
+
+          type:
+            draftField.type || ''
+
+        });
+
+      }
+
+    }
   );
 
-  result.duplicateEntryIds = findDuplicateValues_(
-    formFields.map(function(field) {
-      return field.entryId;
-    })
-  );
 
-  // --------------------------------------------------------------------------
-  // CREATE ENTRY ID LOOKUPS
-  // --------------------------------------------------------------------------
+  /* --------------------------------------------------------------------------
+   * FINAL RESULT
+   * ------------------------------------------------------------------------ */
 
-  var formByEntryId = createEntryIdLookup_(formFields);
-  var draftByEntryId = createEntryIdLookup_(draftFields);
+  result.passed =
 
-  // --------------------------------------------------------------------------
-  // CHECK LIVE FORM AGAINST DRAFT
-  // --------------------------------------------------------------------------
+    result.added.length === 0 &&
 
-  formFields.forEach(function(formField) {
+    result.removed.length === 0 &&
 
-    var draftField =
-      draftByEntryId[formField.entryId];
+    result.changed.length === 0 &&
 
-    // ------------------------------------------------------------------------
-    // NEW FIELD
-    // ------------------------------------------------------------------------
+    result.duplicateKeys.length === 0 &&
 
-    if (!draftField) {
+    result.duplicateTitles.length === 0 &&
 
-      result.added.push({
-        key: formField.key,
-        title: formField.title,
-        entryId: formField.entryId,
-        type: formField.type,
-        formField: formField.formField
-      });
+    result.duplicateEntryIds.length === 0;
 
-      return;
-    }
-
-    // ------------------------------------------------------------------------
-    // EXISTING FIELD — COMPARE PROPERTIES
-    // ------------------------------------------------------------------------
-
-    var differences =
-      compareFieldProperties_(
-        formField,
-        draftField
-      );
-
-    if (differences.length > 0) {
-
-      result.changed.push({
-        key: draftField.key,
-
-        title: formField.title,
-
-        entryId: formField.entryId,
-
-        differences: differences,
-
-        form: formField,
-
-        draft: draftField
-      });
-
-    } else {
-
-      result.unchanged.push({
-
-        key: draftField.key,
-
-        title: formField.title,
-
-        entryId: formField.entryId
-
-      });
-
-    }
-
-  });
-
-  // --------------------------------------------------------------------------
-  // CHECK DRAFT FOR REMOVED FIELDS
-  // --------------------------------------------------------------------------
-
-  draftFields.forEach(function(draftField) {
-
-    if (!formByEntryId[draftField.entryId]) {
-
-      result.removed.push({
-
-        key: draftField.key,
-
-        title:
-          draftField.title ||
-          draftField.label ||
-          draftField.key,
-
-        entryId:
-          draftField.entryId || '',
-
-        type:
-          draftField.type || ''
-
-      });
-
-    }
-
-  });
 
   return result;
 }
 
 
+/* ============================================================================
+ * BUILD UPDATED DRAFT SCHEMA
+ * ========================================================================== */
+
 /**
- * Creates an entryId → field lookup table.
+ * Builds the new DRAFT_FIELD_SCHEMA from the current schema and sync plan.
  *
- * entryId is the authoritative identity of a Google Form question.
+ * RULES
+ * -----
+ *
+ * ADD:
+ *   Add the new Form field.
+ *
+ * CHANGE:
+ *   Update the existing field while preserving its application key.
+ *
+ * REMOVE:
+ *   Remove the field completely from DRAFT_FIELD_SCHEMA.
+ *
+ * BACKUP:
+ *   The previous schema has already been saved to
+ *   BACKUP_DRAFT_FIELD_SCHEMA before this function runs.
  */
-function createEntryIdLookup_(fields) {
+function buildUpdatedDraftSchema_(
+  currentSchema,
+  plan
+) {
 
-  var lookup = {};
+  var updated =
+    JSON.parse(
+      JSON.stringify(
+        currentSchema
+      )
+    );
 
-  fields.forEach(function(field) {
 
-    var entryId =
-      String(field.entryId || '').trim();
+  /* --------------------------------------------------------------------------
+   * ADDITIONS
+   * ------------------------------------------------------------------------ */
 
-    if (!entryId) {
-      return;
+  plan.added.forEach(
+    function(change) {
+
+      var field =
+        change.form;
+
+      var newKey =
+        makeUniqueSchemaKey_(
+          change.suggestedKey,
+          updated
+        );
+
+      var newField = {
+
+        key:
+          newKey,
+
+        formField:
+          'form_' + newKey,
+
+        title:
+          field.title,
+
+        entryId:
+          field.entryId,
+
+        type:
+          field.type,
+
+        aliases:
+          createAutomaticAliases_(
+            field.title,
+            newKey
+          ),
+
+        label:
+          createDisplayLabel_(
+            field.title
+          ),
+
+        section:
+          inferAutomationSection_(
+            newKey
+          ),
+
+        default:
+          getAutomationDefaultValue_(
+            newKey,
+            field.type
+          )
+
+      };
+
+      updated.push(
+        newField
+      );
+
+      Logger.log(
+        '➕ ADDING NEW FIELD: ' +
+        newKey +
+        ' — ' +
+        field.title
+      );
+
     }
+  );
 
-    lookup[entryId] = field;
 
-  });
+  /* --------------------------------------------------------------------------
+   * EXISTING CHANGES
+   * ------------------------------------------------------------------------ */
+
+  plan.changed.forEach(
+    function(change) {
+
+      var index =
+        findSchemaIndexByEntryId_(
+          updated,
+          change.entryId
+        );
+
+      if (index === -1) {
+
+        return;
+
+      }
+
+      var existing =
+        updated[index];
+
+      var formField =
+        change.form;
+
+
+      /*
+       * PRESERVE APPLICATION IDENTITY.
+       *
+       * Example:
+       *
+       *   key: name
+       *
+       * remains:
+       *
+       *   key: name
+       *
+       * even when the Form title changes.
+       */
+
+      existing.title =
+        formField.title;
+
+      existing.entryId =
+        formField.entryId;
+
+      existing.type =
+        formField.type;
+
+
+      /*
+       * Preserve existing formField.
+       */
+
+      existing.label =
+        createDisplayLabel_(
+          formField.title
+        );
+
+
+      existing.aliases =
+        mergeAliases_(
+          existing.aliases,
+          [
+            formField.title
+          ]
+        );
+
+
+      /*
+       * Remove any legacy inactive markers.
+       */
+
+      delete existing.inactive;
+
+      delete existing.removedFromForm;
+
+
+      Logger.log(
+        '✏️ UPDATING EXISTING FIELD: ' +
+        existing.key +
+        ' — ' +
+        formField.title
+      );
+
+    }
+  );
+
+
+  /* --------------------------------------------------------------------------
+   * REMOVALS
+   * --------------------------------------------------------------------------
+   *
+   * THIS IS THE IMPORTANT CHANGE.
+   *
+   * Removed Form questions are now removed from the WORKING schema.
+   *
+   * They are NOT retained with:
+   *
+   *   inactive: true
+   *
+   * Instead they disappear from DRAFT_FIELD_SCHEMA.
+   *
+   * The previous version is preserved in:
+   *
+   *   BACKUP_DRAFT_FIELD_SCHEMA
+   *
+   * ------------------------------------------------------------------------ */
+
+  /*
+   * Remove from highest index to lowest index.
+   *
+   * This prevents array index shifting from causing problems.
+   */
+
+  var removalIndexes =
+    [];
+
+  plan.removed.forEach(
+    function(change) {
+
+      var index =
+        findSchemaIndexByEntryId_(
+          updated,
+          change.entryId
+        );
+
+      if (index !== -1) {
+
+        removalIndexes.push(
+          index
+        );
+
+      }
+
+    }
+  );
+
+
+  /*
+   * Sort descending.
+   */
+
+  removalIndexes.sort(
+    function(a, b) {
+
+      return b - a;
+
+    }
+  );
+
+
+  removalIndexes.forEach(
+    function(index) {
+
+      var removedField =
+        updated[index];
+
+      Logger.log(
+        '➖ REMOVING FIELD FROM DRAFT_FIELD_SCHEMA: ' +
+        removedField.key +
+        ' — ' +
+        removedField.title
+      );
+
+      updated.splice(
+        index,
+        1
+      );
+
+    }
+  );
+
+
+  return updated;
+}
+
+
+/* ============================================================================
+ * ENTRY ID LOOKUP
+ * ========================================================================== */
+
+function createEntryIdLookup_(
+  fields
+) {
+
+  var lookup =
+    {};
+
+  fields.forEach(
+    function(field) {
+
+      var entryId =
+        String(
+          field.entryId || ''
+        ).trim();
+
+      if (!entryId) {
+
+        return;
+
+      }
+
+      lookup[entryId] =
+        field;
+
+    }
+  );
 
   return lookup;
 }
 
+
 /* ============================================================================
- * FIELD PROPERTY COMPARISON
+ * FIND SCHEMA FIELD
+ * ========================================================================== */
+
+function findSchemaIndexByEntryId_(
+  schema,
+  entryId
+) {
+
+  var target =
+    String(
+      entryId || ''
+    ).trim();
+
+  for (
+    var i = 0;
+    i < schema.length;
+    i++
+  ) {
+
+    if (
+      String(
+        schema[i].entryId || ''
+      ).trim() === target
+    ) {
+
+      return i;
+
+    }
+
+  }
+
+  return -1;
+}
+
+
+/* ============================================================================
+ * FIELD COMPARISON
  * ========================================================================== */
 
 function compareFieldProperties_(
@@ -790,8 +1862,8 @@ function compareFieldProperties_(
   draftField
 ) {
 
-  var differences = [];
-
+  var differences =
+    [];
 
   compareProperty_(
     differences,
@@ -800,15 +1872,6 @@ function compareFieldProperties_(
     draftField.title
   );
 
-
-  compareProperty_(
-    differences,
-    'entryId',
-    formField.entryId,
-    draftField.entryId
-  );
-
-
   compareProperty_(
     differences,
     'type',
@@ -816,15 +1879,10 @@ function compareFieldProperties_(
     draftField.type
   );
 
-
   return differences;
-
 }
 
 
-/**
- * Compares two individual properties.
- */
 function compareProperty_(
   differences,
   property,
@@ -837,14 +1895,14 @@ function compareProperty_(
       formValue
     );
 
-
   var b =
     normaliseText_(
       draftValue
     );
 
-
-  if (a !== b) {
+  if (
+    a !== b
+  ) {
 
     differences.push({
 
@@ -860,113 +1918,60 @@ function compareProperty_(
     });
 
   }
-
 }
 
 
 /* ============================================================================
- * LOOKUP HELPERS
+ * APPLICATION KEY GENERATION
  * ========================================================================== */
 
-function createFieldLookup_(
-  fields
+/**
+ * Used when a NEW Form question is encountered.
+ *
+ * Existing application keys are never regenerated.
+ */
+function suggestApplicationKey_(
+  field,
+  schema
 ) {
 
-  var lookup = {};
+  var title =
+    String(
+      field.title || ''
+    )
+      .replace(
+        /\s+/g,
+        ' '
+      )
+      .replace(
+        /[?!.:]+$/g,
+        ''
+      )
+      .trim();
 
+  var generated =
+    generateApplicationKey_(
+      title
+    );
 
-  fields.forEach(
-    function(field) {
+  if (!generated) {
 
-      var key =
-        String(
-          field.key || ''
-        ).trim();
+    generated =
+      'field';
 
+  }
 
-      if (!key) {
-        return;
-      }
-
-
-      lookup[key] =
-        field;
-
-    }
+  return makeUniqueSchemaKey_(
+    generated,
+    schema
   );
-
-
-  return lookup;
-
 }
 
 
 /**
- * Finds duplicate values.
+ * Converts a NEW Form title into an application key.
  */
-function findDuplicateValues_(
-  values
-) {
-
-  var counts = {};
-  var duplicates = [];
-
-
-  values.forEach(
-    function(value) {
-
-      if (!value) {
-        return;
-      }
-
-
-      counts[value] =
-        (
-          counts[value] || 0
-        ) + 1;
-
-    }
-  );
-
-
-  Object.keys(counts).forEach(
-    function(value) {
-
-      if (
-        counts[value] > 1
-      ) {
-
-        duplicates.push(
-          value
-        );
-
-      }
-
-    }
-  );
-
-
-  return duplicates;
-
-}
-
-
-/* ============================================================================
- * KEY GENERATION
- * ========================================================================== */
-
-/**
- * Converts a question title into camelCase.
- *
- * Example:
- *
- * How would you prefer us to contact you?
- *
- * becomes:
- *
- * howWouldYouPreferUsToContactYou
- */
-function createCamelCaseKey(
+function generateApplicationKey_(
   str
 ) {
 
@@ -979,103 +1984,130 @@ function createCamelCaseKey(
 
   }
 
-
-  return String(str)
-
-    .replace(
-      /\s+/g,
-      ' '
+  var value =
+    String(
+      str
     )
+      .replace(
+        /\s+/g,
+        ' '
+      )
+      .replace(
+        /[^a-zA-Z0-9 ]/g,
+        ''
+      )
+      .trim();
 
-    .replace(
-      /[^a-zA-Z0-9 ]/g,
-      ''
-    )
+  if (!value) {
 
-    .trim()
+    return '';
 
-    .split(' ')
+  }
 
-    .filter(
-      function(word) {
-        return word.length > 0;
-      }
-    )
+  var words =
+    value
+      .split(' ')
+      .filter(
+        function(word) {
 
-    .map(
-      function(word, index) {
-
-        if (
-          index === 0
-        ) {
-
-          return word.toLowerCase();
+          return word.length > 0;
 
         }
+      );
 
+  var result =
+    '';
 
-        return (
+  words.forEach(
+    function(word, index) {
+
+      if (index === 0) {
+
+        result +=
+          word.toLowerCase();
+
+      } else {
+
+        result +=
           word.charAt(0).toUpperCase() +
-          word.slice(1).toLowerCase()
-        );
+          word.slice(1).toLowerCase();
 
       }
-    )
 
-    .join('');
+    }
+  );
 
+  return result;
 }
 
 
 /* ============================================================================
- * DISPLAY LABEL
+ * UNIQUE KEY
  * ========================================================================== */
 
-/**
- * Creates a human-readable application label.
- *
- * IMPORTANT:
- * This function was missing from the previous version.
- *
- * Example:
- *
- * "Address / Location:"
- *
- * becomes:
- *
- * "Address / Location"
- */
+function makeUniqueSchemaKey_(
+  proposedKey,
+  schema
+) {
+
+  var base =
+    proposedKey ||
+    'field';
+
+  var candidate =
+    base;
+
+  var number =
+    2;
+
+  while (
+    schema.some(
+      function(field) {
+
+        return (
+          String(
+            field.key || ''
+          ).toLowerCase() ===
+          candidate.toLowerCase()
+        );
+
+      }
+    )
+  ) {
+
+    candidate =
+      base +
+      number;
+
+    number++;
+
+  }
+
+  return candidate;
+}
+
+
+/* ============================================================================
+ * LABEL
+ * ========================================================================== */
+
 function createDisplayLabel_(
   title
 ) {
 
-  var clean =
-    String(
-      title || ''
-    )
-
+  return String(
+    title || ''
+  )
     .replace(
       /\s+/g,
       ' '
     )
-
-    .trim();
-
-
-  if (!clean) {
-    return '';
-  }
-
-
-  return clean
-
+    .trim()
     .replace(
-      /[:?]+$/,
+      /[:?]+$/g,
       ''
     )
-
     .trim();
-
 }
 
 
@@ -1083,16 +2115,13 @@ function createDisplayLabel_(
  * ALIASES
  * ========================================================================== */
 
-/**
- * Creates conservative automatic aliases.
- */
 function createAutomaticAliases_(
   title,
   key
 ) {
 
-  var aliases = [];
-
+  var aliases =
+    [];
 
   if (key) {
 
@@ -1102,53 +2131,101 @@ function createAutomaticAliases_(
 
   }
 
-
   var cleanTitle =
     String(
       title || ''
     )
-
-    .replace(
-      /\s+/g,
-      ' '
-    )
-
-    .trim()
-
-    .replace(
-      /[:?]+$/,
-      ''
-    )
-
-    .trim();
-
+      .replace(
+        /\s+/g,
+        ' '
+      )
+      .trim()
+      .replace(
+        /[:?]+$/g,
+        ''
+      )
+      .trim()
+      .toLowerCase();
 
   if (
     cleanTitle &&
     aliases.indexOf(
-      cleanTitle.toLowerCase()
+      cleanTitle
     ) === -1
   ) {
 
     aliases.push(
-      cleanTitle.toLowerCase()
+      cleanTitle
     );
 
   }
 
-
   return aliases;
+}
 
+
+function mergeAliases_(
+  existing,
+  additions
+) {
+
+  var result =
+    Array.isArray(existing)
+      ? existing.slice()
+      : [];
+
+  (additions || []).forEach(
+    function(alias) {
+
+      var value =
+        String(
+          alias || ''
+        )
+          .replace(
+            /\s+/g,
+            ' '
+          )
+          .trim();
+
+      if (!value) {
+
+        return;
+
+      }
+
+      var exists =
+        result.some(
+          function(existingAlias) {
+
+            return (
+              String(
+                existingAlias || ''
+              ).toLowerCase() ===
+              value.toLowerCase()
+            );
+
+          }
+        );
+
+      if (!exists) {
+
+        result.push(
+          value
+        );
+
+      }
+
+    }
+  );
+
+  return result;
 }
 
 
 /* ============================================================================
- * SECTION INFERENCE
+ * SECTION
  * ========================================================================== */
 
-/**
- * Determines the application section.
- */
 function inferAutomationSection_(
   key
 ) {
@@ -1165,15 +2242,15 @@ function inferAutomationSection_(
 
   ];
 
-
   var requestFields = [
 
     'helpCategory',
     'userGoal',
-    'urgency'
+    'urgency',
+    'operatingSystem',
+    'whatOperatingSystemDoYouUse'
 
   ];
-
 
   if (
     clientFields.indexOf(key) !== -1
@@ -1183,7 +2260,6 @@ function inferAutomationSection_(
 
   }
 
-
   if (
     requestFields.indexOf(key) !== -1
   ) {
@@ -1191,7 +2267,6 @@ function inferAutomationSection_(
     return 'request';
 
   }
-
 
   if (
     key === 'honeypot'
@@ -1201,9 +2276,7 @@ function inferAutomationSection_(
 
   }
 
-
   return 'request';
-
 }
 
 
@@ -1224,7 +2297,6 @@ function getAutomationDefaultValue_(
 
   }
 
-
   if (
     key === 'usedBefore'
   ) {
@@ -1232,7 +2304,6 @@ function getAutomationDefaultValue_(
     return 'No';
 
   }
-
 
   if (
     key === 'urgency'
@@ -1242,7 +2313,6 @@ function getAutomationDefaultValue_(
 
   }
 
-
   if (
     key === 'helpCategory'
   ) {
@@ -1250,7 +2320,6 @@ function getAutomationDefaultValue_(
     return 'Not specified';
 
   }
-
 
   if (
     key === 'userGoal'
@@ -1260,7 +2329,6 @@ function getAutomationDefaultValue_(
 
   }
 
-
   if (
     schemaType === 'paragraph'
   ) {
@@ -1269,9 +2337,7 @@ function getAutomationDefaultValue_(
 
   }
 
-
   return 'Not provided';
-
 }
 
 
@@ -1292,69 +2358,167 @@ function normaliseText_(
 
   }
 
-
-  return String(value)
-
+  return String(
+    value
+  )
     .replace(
       /\r\n/g,
       '\n'
     )
-
     .replace(
       /\r/g,
       '\n'
     )
-
     .replace(
       /\s+/g,
       ' '
     )
-
     .trim()
-
     .toLowerCase();
-
 }
 
 
 /* ============================================================================
- * LOGGING
+ * DUPLICATES
  * ========================================================================== */
 
-function logSchemaComparison_(
+function findDuplicateValues_(
+  values
+) {
+
+  var counts =
+    {};
+
+  var duplicates =
+    [];
+
+  values.forEach(
+    function(value) {
+
+      if (!value) {
+
+        return;
+
+      }
+
+      counts[value] =
+        (
+          counts[value] || 0
+        ) + 1;
+
+    }
+  );
+
+  Object.keys(
+    counts
+  ).forEach(
+    function(value) {
+
+      if (
+        counts[value] > 1
+      ) {
+
+        duplicates.push(
+          value
+        );
+
+      }
+
+    }
+  );
+
+  return duplicates;
+}
+
+
+/* ============================================================================
+ * SYNC PLAN STORAGE
+ * ========================================================================== */
+
+function saveSyncPlan_(
+  plan
+) {
+
+  PropertiesService
+    .getScriptProperties()
+    .setProperty(
+      AUTOMATION_CONFIG.syncPlanPropertyKey,
+      JSON.stringify(
+        plan
+      )
+    );
+}
+
+
+function getSavedSyncPlan_() {
+
+  var stored =
+    PropertiesService
+      .getScriptProperties()
+      .getProperty(
+        AUTOMATION_CONFIG.syncPlanPropertyKey
+      );
+
+  if (!stored) {
+
+    return null;
+
+  }
+
+  try {
+
+    return JSON.parse(
+      stored
+    );
+
+  } catch (error) {
+
+    throw new Error(
+      'Saved sync plan is invalid.\n' +
+      error.message
+    );
+
+  }
+}
+
+
+/* ============================================================================
+ * LOG SYNC PLAN
+ * ========================================================================== */
+
+function logSyncPlan_(
   comparison
 ) {
 
   Logger.log('');
-  Logger.log('============================================================');
-  Logger.log('FORM → DRAFT SCHEMA COMPARISON');
-  Logger.log('============================================================');
+  Logger.log(
+    '============================================================'
+  );
 
+  Logger.log(
+    'FORM → DRAFT_FIELD_SCHEMA COMPARISON'
+  );
+
+  Logger.log(
+    '============================================================'
+  );
 
   Logger.log(
     'Live Form Fields: ' +
     comparison.formFieldCount
   );
 
-
   Logger.log(
     'Draft Fields: ' +
     comparison.draftFieldCount
   );
 
-
   Logger.log('');
-
-
-  /* --------------------------------------------------------------------------
-   * UNCHANGED
-   * ------------------------------------------------------------------------ */
 
   Logger.log(
     'UNCHANGED: ' +
     comparison.unchanged.length
   );
-
 
   comparison.unchanged.forEach(
     function(field) {
@@ -1371,63 +2535,46 @@ function logSchemaComparison_(
     }
   );
 
-
   Logger.log('');
-
-
-  /* --------------------------------------------------------------------------
-   * NEW
-   * ------------------------------------------------------------------------ */
 
   Logger.log(
     'NEW FORM FIELDS: ' +
     comparison.added.length
   );
 
-
   comparison.added.forEach(
-    function(field) {
+    function(change) {
 
       Logger.log(
         '  ➕ ' +
-        field.key +
+        change.suggestedKey +
         ' — ' +
-        field.title +
+        change.form.title +
         ' — ' +
-        field.entryId +
-        ' — ' +
-        field.type
+        change.form.entryId
       );
 
     }
   );
 
-
   Logger.log('');
-
-
-  /* --------------------------------------------------------------------------
-   * CHANGED
-   * ------------------------------------------------------------------------ */
 
   Logger.log(
     'CHANGED FIELDS: ' +
     comparison.changed.length
   );
 
-
   comparison.changed.forEach(
-    function(field) {
+    function(change) {
 
       Logger.log(
-        '  ⚠️ ' +
-        field.key +
+        '  ✏️ ' +
+        change.key +
         ' — ' +
-        field.title
+        change.entryId
       );
 
-
-      field.differences.forEach(
+      change.differences.forEach(
         function(difference) {
 
           Logger.log(
@@ -1435,14 +2582,12 @@ function logSchemaComparison_(
             difference.property
           );
 
-
           Logger.log(
             '        FORM : ' +
             JSON.stringify(
               difference.formValue
             )
           );
-
 
           Logger.log(
             '        DRAFT: ' +
@@ -1457,19 +2602,12 @@ function logSchemaComparison_(
     }
   );
 
-
   Logger.log('');
-
-
-  /* --------------------------------------------------------------------------
-   * REMOVED
-   * ------------------------------------------------------------------------ */
 
   Logger.log(
     'REMOVED FROM FORM: ' +
     comparison.removed.length
   );
-
 
   comparison.removed.forEach(
     function(field) {
@@ -1478,962 +2616,60 @@ function logSchemaComparison_(
         '  ➖ ' +
         field.key +
         ' — ' +
-        field.title
+        field.title +
+        ' — ' +
+        field.entryId
       );
 
     }
   );
 
-
   Logger.log('');
-
-
-  /* --------------------------------------------------------------------------
-   * DUPLICATES
-   * ------------------------------------------------------------------------ */
 
   Logger.log(
     'DUPLICATE FORM KEYS: ' +
     comparison.duplicateKeys.length
   );
 
-
-  comparison.duplicateKeys.forEach(
-    function(key) {
-
-      Logger.log(
-        '  ❌ ' +
-        key
-      );
-
-    }
-  );
-
-
   Logger.log(
     'DUPLICATE FORM TITLES: ' +
     comparison.duplicateTitles.length
   );
 
-
-  comparison.duplicateTitles.forEach(
-    function(title) {
-
-      Logger.log(
-        '  ❌ ' +
-        title
-      );
-
-    }
+  Logger.log(
+    'DUPLICATE ENTRY IDs: ' +
+    comparison.duplicateEntryIds.length
   );
-
 
   Logger.log('');
 
-
-  /* --------------------------------------------------------------------------
-   * SUMMARY
-   * ------------------------------------------------------------------------ */
-
   Logger.log(
     '------------------------------------------------------------'
   );
-
-  Logger.log('SUMMARY');
-
-  Logger.log(
-    '------------------------------------------------------------'
-  );
-
-
-  Logger.log(
-    'Unchanged: ' +
-    comparison.unchanged.length
-  );
-
-
-  Logger.log(
-    'New: ' +
-    comparison.added.length
-  );
-
-
-  Logger.log(
-    'Changed: ' +
-    comparison.changed.length
-  );
-
-
-  Logger.log(
-    'Removed: ' +
-    comparison.removed.length
-  );
-
-
-  Logger.log(
-    'Duplicate Keys: ' +
-    comparison.duplicateKeys.length
-  );
-
-
-  Logger.log(
-    'Duplicate Titles: ' +
-    comparison.duplicateTitles.length
-  );
-
-
-  Logger.log(
-    '------------------------------------------------------------'
-  );
-
 
   if (
-    comparison.added.length === 0 &&
-    comparison.removed.length === 0 &&
-    comparison.changed.length === 0 &&
-    comparison.duplicateKeys.length === 0 &&
-    comparison.duplicateTitles.length === 0
+    comparison.passed
   ) {
 
     Logger.log(
-      '✅ FORM AND DRAFT SCHEMA ARE CURRENTLY ALIGNED'
+      '✅ FORM AND DRAFT_FIELD_SCHEMA ARE ALIGNED'
     );
 
   } else {
 
     Logger.log(
-      '⚠️ FORM AND DRAFT SCHEMA ARE NOT ALIGNED'
-    );
-
-    Logger.log(
-      'NO PRODUCTION FILES HAVE BEEN CHANGED.'
+      '⚠️ SYNC REQUIRED'
     );
 
   }
 
-
   Logger.log(
-    '============================================================'
+    '------------------------------------------------------------'
   );
-
-}
-
-
-/* ============================================================================
- * TEST — FULL DRY RUN
- * ========================================================================== */
-
-/**
- * RUN THIS FUNCTION.
- *
- * This is the main test.
- */
-function testSyncFormToDraftSchema() {
-
-  Logger.log('');
-  Logger.log('============================================================');
-  Logger.log('TEST: syncFormToDraftSchema()');
-  Logger.log('============================================================');
-
-
-  var result =
-    syncFormToDraftSchema();
-
-
-  Logger.log('');
-  Logger.log('============================================================');
-
-
-  if (
-    result.passed
-  ) {
-
-    Logger.log(
-      '✅ TEST PASSED'
-    );
-
-  } else {
-
-    Logger.log(
-      '⚠️ TEST COMPLETED — DIFFERENCES DETECTED'
-    );
-
-  }
-
-
-  Logger.log(
-    '============================================================'
-  );
-
-
-  Logger.log(
-    'IMPORTANT: This was a DRY RUN.'
-  );
-
-
-  Logger.log(
-    'FIELD_SCHEMA was NOT changed.'
-  );
-
-
-  Logger.log(
-    '============================================================'
-  );
-
-
-  return result;
-
-}
-
-
-/* ============================================================================
- * TEST — FORM ACCESS ONLY
- * ========================================================================== */
-
-/**
- * Tests whether Automation can open the Google Form.
- */
-function testReadAutomationForm() {
-
-  Logger.log(
-    '============================================================'
-  );
-
-  Logger.log(
-    'TEST: READ GOOGLE FORM'
-  );
-
-  Logger.log(
-    '============================================================'
-  );
-
-
-  var form =
-    getAutomationForm_();
-
-
-  Logger.log(
-    'Form ID: ' +
-    form.getId()
-  );
-
-
-  Logger.log(
-    'Form Title: ' +
-    form.getTitle()
-  );
-
-
-  Logger.log(
-    'Form URL: ' +
-    form.getEditUrl()
-  );
-
-
-  Logger.log(
-    'Item Count: ' +
-    form.getItems().length
-  );
-
-
-  Logger.log(
-    '============================================================'
-  );
-
-
-  Logger.log(
-    '✅ GOOGLE FORM ACCESS TEST PASSED'
-  );
-
-
-  Logger.log(
-    '============================================================'
-  );
-
-
-  return true;
-
-}
-
-
-/* ============================================================================
- * TEST — SHOW LIVE FORM FIELDS
- * ========================================================================== */
-
-function testReadCurrentFormFields() {
-
-  Logger.log(
-    '============================================================'
-  );
-
-  Logger.log(
-    'TEST: READ CURRENT GOOGLE FORM FIELDS'
-  );
-
-  Logger.log(
-    '============================================================'
-  );
-
-
-  var formData =
-    readCurrentFormForAutomation_();
-
-
-  formData.fields.forEach(
-    function(field) {
-
-      Logger.log(
-
-        field.index +
-        '. ' +
-        field.key +
-        ' | ' +
-        field.title +
-        ' | ' +
-        field.entryId +
-        ' | ' +
-        field.type
-
-      );
-
-    }
-  );
-
-
-  Logger.log(
-    '============================================================'
-  );
-
-
-  Logger.log(
-    'Total fields: ' +
-    formData.fields.length
-  );
-
-
-  Logger.log(
-    '============================================================'
-  );
-
-
-  return formData;
-
-}
-
-
-/* ============================================================================
- * TEST — SHOW DRAFT
- * ========================================================================== */
-
-function testReadDraftFieldSchema() {
-
-  Logger.log(
-    '============================================================'
-  );
-
-  Logger.log(
-    'TEST: READ DRAFT_FIELD_SCHEMA'
-  );
-
-  Logger.log(
-    '============================================================'
-  );
-
-
-  var draftSchema =
-    getDraftFieldSchema_();
-
-
-  draftSchema.forEach(
-    function(field, index) {
-
-      Logger.log(
-
-        (index + 1) +
-        '. ' +
-        field.key +
-        ' | ' +
-        field.title +
-        ' | ' +
-        field.entryId +
-        ' | ' +
-        field.type
-
-      );
-
-    }
-  );
-
-
-  Logger.log(
-    '============================================================'
-  );
-
-
-  Logger.log(
-    'Total draft fields: ' +
-    draftSchema.length
-  );
-
-
-  Logger.log(
-    '============================================================'
-  );
-
-
-  return draftSchema;
-
-}
-
-
-/* ============================================================================
- * REFERENCE GUIDE
- * ========================================================================== */
-
-function generateFormReferenceGuide() {
-
-  var formData =
-    readCurrentFormForAutomation_();
-
-
-  var md = [];
-
-
-  md.push(
-    '# Google Form Field Reference Guide'
-  );
-
-
-  md.push(
-    '**Form Title:** ' +
-    formData.formTitle
-  );
-
-
-  md.push(
-    '**Generated On:** ' +
-    Utilities.formatDate(
-      new Date(),
-      Session.getScriptTimeZone() ||
-        'Pacific/Auckland',
-      'dd MMMM yyyy, h:mm a'
-    )
-  );
-
-
-  md.push('');
-  md.push('---');
-  md.push('');
-
-
-  md.push(
-    '| # | Question Title | Entry ID | Schema Key | Data Type | HTML Template Tag |'
-  );
-
-
-  md.push(
-    '|---|---|---|---|---|---|'
-  );
-
-
-  formData.fields.forEach(
-    function(field) {
-
-      md.push(
-
-        '| ' +
-        field.index +
-        ' | ' +
-        escapeMarkdown_(
-          field.title
-        ) +
-        ' | `' +
-        field.entryId +
-        '` | `' +
-        field.key +
-        '` | `' +
-        field.type +
-        '` | `<?= request.' +
-        field.key +
-        ' ?>` |'
-
-      );
-
-    }
-  );
-
-
-  md.push('');
-  md.push('---');
-  md.push('');
-
-
-  md.push(
-    '### Email Template Usage'
-  );
-
-
-  md.push(
-    '- Direct value: `<?= request.keyName ?>`'
-  );
-
-
-  md.push(
-    '- Paragraph value: `<span style="white-space: pre-wrap;"><?= request.keyName ?></span>`'
-  );
-
-
-  var output =
-    md.join('\n');
-
-
-  Logger.log(
-    '============================================================'
-  );
-
-
-  Logger.log(
-    'AUTO-GENERATED FORM REFERENCE GUIDE'
-  );
-
-
-  Logger.log(
-    '============================================================'
-  );
-
-
-  Logger.log(
-    output
-  );
-
-
-  Logger.log(
-    '============================================================'
-  );
-
-
-  return output;
-
-}
-
-
-/* ============================================================================
- * MARKDOWN ESCAPE
- * ========================================================================== */
-
-function escapeMarkdown_(
-  value
-) {
-
-  return String(
-    value || ''
-  )
-
-    .replace(
-      /\|/g,
-      '\\|'
-    )
-
-    .replace(
-      /\n/g,
-      ' '
-    )
-
-    .replace(
-      /\r/g,
-      ' ' 
-    );
-
 }
 
 
 /* ============================================================================
  * END AUTOMATION ENGINE
  * ============================================================================
- *
- * NEXT STEP
- * ----------
- *
- * Once:
- *
- *     testSyncFormToDraftSchema()
- *
- * correctly identifies the live form and DRAFT_FIELD_SCHEMA,
- * we can build the NEXT controlled operation:
- *
- *     GOOGLE FORM
- *          ↓
- *     AUTOMATION
- *          ↓
- *     DRAFT_FIELD_SCHEMA
- *          ↓
- *     REVIEW
- *          ↓
- *     PROMOTE TO FIELD_SCHEMA
- *
- * Only after that will we move onto:
- *
- *     CLIENT EMAIL
- *     ADMIN EMAIL
- *
- * ============================================================================
  */
-
-
-
-
-/**
- * ============================================================================
- * TEST: RAW GOOGLE FORM DATA
- * ============================================================================
- *
- * READ-ONLY.
- *
- * Shows exactly what Google Forms is returning for each question.
- *
- * Run:
- *     testRawGoogleFormData()
- *
- * Nothing is changed.
- * ============================================================================
- */
-function testRawGoogleFormData() {
-
-  Logger.log('');
-  Logger.log('============================================================');
-  Logger.log('TEST: RAW GOOGLE FORM DATA');
-  Logger.log('============================================================');
-
-  var form = getAutomationForm_();
-
-  Logger.log('Form ID: ' + form.getId());
-  Logger.log('Form Title: ' + form.getTitle());
-  Logger.log('Form Edit URL: ' + form.getEditUrl());
-
-  var items = form.getItems();
-
-  Logger.log('');
-  Logger.log('TOTAL ITEMS: ' + items.length);
-  Logger.log('');
-
-  items.forEach(function(item, index) {
-
-    Logger.log('------------------------------------------------------------');
-    Logger.log('ITEM #' + (index + 1));
-    Logger.log('------------------------------------------------------------');
-
-    Logger.log('Item ID: ' + item.getId());
-    Logger.log('Item Type: ' + item.getType());
-
-    var title = '';
-
-    try {
-      title = item.getTitle();
-    } catch (error) {
-      title = '[NO TITLE]';
-    }
-
-    Logger.log('Title: ' + JSON.stringify(title));
-
-    /*
-     * Generated application-style key.
-     * This is ONLY for inspection.
-     */
-    Logger.log(
-      'Generated Key: ' +
-      createCamelCaseKey(title)
-    );
-
-    /*
-     * Entry ID.
-     */
-    Logger.log(
-      'Entry ID: entry.' +
-      item.getId()
-    );
-
-    /*
-     * Try to show choices for dropdown / multiple choice /
-     * checkbox questions.
-     */
-    try {
-
-      if (item.getType() === FormApp.ItemType.MULTIPLE_CHOICE) {
-
-        var choices =
-          item.asMultipleChoiceItem().getChoices();
-
-        Logger.log('Choices:');
-
-        choices.forEach(function(choice) {
-          Logger.log('  - ' + choice.getValue());
-        });
-
-      } else if (item.getType() === FormApp.ItemType.LIST) {
-
-        var listChoices =
-          item.asListItem().getChoices();
-
-        Logger.log('Choices:');
-
-        listChoices.forEach(function(choice) {
-          Logger.log('  - ' + choice.getValue());
-        });
-
-      } else if (item.getType() === FormApp.ItemType.CHECKBOX) {
-
-        var checkboxChoices =
-          item.asCheckboxItem().getChoices();
-
-        Logger.log('Choices:');
-
-        checkboxChoices.forEach(function(choice) {
-          Logger.log('  - ' + choice.getValue());
-        });
-      }
-
-    } catch (error) {
-
-      Logger.log(
-        'Choices: [unable to read]'
-      );
-
-    }
-
-    Logger.log('');
-  });
-
-  Logger.log('============================================================');
-  Logger.log('RAW GOOGLE FORM TEST COMPLETE');
-  Logger.log('============================================================');
-
-  return true;
-}
-
-
-
-
-
-
-
-
-
-/**
- * ============================================================================
- * TEST: DETECT NEW FORM FIELDS
- * ============================================================================
- *
- * READ-ONLY.
- *
- * Finds Form questions whose entryId does not exist in DRAFT_FIELD_SCHEMA.
- *
- * It suggests a clean application key, but DOES NOT save anything.
- *
- * Run:
- *     testDetectNewFormFields()
- * ============================================================================
- */
-function testDetectNewFormFields() {
-
-  Logger.log('');
-  Logger.log('============================================================');
-  Logger.log('TEST: DETECT NEW FORM FIELDS');
-  Logger.log('============================================================');
-
-  var formData = readCurrentFormForAutomation_();
-  var draftSchema = getDraftFieldSchema_();
-
-  var draftByEntryId = createEntryIdLookup_(draftSchema);
-
-  var newFields = [];
-
-  formData.fields.forEach(function(formField) {
-
-    var existing =
-      draftByEntryId[formField.entryId];
-
-    if (!existing) {
-
-      newFields.push({
-        entryId: formField.entryId,
-        title: formField.title,
-        generatedKey: formField.key,
-        suggestedKey: suggestApplicationKey_(formField),
-        type: formField.type,
-        itemType: formField.itemType,
-        formField: formField.formField
-      });
-
-    }
-
-  });
-
-  Logger.log('');
-
-  if (newFields.length === 0) {
-
-    Logger.log('✅ NO NEW FORM FIELDS FOUND');
-
-    Logger.log('');
-    Logger.log('All current Form questions already exist');
-    Logger.log('in DRAFT_FIELD_SCHEMA by entryId.');
-
-    Logger.log('');
-    Logger.log('============================================================');
-    Logger.log('NO FILES WERE CHANGED');
-    Logger.log('============================================================');
-
-    return newFields;
-  }
-
-  Logger.log(
-    '⚠️ NEW FORM FIELDS FOUND: ' +
-    newFields.length
-  );
-
-  Logger.log('');
-
-  newFields.forEach(function(field, index) {
-
-    Logger.log(
-      '------------------------------------------------------------'
-    );
-
-    Logger.log(
-      'NEW FIELD #' + (index + 1)
-    );
-
-    Logger.log(
-      '------------------------------------------------------------'
-    );
-
-    Logger.log(
-      'Title: ' +
-      field.title
-    );
-
-    Logger.log(
-      'Entry ID: ' +
-      field.entryId
-    );
-
-    Logger.log(
-      'Google Form Type: ' +
-      field.itemType
-    );
-
-    Logger.log(
-      'Schema Type: ' +
-      field.type
-    );
-
-    Logger.log(
-      'Generated Key: ' +
-      field.generatedKey
-    );
-
-    Logger.log(
-      'Suggested Application Key: ' +
-      field.suggestedKey
-    );
-
-    Logger.log(
-      'Form Field: ' +
-      field.formField
-    );
-
-    Logger.log(
-      'STATUS: ⚠️ REQUIRES REVIEW'
-    );
-
-    Logger.log('');
-  });
-
-  Logger.log(
-    '============================================================'
-  );
-
-  Logger.log(
-    'NO FILES WERE CHANGED'
-  );
-
-  Logger.log(
-    '============================================================'
-  );
-
-  return newFields;
-}
-
-
-/**
- * ============================================================================
- * SUGGEST APPLICATION KEY
- * ============================================================================
- *
- * Converts a Form question into a SHORTER application-friendly key.
- *
- * IMPORTANT:
- * This is only a suggestion.
- *
- * It does NOT become the official key automatically.
- * ============================================================================
- */
-function suggestApplicationKey_(field) {
-
-  var title = String(field.title || '')
-    .replace(/\s+/g, ' ')
-    .replace(/[?!.:]+$/g, '')
-    .trim()
-    .toLowerCase();
-
-  Logger.log('DEBUG normalized title: [' + title + ']');
-
-  var knownMappings = {
-    'name': 'name',
-    'full name': 'name',
-    'email': 'email',
-    'email address': 'email',
-    'phone': 'phone',
-    'phone number': 'phone',
-    'address / location': 'location',
-    'how would you prefer us to contact you': 'contactPreference',
-    'have you used rd3 tech before': 'usedBefore',
-    'i am contacting rd3 tech as': 'contactingAs',
-    'what can we help you with': 'helpCategory',
-    'what are you trying to achieve': 'userGoal',
-    'how urgent is this for you': 'urgency',
-    'what operating system do you use': 'operatingSystem'
-  };
-
-  var suggested = knownMappings[title];
-
-  if (suggested) {
-    Logger.log(
-      'DEBUG known mapping found: ' +
-      title +
-      ' → ' +
-      suggested
-    );
-
-    return suggested;
-  }
-
-  var generated = createCamelCaseKey(title);
-
-  Logger.log(
-    'DEBUG no known mapping. Generated key: ' +
-    generated
-  );
-
-  if (generated.length <= 40) {
-    return generated;
-  }
-
-  return '[MANUAL KEY REQUIRED]';
-}
-
-
-
-
-
-
