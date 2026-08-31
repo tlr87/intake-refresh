@@ -26,7 +26,7 @@ function testEmail_Client() {
   Logger.log('EMAIL TEST 1 — CLIENT EMAIL');
   Logger.log('============================================================');
 
-  const testClientEmail = 'test+tom.revill@gmail.com';
+  const testClientEmail = 'tom.revill@gmail.com';
 
   const formConfig =
     typeof getFormConfig === 'function'

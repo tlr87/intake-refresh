@@ -1,22 +1,9 @@
 /**
  * ============================================================================
- * RD3 TECH — PRODUCTION AUTOMATION ENGINE
+ * RD3 TECH — AUTOMATION ENGINE
  * ============================================================================
  *
- * FORM → FIELD_SCHEMA SYNCHRONISATION
- *
- * PRODUCTION ARCHITECTURE
- * -----------------------
- *
- * FIELD_SCHEMA
- *     Production field schema stored as JSON in Script Properties.
- *
- * BACKUP_FIELD_SCHEMA
- *     Backup of FIELD_SCHEMA before an approved apply.
- *
- * FIELD_SYNC_PLAN
- *     Current form/schema comparison and approval state.
- *
+ * FORM → DRAFT_FIELD_SCHEMA SYNCHRONISATION
  *
  * WORKFLOW
  * --------
@@ -28,24 +15,47 @@
  *   5. verifyFormSync()
  *
  *
+ * SCRIPT PROPERTIES
+ * -----------------
+ *
+ *   DRAFT_FIELD_SCHEMA
+ *       Current working schema stored as JSON.
+ *
+ *   BACKUP_DRAFT_FIELD_SCHEMA
+ *       Backup of DRAFT_FIELD_SCHEMA before an apply.
+ *
+ *   RD3_FORM_SYNC_PLAN
+ *       Current approved/unapproved sync plan.
+ *
+ *
  * IMPORTANT
  * ---------
  *
- * FIELD_SCHEMA is NOT stored in this source file.
+ * DRAFT_FIELD_SCHEMA is NOT rewritten in the Apps Script source.
  *
- * FIELD_SCHEMA exists ONLY in Script Properties.
+ * The JavaScript source contains INITIAL_DRAFT_FIELD_SCHEMA only as the
+ * initial seed if the DRAFT_FIELD_SCHEMA Script Property does not exist.
  *
- * This automation engine:
+ * Once DRAFT_FIELD_SCHEMA exists in Script Properties, that JSON is the
+ * working schema.
  *
- *   - reads FIELD_SCHEMA from Script Properties
- *   - compares it with the live Google Form
- *   - creates a sync plan
- *   - requires approval
- *   - backs up FIELD_SCHEMA
- *   - applies approved changes
- *   - verifies the result
  *
- * No source-code schema is maintained.
+ * SYNC RULES
+ * ----------
+ *
+ * 1. Existing Form questions are matched using entryId.
+ *
+ * 2. Existing application keys are preserved.
+ *
+ * 3. Changed Form titles update the schema title/label.
+ *
+ * 4. New Form questions are added to the schema.
+ *
+ * 5. Removed Form questions are removed from the working schema.
+ *
+ * 6. BACKUP_DRAFT_FIELD_SCHEMA preserves the previous schema before apply.
+ *
+ * 7. verifyFormSync() expects the Form and DRAFT_FIELD_SCHEMA to match.
  *
  * ============================================================================
  */
@@ -57,14 +67,14 @@
 
 var AUTOMATION_CONFIG = {
 
-  fieldSchemaPropertyKey:
-    'FIELD_SCHEMA',
+  draftPropertyKey:
+    'DRAFT_FIELD_SCHEMA',
 
   backupPropertyKey:
-    'BACKUP_FIELD_SCHEMA',
+    'BACKUP_DRAFT_FIELD_SCHEMA',
 
   syncPlanPropertyKey:
-    'FIELD_SYNC_PLAN',
+    'RD3_FORM_SYNC_PLAN',
 
   requireApproval:
     true
@@ -73,18 +83,229 @@ var AUTOMATION_CONFIG = {
 
 
 /* ============================================================================
+ * INITIAL DRAFT FIELD SCHEMA
+ * ============================================================================
+ *
+ * This is ONLY used if DRAFT_FIELD_SCHEMA does not yet exist in
+ * Script Properties.
+ *
+ * Once DRAFT_FIELD_SCHEMA exists, Script Properties becomes the working copy.
+ * ========================================================================== */
+
+var INITIAL_DRAFT_FIELD_SCHEMA = [
+
+  /* --------------------------------------------------------------------------
+   * CLIENT
+   * ------------------------------------------------------------------------ */
+
+  {
+    key: 'name',
+    formField: 'form_name',
+    title: 'Name',
+    entryId: 'entry.943904063',
+    type: 'text',
+    aliases: [
+      'name',
+      'full name'
+    ],
+    label: 'Full Name',
+    section: 'client',
+    default: 'Not provided'
+  },
+
+  {
+    key: 'email',
+    formField: 'form_email',
+    title: 'Email',
+    entryId: 'entry.2015577610',
+    type: 'text',
+    aliases: [
+      'email',
+      'email address'
+    ],
+    label: 'Email Address',
+    section: 'client',
+    default: 'Not provided'
+  },
+
+  {
+    key: 'phone',
+    formField: 'form_phone',
+    title: 'Phone',
+    entryId: 'entry.38229443',
+    type: 'text',
+    aliases: [
+      'phone',
+      'phone number'
+    ],
+    label: 'Phone Number',
+    section: 'client',
+    default: 'Not provided'
+  },
+
+  {
+    key: 'location',
+    formField: 'form_location',
+    title: 'Address / Location:',
+    entryId: 'entry.1374165657',
+    type: 'text',
+    aliases: [
+      'location',
+      'address',
+      'address / location'
+    ],
+    label: 'Location / Address',
+    section: 'client',
+    default: 'Not provided'
+  },
+
+  {
+    key: 'contactPreference',
+    formField: 'form_contactPreference',
+    title: 'How would you prefer us to contact you?',
+    entryId: 'entry.786887502',
+    type: 'dropdown',
+    aliases: [
+      'contactPreference',
+      'preferredContact',
+      'how would you prefer us to contact you',
+      'prefer us to contact',
+      'preferred contact'
+    ],
+    label: 'Preferred Contact',
+    section: 'client',
+    default: 'Not provided'
+  },
+
+  {
+    key: 'contactingAs',
+    formField: 'form_clientType',
+    title: 'I am contacting RD3 Tech as:',
+    entryId: 'entry.1187723509',
+    type: 'dropdown',
+    aliases: [
+      'clientType',
+      'contactingAs',
+      'i am contacting rd3 tech as',
+      'contacting as'
+    ],
+    label: 'Contacting As',
+    section: 'client',
+    default: 'Not provided'
+  },
+
+  {
+    key: 'usedBefore',
+    formField: 'form_usedBefore',
+    title: 'Have you used RD3 Tech before?',
+    entryId: 'entry.1059088719',
+    type: 'dropdown',
+    aliases: [
+      'usedBefore',
+      'have you used rd3 tech before',
+      'previous customer',
+      'used before'
+    ],
+    label: 'Previous Customer',
+    section: 'client',
+    default: 'No'
+  },
+
+
+  /* --------------------------------------------------------------------------
+   * REQUEST
+   * ------------------------------------------------------------------------ */
+
+  {
+    key: 'helpCategory',
+    formField: 'form_helpCategory',
+    title: 'What can we help you with?',
+    entryId: 'entry.534946962',
+    type: 'dropdown',
+    aliases: [
+      'helpCategory',
+      'what can we help you with',
+      'need help with',
+      'help with'
+    ],
+    label: 'Need Help With',
+    section: 'request',
+    default: 'Not specified'
+  },
+
+  {
+    key: 'userGoal',
+    formField: 'form_userGoal',
+    title: 'What Are You Trying To Achieve?',
+    entryId: 'entry.1272748221',
+    type: 'paragraph',
+    aliases: [
+      'userGoal',
+      'goal',
+      'details',
+      'what are you trying to achieve',
+      'trying to achieve',
+      'desired outcome'
+    ],
+    label: 'Desired Outcome / Goal',
+    section: 'request',
+    default: 'Not specified'
+  },
+
+  {
+    key: 'urgency',
+    formField: 'form_urgency',
+    title: 'How Urgent Is This For You?',
+    entryId: 'entry.1183805901',
+    type: 'dropdown',
+    aliases: [
+      'urgency',
+      'how urgent is this for you',
+      'how urgent'
+    ],
+    label: 'How Urgent Is This?',
+    section: 'request',
+    default: 'Medium'
+  },
+
+
+  /* --------------------------------------------------------------------------
+   * HONEYPOT
+   * ------------------------------------------------------------------------ */
+
+  {
+    key: 'honeypot',
+    formField: 'form_honeypot',
+    title:
+      'Website URL  \n\n\nSecurity Check: Please leave this field empty.',
+    entryId: 'entry.663587071',
+    type: 'text',
+    aliases: [
+      'website url',
+      'security check',
+      'please leave this field empty',
+      'leave blank',
+      'honeypot'
+    ],
+    label: 'Honeypot',
+    section: 'security',
+    default: ''
+  }
+
+];
+
+
+/* ============================================================================
  * PUBLIC FUNCTION #1
- * BACKUP PRODUCTION FIELD_SCHEMA
+ * BACKUP FORM
  * ========================================================================== */
 
 /**
- * Creates a JSON backup of the current production FIELD_SCHEMA.
+ * Creates a JSON backup of the current DRAFT_FIELD_SCHEMA.
  *
- * This does NOT modify FIELD_SCHEMA.
+ * Run this before applying a sync if you want an explicit backup.
  *
- * The backup is stored in:
- *
- *   BACKUP_FIELD_SCHEMA
+ * applyFormSync() also performs a backup automatically.
  */
 function backupForm() {
 
@@ -93,14 +314,23 @@ function backupForm() {
     '============================================================'
   );
   Logger.log(
-    'RD3 TECH — BACKUP PRODUCTION FIELD_SCHEMA'
+    'RD3 TECH — BACKUP FORM'
   );
   Logger.log(
     '============================================================'
   );
+  Logger.log('');
 
   var currentSchema =
-    getFieldSchema_();
+    getDraftFieldSchema_();
+
+  if (!Array.isArray(currentSchema)) {
+
+    throw new Error(
+      'Cannot create backup because DRAFT_FIELD_SCHEMA is not an array.'
+    );
+
+  }
 
   var backup =
     JSON.stringify(
@@ -147,13 +377,6 @@ function backupForm() {
  * CHECK FORM SYNC
  * ========================================================================== */
 
-/**
- * Compares the live Google Form against production FIELD_SCHEMA.
- *
- * Saves the comparison to:
- *
- *   FIELD_SYNC_PLAN
- */
 function checkFormSync() {
 
   Logger.log('');
@@ -161,7 +384,7 @@ function checkFormSync() {
     '============================================================'
   );
   Logger.log(
-    'RD3 TECH — CHECK PRODUCTION FORM SYNC'
+    'RD3 TECH — CHECK FORM SYNC'
   );
   Logger.log(
     '============================================================'
@@ -170,38 +393,20 @@ function checkFormSync() {
   var formData =
     readCurrentForm_();
 
-  var fieldSchema =
-    getFieldSchema_();
+  var draftSchema =
+    getDraftFieldSchema_();
 
   var comparison =
-    compareFormToFieldSchema_(
+    compareFormToDraftSchema_(
       formData.fields,
-      fieldSchema
+      draftSchema
     );
 
-  comparison.formId =
-    formData.formId;
-
-  comparison.formTitle =
-    formData.formTitle;
-
-  comparison.formUrl =
-    formData.formUrl;
-
-  comparison.checkedAt =
-    new Date().toISOString();
-
-  comparison.approved =
-    false;
-
-  comparison.applied =
-    false;
-
-  saveSyncPlan_(
+  logSyncPlan_(
     comparison
   );
 
-  logSyncPlan_(
+  saveSyncPlan_(
     comparison
   );
 
@@ -210,17 +415,21 @@ function checkFormSync() {
   if (comparison.passed) {
 
     Logger.log(
-      '✅ PRODUCTION FIELD_SCHEMA IS ALIGNED WITH THE FORM'
+      '✅ FORM AND DRAFT_FIELD_SCHEMA ARE ALIGNED'
     );
 
   } else {
 
     Logger.log(
-      '⚠️ PRODUCTION FIELD_SCHEMA REQUIRES SYNC'
+      '⚠️ SYNC REQUIRED'
     );
 
     Logger.log(
-      'Review the plan, then run approveFormSync().'
+      'Review the changes.'
+    );
+
+    Logger.log(
+      'Then run approveFormSync().'
     );
 
   }
@@ -235,14 +444,9 @@ function checkFormSync() {
 
 /* ============================================================================
  * PUBLIC FUNCTION #3
- * APPROVE FORM SYNC
+ * APPROVE
  * ========================================================================== */
 
-/**
- * Approves the currently saved sync plan.
- *
- * Does NOT modify FIELD_SCHEMA.
- */
 function approveFormSync() {
 
   Logger.log('');
@@ -250,7 +454,7 @@ function approveFormSync() {
     '============================================================'
   );
   Logger.log(
-    'RD3 TECH — APPROVE PRODUCTION FORM SYNC'
+    'RD3 TECH — APPROVE FORM SYNC'
   );
   Logger.log(
     '============================================================'
@@ -262,8 +466,7 @@ function approveFormSync() {
   if (!plan) {
 
     throw new Error(
-      'No FIELD_SYNC_PLAN exists. ' +
-      'Run checkFormSync() first.'
+      'No sync plan exists. Run checkFormSync() first.'
     );
 
   }
@@ -284,17 +487,13 @@ function approveFormSync() {
   plan.approvedAt =
     new Date().toISOString();
 
-  plan.applied =
-    false;
-
   saveSyncPlan_(
     plan
   );
 
   Logger.log('');
-
   Logger.log(
-    '✅ PRODUCTION FORM SYNC APPROVED'
+    '✅ FORM SYNC APPROVED'
   );
 
   Logger.log(
@@ -311,24 +510,9 @@ function approveFormSync() {
 
 /* ============================================================================
  * PUBLIC FUNCTION #4
- * APPLY FORM SYNC
+ * APPLY
  * ========================================================================== */
 
-/**
- * Applies the approved sync plan to production FIELD_SCHEMA.
- *
- * Sequence:
- *
- *   1. Load plan
- *   2. Confirm approval
- *   3. Backup FIELD_SCHEMA
- *   4. Verify backup
- *   5. Build updated schema
- *   6. Save FIELD_SCHEMA
- *   7. Read FIELD_SCHEMA back
- *   8. Verify write
- *   9. Mark plan applied
- */
 function applyFormSync() {
 
   Logger.log('');
@@ -336,7 +520,7 @@ function applyFormSync() {
     '============================================================'
   );
   Logger.log(
-    'RD3 TECH — APPLY PRODUCTION FORM SYNC'
+    'RD3 TECH — APPLY FORM SYNC'
   );
   Logger.log(
     '============================================================'
@@ -348,8 +532,7 @@ function applyFormSync() {
   if (!plan) {
 
     throw new Error(
-      'No FIELD_SYNC_PLAN exists. ' +
-      'Run checkFormSync() first.'
+      'No sync plan exists. Run checkFormSync() first.'
     );
 
   }
@@ -360,7 +543,7 @@ function applyFormSync() {
       '✅ NO CHANGES REQUIRED'
     );
 
-    return getFieldSchema_();
+    return getDraftFieldSchema_();
 
   }
 
@@ -370,24 +553,15 @@ function applyFormSync() {
   ) {
 
     throw new Error(
-      'PRODUCTION FORM SYNC HAS NOT BEEN APPROVED. ' +
+      'FORM SYNC HAS NOT BEEN APPROVED. ' +
       'Run approveFormSync() first.'
-    );
-
-  }
-
-  if (plan.applied === true) {
-
-    throw new Error(
-      'This FIELD_SYNC_PLAN has already been applied. ' +
-      'Run checkFormSync() again before another apply.'
     );
 
   }
 
 
   /* --------------------------------------------------------------------------
-   * STEP 1 — BACKUP PRODUCTION FIELD_SCHEMA
+   * STEP 1 — BACKUP CURRENT SCHEMA
    * ------------------------------------------------------------------------ */
 
   backupForm();
@@ -398,10 +572,10 @@ function applyFormSync() {
    * ------------------------------------------------------------------------ */
 
   var backup =
-    getBackupFieldSchema_();
+    getBackupDraftFieldSchema_();
 
   var currentSchema =
-    getFieldSchema_();
+    getDraftFieldSchema_();
 
   if (
     JSON.stringify(backup) !==
@@ -410,15 +584,14 @@ function applyFormSync() {
 
     throw new Error(
       'Backup verification failed. ' +
-      'FIELD_SCHEMA was NOT changed.'
+      'DRAFT_FIELD_SCHEMA was NOT changed.'
     );
 
   }
 
   Logger.log('');
-
   Logger.log(
-    '✅ PRODUCTION FIELD_SCHEMA BACKUP VERIFIED'
+    '✅ CURRENT SCHEMA BACKUP VERIFIED'
   );
 
 
@@ -427,17 +600,17 @@ function applyFormSync() {
    * ------------------------------------------------------------------------ */
 
   var updatedSchema =
-    buildUpdatedFieldSchema_(
+    buildUpdatedDraftSchema_(
       currentSchema,
       plan
     );
 
 
   /* --------------------------------------------------------------------------
-   * STEP 4 — SAVE PRODUCTION FIELD_SCHEMA
+   * STEP 4 — SAVE DIRECTLY TO SCRIPT PROPERTY
    * ------------------------------------------------------------------------ */
 
-  saveFieldSchema_(
+  saveDraftFieldSchema_(
     updatedSchema
   );
 
@@ -447,7 +620,7 @@ function applyFormSync() {
    * ------------------------------------------------------------------------ */
 
   var savedSchema =
-    getFieldSchema_();
+    getDraftFieldSchema_();
 
   if (
     JSON.stringify(savedSchema) !==
@@ -455,7 +628,7 @@ function applyFormSync() {
   ) {
 
     throw new Error(
-      'FIELD_SCHEMA write verification failed.'
+      'DRAFT_FIELD_SCHEMA write verification failed.'
     );
 
   }
@@ -477,13 +650,12 @@ function applyFormSync() {
 
 
   Logger.log('');
-
   Logger.log(
     '============================================================'
   );
 
   Logger.log(
-    '✅ PRODUCTION FIELD_SCHEMA UPDATED'
+    '✅ DRAFT_FIELD_SCHEMA UPDATED'
   );
 
   Logger.log(
@@ -492,21 +664,21 @@ function applyFormSync() {
   );
 
   Logger.log(
-    'Property: FIELD_SCHEMA'
+    'Property: DRAFT_FIELD_SCHEMA'
   );
 
   Logger.log('');
 
   Logger.log(
-    'Backup property: BACKUP_FIELD_SCHEMA'
-  );
-
-  Logger.log(
-    'Sync plan property: FIELD_SYNC_PLAN'
-  );
-
-  Logger.log(
     'No Apps Script source code was modified.'
+  );
+
+  Logger.log(
+    'No UrlFetchApp was used.'
+  );
+
+  Logger.log(
+    'No Apps Script API was used.'
   );
 
   Logger.log(
@@ -519,14 +691,9 @@ function applyFormSync() {
 
 /* ============================================================================
  * PUBLIC FUNCTION #5
- * VERIFY FORM SYNC
+ * VERIFY
  * ========================================================================== */
 
-/**
- * Verifies the live Google Form against production FIELD_SCHEMA.
- *
- * Does NOT modify FIELD_SCHEMA.
- */
 function verifyFormSync() {
 
   Logger.log('');
@@ -534,7 +701,7 @@ function verifyFormSync() {
     '============================================================'
   );
   Logger.log(
-    'RD3 TECH — VERIFY PRODUCTION FORM SYNC'
+    'RD3 TECH — VERIFY FORM SYNC'
   );
   Logger.log(
     '============================================================'
@@ -543,13 +710,13 @@ function verifyFormSync() {
   var formData =
     readCurrentForm_();
 
-  var fieldSchema =
-    getFieldSchema_();
+  var draftSchema =
+    getDraftFieldSchema_();
 
   var comparison =
-    compareFormToFieldSchema_(
+    compareFormToDraftSchema_(
       formData.fields,
-      fieldSchema
+      draftSchema
     );
 
   logSyncPlan_(
@@ -565,11 +732,11 @@ function verifyFormSync() {
     );
 
     Logger.log(
-      '✅ PRODUCTION VERIFY PASSED'
+      '✅ VERIFY PASSED'
     );
 
     Logger.log(
-      'FORM AND FIELD_SCHEMA ARE ALIGNED'
+      'FORM AND DRAFT_FIELD_SCHEMA ARE ALIGNED'
     );
 
     Logger.log(
@@ -583,11 +750,11 @@ function verifyFormSync() {
     );
 
     Logger.log(
-      '❌ PRODUCTION VERIFY FAILED'
+      '❌ VERIFY FAILED'
     );
 
     Logger.log(
-      'FORM AND FIELD_SCHEMA ARE STILL DIFFERENT'
+      'FORM AND DRAFT_FIELD_SCHEMA ARE STILL DIFFERENT'
     );
 
     Logger.log(
@@ -601,71 +768,95 @@ function verifyFormSync() {
 
 
 /* ============================================================================
- * GET PRODUCTION FIELD_SCHEMA
+ * GET DRAFT FIELD SCHEMA
  * ========================================================================== */
 
-/**
- * Reads FIELD_SCHEMA exclusively from Script Properties.
- *
- * There is deliberately NO source-code fallback.
- */
-function getFieldSchema_() {
+function getDraftFieldSchema_() {
+
+  var properties =
+    PropertiesService
+      .getScriptProperties();
 
   var stored =
-    PropertiesService
-      .getScriptProperties()
-      .getProperty(
-        AUTOMATION_CONFIG.fieldSchemaPropertyKey
-      );
-
-  if (!stored) {
-
-    throw new Error(
-      'FIELD_SCHEMA does not exist in Script Properties.'
+    properties.getProperty(
+      AUTOMATION_CONFIG.draftPropertyKey
     );
 
-  }
 
-  try {
+  /* --------------------------------------------------------------------------
+   * EXISTING SCRIPT PROPERTY
+   * ------------------------------------------------------------------------ */
 
-    var parsed =
-      JSON.parse(
-        stored
-      );
+  if (stored) {
 
-    if (!Array.isArray(parsed)) {
+    try {
+
+      var parsed =
+        JSON.parse(
+          stored
+        );
+
+      if (!Array.isArray(parsed)) {
+
+        throw new Error(
+          'DRAFT_FIELD_SCHEMA JSON is not an array.'
+        );
+
+      }
+
+      return parsed;
+
+    } catch (error) {
 
       throw new Error(
-        'FIELD_SCHEMA JSON must be an array.'
+        'Unable to parse DRAFT_FIELD_SCHEMA.\n' +
+        error.message
       );
 
     }
 
-    return parsed;
+  }
 
-  } catch (error) {
 
-    throw new Error(
-      'Unable to parse FIELD_SCHEMA JSON.\n' +
-      error.message
+  /* --------------------------------------------------------------------------
+   * FIRST RUN
+   * ------------------------------------------------------------------------ */
+
+  var initial =
+    JSON.parse(
+      JSON.stringify(
+        INITIAL_DRAFT_FIELD_SCHEMA
+      )
     );
 
-  }
+  saveDraftFieldSchema_(
+    initial
+  );
+
+  Logger.log(
+    'ℹ️ DRAFT_FIELD_SCHEMA did not exist.'
+  );
+
+  Logger.log(
+    'Initial schema copied into Script Properties.'
+  );
+
+  return initial;
 }
 
 
 /* ============================================================================
- * SAVE PRODUCTION FIELD_SCHEMA
+ * SAVE DRAFT FIELD SCHEMA
  * ========================================================================== */
 
-function saveFieldSchema_(
+function saveDraftFieldSchema_(
   schema
 ) {
 
   if (!Array.isArray(schema)) {
 
     throw new Error(
-      'FIELD_SCHEMA must be an array.'
+      'DRAFT_FIELD_SCHEMA must be an array.'
     );
 
   }
@@ -678,17 +869,17 @@ function saveFieldSchema_(
   PropertiesService
     .getScriptProperties()
     .setProperty(
-      AUTOMATION_CONFIG.fieldSchemaPropertyKey,
+      AUTOMATION_CONFIG.draftPropertyKey,
       json
     );
 }
 
 
 /* ============================================================================
- * GET BACKUP FIELD_SCHEMA
+ * GET BACKUP
  * ========================================================================== */
 
-function getBackupFieldSchema_() {
+function getBackupDraftFieldSchema_() {
 
   var stored =
     PropertiesService
@@ -700,7 +891,7 @@ function getBackupFieldSchema_() {
   if (!stored) {
 
     throw new Error(
-      'BACKUP_FIELD_SCHEMA does not exist.'
+      'BACKUP_DRAFT_FIELD_SCHEMA does not exist.'
     );
 
   }
@@ -715,7 +906,7 @@ function getBackupFieldSchema_() {
     if (!Array.isArray(parsed)) {
 
       throw new Error(
-        'BACKUP_FIELD_SCHEMA JSON must be an array.'
+        'Backup JSON is not an array.'
       );
 
     }
@@ -725,7 +916,7 @@ function getBackupFieldSchema_() {
   } catch (error) {
 
     throw new Error(
-      'Unable to parse BACKUP_FIELD_SCHEMA JSON.\n' +
+      'Unable to parse BACKUP_DRAFT_FIELD_SCHEMA.\n' +
       error.message
     );
 
@@ -826,10 +1017,7 @@ function extractFormId_(
       /\/forms\/d\/e\/([a-zA-Z0-9_-]+)/
     );
 
-  if (
-    match &&
-    match[1]
-  ) {
+  if (match && match[1]) {
 
     return match[1];
 
@@ -840,10 +1028,7 @@ function extractFormId_(
       /\/forms\/d\/([a-zA-Z0-9_-]+)/
     );
 
-  if (
-    match &&
-    match[1]
-  ) {
+  if (match && match[1]) {
 
     return match[1];
 
@@ -1060,9 +1245,9 @@ function getAutomationSchemaType_(
  * COMPARISON ENGINE
  * ========================================================================== */
 
-function compareFormToFieldSchema_(
+function compareFormToDraftSchema_(
   formFields,
-  schemaFields
+  draftFields
 ) {
 
   var result = {
@@ -1073,8 +1258,8 @@ function compareFormToFieldSchema_(
     formFieldCount:
       formFields.length,
 
-    schemaFieldCount:
-      schemaFields.length,
+    draftFieldCount:
+      draftFields.length,
 
     added:
       [],
@@ -1151,21 +1336,21 @@ function compareFormToFieldSchema_(
       formFields
     );
 
-  var schemaByEntryId =
+  var draftByEntryId =
     createEntryIdLookup_(
-      schemaFields
+      draftFields
     );
 
 
   /* --------------------------------------------------------------------------
-   * FORM → FIELD_SCHEMA
+   * FORM → DRAFT
    * ------------------------------------------------------------------------ */
 
   formFields.forEach(
     function(formField) {
 
-      var schemaField =
-        schemaByEntryId[
+      var draftField =
+        draftByEntryId[
           formField.entryId
         ];
 
@@ -1174,7 +1359,7 @@ function compareFormToFieldSchema_(
        * NEW FORM QUESTION
        * -------------------------------------------------------------------- */
 
-      if (!schemaField) {
+      if (!draftField) {
 
         result.added.push({
 
@@ -1184,7 +1369,7 @@ function compareFormToFieldSchema_(
           suggestedKey:
             suggestApplicationKey_(
               formField,
-              schemaFields
+              draftFields
             )
 
         });
@@ -1201,7 +1386,7 @@ function compareFormToFieldSchema_(
       var differences =
         compareFieldProperties_(
           formField,
-          schemaField
+          draftField
         );
 
       if (
@@ -1211,10 +1396,10 @@ function compareFormToFieldSchema_(
         result.changed.push({
 
           key:
-            schemaField.key,
+            draftField.key,
 
           entryId:
-            schemaField.entryId,
+            draftField.entryId,
 
           differences:
             differences,
@@ -1222,8 +1407,8 @@ function compareFormToFieldSchema_(
           form:
             formField,
 
-          schema:
-            schemaField
+          draft:
+            draftField
 
         });
 
@@ -1232,7 +1417,7 @@ function compareFormToFieldSchema_(
         result.unchanged.push({
 
           key:
-            schemaField.key,
+            draftField.key,
 
           title:
             formField.title,
@@ -1249,35 +1434,36 @@ function compareFormToFieldSchema_(
 
 
   /* --------------------------------------------------------------------------
-   * FIELD_SCHEMA → FORM
+   * DRAFT → FORM
    *
-   * Anything in FIELD_SCHEMA that no longer exists in the Form is removed.
+   * Anything in DRAFT_FIELD_SCHEMA that no longer exists in the Form is
+   * classified as removed.
    * ------------------------------------------------------------------------ */
 
-  schemaFields.forEach(
-    function(schemaField) {
+  draftFields.forEach(
+    function(draftField) {
 
       if (
         !formByEntryId[
-          schemaField.entryId
+          draftField.entryId
         ]
       ) {
 
         result.removed.push({
 
           key:
-            schemaField.key,
+            draftField.key,
 
           title:
-            schemaField.title ||
-            schemaField.label ||
-            schemaField.key,
+            draftField.title ||
+            draftField.label ||
+            draftField.key,
 
           entryId:
-            schemaField.entryId || '',
+            draftField.entryId || '',
 
           type:
-            schemaField.type || ''
+            draftField.type || ''
 
         });
 
@@ -1311,10 +1497,29 @@ function compareFormToFieldSchema_(
 
 
 /* ============================================================================
- * BUILD UPDATED PRODUCTION FIELD_SCHEMA
+ * BUILD UPDATED DRAFT SCHEMA
  * ========================================================================== */
 
-function buildUpdatedFieldSchema_(
+/**
+ * Builds the new DRAFT_FIELD_SCHEMA from the current schema and sync plan.
+ *
+ * RULES
+ * -----
+ *
+ * ADD:
+ *   Add the new Form field.
+ *
+ * CHANGE:
+ *   Update the existing field while preserving its application key.
+ *
+ * REMOVE:
+ *   Remove the field completely from DRAFT_FIELD_SCHEMA.
+ *
+ * BACKUP:
+ *   The previous schema has already been saved to
+ *   BACKUP_DRAFT_FIELD_SCHEMA before this function runs.
+ */
+function buildUpdatedDraftSchema_(
   currentSchema,
   plan
 ) {
@@ -1389,7 +1594,7 @@ function buildUpdatedFieldSchema_(
       );
 
       Logger.log(
-        '➕ ADDING PRODUCTION FIELD: ' +
+        '➕ ADDING NEW FIELD: ' +
         newKey +
         ' — ' +
         field.title
@@ -1412,9 +1617,7 @@ function buildUpdatedFieldSchema_(
           change.entryId
         );
 
-      if (
-        index === -1
-      ) {
+      if (index === -1) {
 
         return;
 
@@ -1428,9 +1631,17 @@ function buildUpdatedFieldSchema_(
 
 
       /*
-       * APPLICATION IDENTITY IS PRESERVED.
+       * PRESERVE APPLICATION IDENTITY.
        *
-       * The existing key remains unchanged.
+       * Example:
+       *
+       *   key: name
+       *
+       * remains:
+       *
+       *   key: name
+       *
+       * even when the Form title changes.
        */
 
       existing.title =
@@ -1444,7 +1655,7 @@ function buildUpdatedFieldSchema_(
 
 
       /*
-       * Existing formField is intentionally preserved.
+       * Preserve existing formField.
        */
 
       existing.label =
@@ -1462,13 +1673,17 @@ function buildUpdatedFieldSchema_(
         );
 
 
+      /*
+       * Remove any legacy inactive markers.
+       */
+
       delete existing.inactive;
 
       delete existing.removedFromForm;
 
 
       Logger.log(
-        '✏️ UPDATING PRODUCTION FIELD: ' +
+        '✏️ UPDATING EXISTING FIELD: ' +
         existing.key +
         ' — ' +
         formField.title
@@ -1480,7 +1695,29 @@ function buildUpdatedFieldSchema_(
 
   /* --------------------------------------------------------------------------
    * REMOVALS
+   * --------------------------------------------------------------------------
+   *
+   * THIS IS THE IMPORTANT CHANGE.
+   *
+   * Removed Form questions are now removed from the WORKING schema.
+   *
+   * They are NOT retained with:
+   *
+   *   inactive: true
+   *
+   * Instead they disappear from DRAFT_FIELD_SCHEMA.
+   *
+   * The previous version is preserved in:
+   *
+   *   BACKUP_DRAFT_FIELD_SCHEMA
+   *
    * ------------------------------------------------------------------------ */
+
+  /*
+   * Remove from highest index to lowest index.
+   *
+   * This prevents array index shifting from causing problems.
+   */
 
   var removalIndexes =
     [];
@@ -1494,9 +1731,7 @@ function buildUpdatedFieldSchema_(
           change.entryId
         );
 
-      if (
-        index !== -1
-      ) {
+      if (index !== -1) {
 
         removalIndexes.push(
           index
@@ -1509,7 +1744,7 @@ function buildUpdatedFieldSchema_(
 
 
   /*
-   * Highest index first.
+   * Sort descending.
    */
 
   removalIndexes.sort(
@@ -1528,7 +1763,7 @@ function buildUpdatedFieldSchema_(
         updated[index];
 
       Logger.log(
-        '➖ REMOVING PRODUCTION FIELD: ' +
+        '➖ REMOVING FIELD FROM DRAFT_FIELD_SCHEMA: ' +
         removedField.key +
         ' — ' +
         removedField.title
@@ -1583,7 +1818,7 @@ function createEntryIdLookup_(
 
 
 /* ============================================================================
- * FIND FIELD BY ENTRY ID
+ * FIND SCHEMA FIELD
  * ========================================================================== */
 
 function findSchemaIndexByEntryId_(
@@ -1624,7 +1859,7 @@ function findSchemaIndexByEntryId_(
 
 function compareFieldProperties_(
   formField,
-  schemaField
+  draftField
 ) {
 
   var differences =
@@ -1634,14 +1869,14 @@ function compareFieldProperties_(
     differences,
     'title',
     formField.title,
-    schemaField.title
+    draftField.title
   );
 
   compareProperty_(
     differences,
     'type',
     formField.type,
-    schemaField.type
+    draftField.type
   );
 
   return differences;
@@ -1652,7 +1887,7 @@ function compareProperty_(
   differences,
   property,
   formValue,
-  schemaValue
+  draftValue
 ) {
 
   var a =
@@ -1662,7 +1897,7 @@ function compareProperty_(
 
   var b =
     normaliseText_(
-      schemaValue
+      draftValue
     );
 
   if (
@@ -1677,8 +1912,8 @@ function compareProperty_(
       formValue:
         formValue,
 
-      schemaValue:
-        schemaValue
+      draftValue:
+        draftValue
 
     });
 
@@ -1690,6 +1925,11 @@ function compareProperty_(
  * APPLICATION KEY GENERATION
  * ========================================================================== */
 
+/**
+ * Used when a NEW Form question is encountered.
+ *
+ * Existing application keys are never regenerated.
+ */
 function suggestApplicationKey_(
   field,
   schema
@@ -1728,10 +1968,9 @@ function suggestApplicationKey_(
 }
 
 
-/* ============================================================================
- * GENERATE APPLICATION KEY
- * ========================================================================== */
-
+/**
+ * Converts a NEW Form title into an application key.
+ */
 function generateApplicationKey_(
   str
 ) {
@@ -1782,9 +2021,7 @@ function generateApplicationKey_(
   words.forEach(
     function(word, index) {
 
-      if (
-        index === 0
-      ) {
+      if (index === 0) {
 
         result +=
           word.toLowerCase();
@@ -1805,7 +2042,7 @@ function generateApplicationKey_(
 
 
 /* ============================================================================
- * UNIQUE APPLICATION KEY
+ * UNIQUE KEY
  * ========================================================================== */
 
 function makeUniqueSchemaKey_(
@@ -1926,10 +2163,6 @@ function createAutomaticAliases_(
   return aliases;
 }
 
-
-/* ============================================================================
- * MERGE ALIASES
- * ========================================================================== */
 
 function mergeAliases_(
   existing,
@@ -2234,28 +2467,14 @@ function getSavedSyncPlan_() {
 
   try {
 
-    var plan =
-      JSON.parse(
-        stored
-      );
-
-    if (
-      !plan ||
-      typeof plan !== 'object'
-    ) {
-
-      throw new Error(
-        'FIELD_SYNC_PLAN must be a JSON object.'
-      );
-
-    }
-
-    return plan;
+    return JSON.parse(
+      stored
+    );
 
   } catch (error) {
 
     throw new Error(
-      'Saved FIELD_SYNC_PLAN is invalid.\n' +
+      'Saved sync plan is invalid.\n' +
       error.message
     );
 
@@ -2277,7 +2496,7 @@ function logSyncPlan_(
   );
 
   Logger.log(
-    'FORM → PRODUCTION FIELD_SCHEMA COMPARISON'
+    'FORM → DRAFT_FIELD_SCHEMA COMPARISON'
   );
 
   Logger.log(
@@ -2290,8 +2509,8 @@ function logSyncPlan_(
   );
 
   Logger.log(
-    'Production Schema Fields: ' +
-    comparison.schemaFieldCount
+    'Draft Fields: ' +
+    comparison.draftFieldCount
   );
 
   Logger.log('');
@@ -2371,9 +2590,9 @@ function logSyncPlan_(
           );
 
           Logger.log(
-            '        SCHEMA: ' +
+            '        DRAFT: ' +
             JSON.stringify(
-              difference.schemaValue
+              difference.draftValue
             )
           );
 
@@ -2433,13 +2652,13 @@ function logSyncPlan_(
   ) {
 
     Logger.log(
-      '✅ FORM AND PRODUCTION FIELD_SCHEMA ARE ALIGNED'
+      '✅ FORM AND DRAFT_FIELD_SCHEMA ARE ALIGNED'
     );
 
   } else {
 
     Logger.log(
-      '⚠️ PRODUCTION SYNC REQUIRED'
+      '⚠️ SYNC REQUIRED'
     );
 
   }
@@ -2451,6 +2670,6 @@ function logSyncPlan_(
 
 
 /* ============================================================================
- * END PRODUCTION AUTOMATION ENGINE
+ * END AUTOMATION ENGINE
  * ============================================================================
  */
