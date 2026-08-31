@@ -40,41 +40,56 @@ const EMAIL_SUBJECTS = {
 
 function getFieldSchema() {
 
-  const json =
-    PropertiesService
-      .getScriptProperties()
-      .getProperty('FIELD_SCHEMA');
+  const json = PropertiesService
+    .getScriptProperties()
+    .getProperty('FIELD_SCHEMA');
 
   if (!json) {
-    throw new Error(
-      'FIELD_SCHEMA is missing from Script Properties.'
-    );
+    throw new Error('FIELD_SCHEMA is missing from Script Properties.');
   }
 
   let schema;
 
   try {
-
     schema = JSON.parse(json);
-
   } catch (error) {
-
     throw new Error(
-      'FIELD_SCHEMA contains invalid JSON: ' +
-      error.message
+      'FIELD_SCHEMA contains invalid JSON: ' + error.message
     );
-
   }
 
-  if (!Array.isArray(schema)) {
+  // FIELD_SCHEMA stored as object — convert internally to array
+  if (
+    schema &&
+    typeof schema === 'object' &&
+    !Array.isArray(schema)
+  ) {
+    return Object.keys(schema).map(function(key) {
 
-    throw new Error(
-      'FIELD_SCHEMA must be a JSON array.'
-    );
+      const field = schema[key];
 
+      if (!field || typeof field !== 'object') {
+        throw new Error(
+          'Invalid FIELD_SCHEMA field: ' + key
+        );
+      }
+
+      if (!field.key) {
+        field.key = key;
+      }
+
+      return field;
+    });
   }
 
-  return schema;
+  // Also allow existing array format
+  if (Array.isArray(schema)) {
+    return schema;
+  }
+
+  throw new Error(
+    'FIELD_SCHEMA must be a JSON object or array.'
+  );
 }
 
 

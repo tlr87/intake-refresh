@@ -2,6 +2,13 @@
  * ============================================================================
  * RD3 TECH — CONFIG EDITOR, ROUTER & STANDALONE FALLBACK PROVIDERS
  * ============================================================================
+ *
+ * FIELD_SCHEMA:
+ *   - Stored in Script Properties as the PRIMARY source.
+ *   - getFallbackFieldSchema() provides the DEFAULT/FALLBACK source.
+ *   - The Config Editor can view, edit, save, and restore FIELD_SCHEMA.
+ *
+ * ============================================================================
  */
 
 
@@ -12,20 +19,23 @@
  */
 function onOpen() {
 
-  SpreadsheetApp.getUi()
-
+  SpreadsheetApp
+    .getUi()
     .createMenu('RD3 Tech')
-
     .addItem(
       '⚙️ Open Config Editor',
       'openConfigEditor'
     )
-
     .addToUi();
 
 }
 
 
+/**
+ * ============================================================================
+ * Opens the Configuration Editor.
+ * ============================================================================
+ */
 function openConfigEditor() {
 
   const template =
@@ -37,12 +47,10 @@ function openConfigEditor() {
     );
 
   const htmlOutput =
-    template.evaluate()
-
+    template
+      .evaluate()
       .setWidth(920)
-
       .setHeight(720)
-
       .setTitle(
         'RD3 Tech — Configuration JSON Editor'
       );
@@ -68,8 +76,16 @@ function openConfigEditor() {
 
 /**
  * ============================================================================
- * Reads existing Script Properties WITHOUT wiping or auto-writing fallback
- * defaults.
+ * READ INITIAL CONFIGURATION DATA
+ * ============================================================================
+ *
+ * Reads existing Script Properties WITHOUT wiping or automatically writing
+ * fallback defaults.
+ *
+ * Fallbacks are supplied IN MEMORY only when the corresponding property
+ * does not exist.
+ *
+ * FIELD_SCHEMA is included here and uses getFallbackFieldSchema().
  * ============================================================================
  */
 function getInitialData() {
@@ -96,7 +112,10 @@ function getInitialData() {
       getFallbackRateLimitConfig(),
 
     FORM_CONFIG:
-      getFallbackFormConfig()
+      getFallbackFormConfig(),
+
+    FIELD_SCHEMA:
+      getFallbackFieldSchema()
 
   };
 
@@ -128,7 +147,7 @@ function getInitialData() {
 
 
   // --------------------------------------------------------------------------
-  // Supply fallbacks in-memory ONLY if key doesn't exist
+  // Supply fallbacks IN MEMORY ONLY if key does not exist.
   // --------------------------------------------------------------------------
 
   Object.keys(fallbacks).forEach(function(key) {
@@ -150,6 +169,9 @@ function getInitialData() {
 
 /**
  * ============================================================================
+ * SAVE CONFIGURATION DATA
+ * ============================================================================
+ *
  * Saves specific properties directly without calling deleteAllProperties().
  * ============================================================================
  */
@@ -188,6 +210,20 @@ function saveAllConfigs(payload) {
  * ============================================================================
  * RESTORE HANDLER
  * ============================================================================
+ *
+ * Restores a configuration key from its canonical fallback provider.
+ *
+ * Supported fallback providers:
+ *
+ *   REVIEW_CONFIG
+ *   URGENCY_CONFIG
+ *   SPAM_CONFIG
+ *   RATE_LIMIT_CONFIG
+ *   FORM_CONFIG
+ *   FIELD_SCHEMA
+ *
+ * The restored value is also written back to Script Properties.
+ * ============================================================================
  */
 function resetKeyToFallback(key) {
 
@@ -219,16 +255,23 @@ function resetKeyToFallback(key) {
     fallbackData =
       getFallbackFormConfig();
 
+  } else if (key === 'FIELD_SCHEMA') {
+
+    fallbackData =
+      getFallbackFieldSchema();
+
   }
 
 
-  if (fallbackData) {
+  if (fallbackData !== null) {
 
     PropertiesService
       .getScriptProperties()
       .setProperty(
         key,
-        JSON.stringify(fallbackData)
+        JSON.stringify(
+          fallbackData
+        )
       );
 
 
@@ -249,7 +292,13 @@ function resetKeyToFallback(key) {
 
 /**
  * ============================================================================
- * HELPER: Direct Script Properties Wipe and Reset.
+ * RESET ALL SCRIPT PROPERTIES TO DEFAULT
+ * ============================================================================
+ *
+ * WARNING:
+ * This deletes ALL existing Script Properties before restoring the known
+ * configuration defaults.
+ *
  * ============================================================================
  */
 function resetAllScriptPropertiesToDefault() {
@@ -276,7 +325,10 @@ function resetAllScriptPropertiesToDefault() {
       getFallbackRateLimitConfig(),
 
     FORM_CONFIG:
-      getFallbackFormConfig()
+      getFallbackFormConfig(),
+
+    FIELD_SCHEMA:
+      getFallbackFieldSchema()
 
   };
 
@@ -305,9 +357,24 @@ function resetAllScriptPropertiesToDefault() {
  * VALIDATION HANDLER
  * ============================================================================
  *
- * FIELD_SCHEMA is now the single source of truth for form fields.
+ * FIELD_SCHEMA is the single source of truth for form fields.
  *
- * FORM_CONFIG is used only for the form-level settings, such as formBaseUrl.
+ * FORM_CONFIG is used only for form-level settings such as formBaseUrl.
+ *
+ * IMPORTANT:
+ * FIELD_SCHEMA is loaded from getInitialData(), meaning the validator uses
+ * the same FIELD_SCHEMA that the Configuration Editor displays and edits.
+ *
+ * The fallback provider returns FIELD_SCHEMA as an object keyed by field name.
+ * This function normalizes either:
+ *
+ *   Array
+ *
+ * or:
+ *
+ *   Object
+ *
+ * into an array for validation.
  * ============================================================================
  */
 function runFormValidationFromUi() {
@@ -348,20 +415,53 @@ function runFormValidationFromUi() {
     }
 
 
-    if (
-      typeof FIELD_SCHEMA === 'undefined' ||
-      !Array.isArray(FIELD_SCHEMA)
+    // ------------------------------------------------------------------------
+    // Load FIELD_SCHEMA from Script Properties / fallback.
+    // ------------------------------------------------------------------------
+
+    const fieldSchemaData =
+      data.FIELD_SCHEMA || {};
+
+
+    let fieldSchema;
+
+
+    if (Array.isArray(fieldSchemaData)) {
+
+      fieldSchema =
+        fieldSchemaData;
+
+    } else if (
+      typeof fieldSchemaData === 'object' &&
+      fieldSchemaData !== null
     ) {
 
+      fieldSchema =
+        Object.keys(fieldSchemaData)
+          .map(function(key) {
+
+            return fieldSchemaData[key];
+
+          });
+
+    } else {
+
+      fieldSchema = [];
+
+    }
+
+
+    if (!Array.isArray(fieldSchema)) {
+
       throw new Error(
-        'FIELD_SCHEMA is missing or is not an array.'
+        'FIELD_SCHEMA is missing or could not be converted to an array.'
       );
 
     }
 
 
     // ------------------------------------------------------------------------
-    // Extract Form ID from URL
+    // Extract Form ID from URL.
     // ------------------------------------------------------------------------
 
     const match =
@@ -422,7 +522,7 @@ function runFormValidationFromUi() {
 
 
     totalConfigured =
-      FIELD_SCHEMA.length;
+      fieldSchema.length;
 
 
     details.push(
@@ -430,11 +530,39 @@ function runFormValidationFromUi() {
     );
 
 
+    details.push(
+      'Configured fields: ' +
+      totalConfigured
+    );
+
+
+    details.push(
+      'Live form items: ' +
+      liveItems.length
+    );
+
+
     // ------------------------------------------------------------------------
-    // Validate every FIELD_SCHEMA entry against the live form
+    // Validate every FIELD_SCHEMA entry against the live form.
     // ------------------------------------------------------------------------
 
-    FIELD_SCHEMA.forEach(function(field) {
+    fieldSchema.forEach(function(field) {
+
+      if (
+        !field ||
+        typeof field !== 'object'
+      ) {
+
+        failed++;
+
+        details.push(
+          '✖ FAIL: Invalid FIELD_SCHEMA entry'
+        );
+
+        return;
+
+      }
+
 
       const key =
         field.key || '(missing key)';
@@ -536,7 +664,7 @@ function runFormValidationFromUi() {
 
 
     // ------------------------------------------------------------------------
-    // Find live Form items that are not represented in FIELD_SCHEMA
+    // Find live Form items that are not represented in FIELD_SCHEMA.
     // ------------------------------------------------------------------------
 
     details.push(
@@ -559,7 +687,17 @@ function runFormValidationFromUi() {
 
 
       const isConfigured =
-        FIELD_SCHEMA.some(function(field) {
+        fieldSchema.some(function(field) {
+
+          if (
+            !field ||
+            typeof field !== 'object'
+          ) {
+
+            return false;
+
+          }
+
 
           const configuredTitle =
             String(
@@ -653,14 +791,16 @@ function runFormValidationFromUi() {
 }
 
 
-/* ============================================================================
+/**
+ * ============================================================================
  * KEYWORD EVALUATION ENGINE HANDLERS
- * ========================================================================== */
+ * ============================================================================
+ */
 
 
 /**
- * Evaluates text against configured out-of-scope review keywords using regex
- * word boundaries.
+ * Evaluates text against configured out-of-scope review keywords using
+ * regex word boundaries.
  */
 function checkReviewKeywords(text, config) {
 
@@ -673,9 +813,11 @@ function checkReviewKeywords(text, config) {
 
     return {
 
-      needsReview: false,
+      needsReview:
+        false,
 
-      matchedKeywords: []
+      matchedKeywords:
+        []
 
     };
 
@@ -745,9 +887,11 @@ function checkSpamKeywords(text, config) {
 
     return {
 
-      isSpam: false,
+      isSpam:
+        false,
 
-      matchedKeywords: []
+      matchedKeywords:
+        []
 
     };
 
@@ -829,11 +973,18 @@ function checkSpamKeywords(text, config) {
 }
 
 
-/* ============================================================================
+/**
+ * ============================================================================
  * STANDALONE FALLBACK PROVIDER FUNCTIONS
- * ========================================================================== */
+ * ============================================================================
+ */
 
 
+/**
+ * ============================================================================
+ * REVIEW CONFIG FALLBACK
+ * ============================================================================
+ */
 function getFallbackReviewConfig() {
 
   return {
@@ -898,14 +1049,21 @@ function getFallbackReviewConfig() {
 }
 
 
+/**
+ * ============================================================================
+ * URGENCY CONFIG FALLBACK
+ * ============================================================================
+ */
 function getUrgencyConfigFallback() {
 
   return {
 
     levels: [
+
       'Low',
       'Medium',
       'High'
+
     ],
 
     defaultLevel:
@@ -916,6 +1074,11 @@ function getUrgencyConfigFallback() {
 }
 
 
+/**
+ * ============================================================================
+ * SPAM CONFIG FALLBACK
+ * ============================================================================
+ */
 function getFallbackSpamConfig() {
 
   return {
@@ -958,6 +1121,11 @@ function getFallbackSpamConfig() {
 }
 
 
+/**
+ * ============================================================================
+ * RATE LIMIT CONFIG FALLBACK
+ * ============================================================================
+ */
 function getFallbackRateLimitConfig() {
 
   return {
@@ -983,11 +1151,11 @@ function getFallbackRateLimitConfig() {
 }
 
 
-/* ============================================================================
+/**
+ * ============================================================================
  * WEB APP ROUTER
- * ========================================================================== */
-
-
+ * ============================================================================
+ */
 function doGet(e) {
 
   const isApiRequest =
