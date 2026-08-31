@@ -611,34 +611,28 @@ function verifyFormSync() {
  */
 function getFieldSchema_() {
 
-  var stored =
-    PropertiesService
-      .getScriptProperties()
-      .getProperty(
-        AUTOMATION_CONFIG.fieldSchemaPropertyKey
-      );
+  var stored = PropertiesService
+    .getScriptProperties()
+    .getProperty('FIELD_SCHEMA');
 
   if (!stored) {
-
     throw new Error(
       'FIELD_SCHEMA does not exist in Script Properties.'
     );
-
   }
 
   try {
 
-    var parsed =
-      JSON.parse(
-        stored
-      );
+    var parsed = JSON.parse(stored);
 
-    if (!Array.isArray(parsed)) {
-
+    if (
+      !parsed ||
+      typeof parsed !== 'object' ||
+      Array.isArray(parsed)
+    ) {
       throw new Error(
-        'FIELD_SCHEMA JSON must be an array.'
+        'FIELD_SCHEMA JSON must be an object.'
       );
-
     }
 
     return parsed;
@@ -646,7 +640,7 @@ function getFieldSchema_() {
   } catch (error) {
 
     throw new Error(
-      'Unable to parse FIELD_SCHEMA JSON.\n' +
+      'Unable to parse FIELD_SCHEMA.\n' +
       error.message
     );
 
