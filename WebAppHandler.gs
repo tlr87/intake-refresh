@@ -1,15 +1,7 @@
-/**
- * Configuration Constants
- */
-const CONFIG = {
-  DEFAULT_ADMIN_EMAIL: 'tom@rd3tech.com',
-  GOOGLE_FORM_ID: '1xKJWg66c4h4rdRjRg-BrTqpS_V76RYYJfF_6V2lJ-1g',
-  DEFAULT_COOLDOWN_SEC: 60
-};
 
 /**
  * ============================================================================
- * RD3 TECH — WEBSITE FORM WEB APP ENDPOINT
+ * RD3 TECH — WEBSITE FORM WEB APP
  * ============================================================================
  *
  * WordPress Contact Form
@@ -25,8 +17,37 @@ const CONFIG = {
  *  Google Sheet
  *
  * IMPORTANT:
- * This does NOT submit the website enquiry back into Google Forms.
- * The real Google Form has its own onFormSubmit(e) pipeline.
+ * Mapping.gs remains the single source of truth for field mapping.
+ *
+ * IMPORTANT FIX:
+ * contactPreference must remain named "contactPreference" all the way
+ * through the payload → email template.
+ *
+ * ClientEmail.html expects:
+ *
+ *   client.contactPreference
+ *
+ * NOT:
+ *
+ *   client.preferredContact
+ * ============================================================================
+ */
+
+
+/**
+ * Configuration Constants
+ */
+const CONFIG = {
+  DEFAULT_ADMIN_EMAIL: 'tom@rd3tech.com',
+  GOOGLE_FORM_ID: '1xKJWg66c4h4rdRjRg-BrTqpS_V76RYYJfF_6V2lJ-1g',
+  DEFAULT_COOLDOWN_SEC: 60
+};
+
+
+/**
+ * ============================================================================
+ * doPost()
+ * ============================================================================
  */
 function doPost(e) {
 
@@ -41,6 +62,7 @@ function doPost(e) {
     // ------------------------------------------------------------------------
 
     const configs = {
+
       form: typeof getFormConfig === 'function'
         ? getFormConfig()
         : {},
@@ -57,9 +79,10 @@ function doPost(e) {
         ? getRateLimitConfig()
         : {
             enabled: true,
-            cooldownSeconds: CONFIG.DEFAULT_COOLDOWN_SEC || 60
+            cooldownSeconds: CONFIG.DEFAULT_COOLDOWN_SEC
           }
     };
+
 
     const adminEmail =
       configs.form &&
@@ -67,6 +90,7 @@ function doPost(e) {
       configs.form.settings.adminEmail
         ? configs.form.settings.adminEmail
         : CONFIG.DEFAULT_ADMIN_EMAIL;
+
 
     Logger.log('Admin Email: ' + adminEmail);
 
@@ -78,20 +102,18 @@ function doPost(e) {
     const rawParams = parseIncomingParameters(e);
 
     Logger.log('RAW WEBSITE PARAMETERS:');
-    Logger.log(JSON.stringify(rawParams));
+    Logger.log(JSON.stringify(rawParams, null, 2));
 
 
     // ------------------------------------------------------------------------
     // 3. MAP USING Mapping.gs
     // ------------------------------------------------------------------------
-    //
-    // Mapping.gs is now the single source of truth.
-    //
 
     const mapped = mapFormPayload(rawParams);
 
-    const payload = mapped.payload;
-    const displaySchema = mapped.displaySchema;
+    const payload = mapped.payload || {};
+    const displaySchema = mapped.displaySchema || [];
+
 
     Logger.log('MAPPED WEBSITE PAYLOAD:');
     Logger.log(JSON.stringify(payload, null, 2));
@@ -105,6 +127,33 @@ function doPost(e) {
     const request = payload.request || {};
     const security = payload.security || {};
 
+
+    // ------------------------------------------------------------------------
+    // IMPORTANT CONTACT PREFERENCE DEBUG
+    // ------------------------------------------------------------------------
+
+    Logger.log('============================================================');
+    Logger.log('CONTACT PREFERENCE CHECK — doPost()');
+    Logger.log('============================================================');
+
+    Logger.log(
+      'payload.client.contactPreference = "' +
+      String(client.contactPreference || '') +
+      '"'
+    );
+
+    Logger.log(
+      'payload.client.preferredContact = "' +
+      String(client.preferredContact || '') +
+      '"'
+    );
+
+    Logger.log('Full client object:');
+    Logger.log(JSON.stringify(client, null, 2));
+
+    Logger.log('============================================================');
+
+
     const userEmail = String(client.email || '')
       .trim()
       .toLowerCase();
@@ -114,7 +163,9 @@ function doPost(e) {
     // 5. HONEYPOT
     // ------------------------------------------------------------------------
 
-    const honeypotValue = String(security.honeypot || '').trim();
+    const honeypotValue =
+      String(security.honeypot || '').trim();
+
 
     if (honeypotValue !== '') {
 
@@ -124,7 +175,6 @@ function doPost(e) {
         '"'
       );
 
-      // Do not reveal that the bot was detected.
       return createJsonResponse({
         status: 'success',
         message: 'Form submitted successfully.'
@@ -169,16 +219,10 @@ function doPost(e) {
     // ------------------------------------------------------------------------
     // 7. MODERATION
     // ------------------------------------------------------------------------
-    //
-    // IMPORTANT:
-    // The current schema uses:
-    //
-    // request.helpCategory
-    // request.userGoal
-    // request.urgency
-    //
 
-    const userGoal = String(request.userGoal || '').trim();
+    const userGoal =
+      String(request.userGoal || '').trim();
+
 
     const reviewResult =
       typeof checkReviewKeywords === 'function'
@@ -191,6 +235,7 @@ function doPost(e) {
             matchedKeywords: []
           };
 
+
     const spamResult =
       typeof checkSpamKeywords === 'function'
         ? checkSpamKeywords(
@@ -201,6 +246,7 @@ function doPost(e) {
             isSpam: false,
             matchedKeywords: []
           };
+
 
     const isUrgent =
       String(request.urgency || '')
@@ -214,6 +260,7 @@ function doPost(e) {
 
     let subjectPrefix = '';
 
+
     if (spamResult.isSpam) {
 
       subjectPrefix +=
@@ -226,9 +273,11 @@ function doPost(e) {
           : '[SPAM] ';
     }
 
+
     if (isUrgent) {
       subjectPrefix += '[URGENT] ';
     }
+
 
     if (reviewResult.needsReview) {
 
@@ -244,14 +293,19 @@ function doPost(e) {
 
 
     // ------------------------------------------------------------------------
-    // 9. SECURITY EVALUATION OBJECT
+    // 9. SECURITY / MODERATION OBJECT
     // ------------------------------------------------------------------------
 
     const moderation = {
+
       reviewResult: reviewResult,
+
       spamResult: spamResult,
+
       isUrgent: isUrgent,
+
       subjectPrefix: subjectPrefix
+
     };
 
 
@@ -265,6 +319,7 @@ function doPost(e) {
 
     let adminSent = false;
 
+
     try {
 
       adminSent = sendAdminEmail(
@@ -274,11 +329,13 @@ function doPost(e) {
         adminEmail
       );
 
+
       if (adminSent) {
         Logger.log('✅ ADMIN EMAIL SENT');
       } else {
         Logger.log('❌ ADMIN EMAIL FAILED');
       }
+
 
     } catch (err) {
 
@@ -286,6 +343,8 @@ function doPost(e) {
         '❌ ADMIN EMAIL EXCEPTION: ' +
         err.toString()
       );
+
+      Logger.log(err.stack || '');
 
       adminSent = false;
     }
@@ -296,6 +355,7 @@ function doPost(e) {
     // ------------------------------------------------------------------------
 
     let clientSent = false;
+
 
     if (
       userEmail &&
@@ -311,11 +371,13 @@ function doPost(e) {
           adminEmail
         );
 
+
         if (clientSent) {
           Logger.log('✅ CLIENT EMAIL SENT');
         } else {
           Logger.log('❌ CLIENT EMAIL FAILED');
         }
+
 
       } catch (err) {
 
@@ -324,8 +386,11 @@ function doPost(e) {
           err.toString()
         );
 
+        Logger.log(err.stack || '');
+
         clientSent = false;
       }
+
 
     } else {
 
@@ -341,9 +406,11 @@ function doPost(e) {
 
     let sheetSaved = false;
 
+
     try {
 
       sheetSaved = saveToSheet(payload);
+
 
       if (sheetSaved) {
         Logger.log('✅ SUBMISSION SAVED TO SHEET');
@@ -351,12 +418,15 @@ function doPost(e) {
         Logger.log('❌ SUBMISSION SHEET SAVE FAILED');
       }
 
+
     } catch (err) {
 
       Logger.log(
         '❌ SHEET SAVE EXCEPTION: ' +
         err.toString()
       );
+
+      Logger.log(err.stack || '');
 
       sheetSaved = false;
     }
@@ -370,9 +440,26 @@ function doPost(e) {
     Logger.log('RD3 TECH — WEBSITE SUBMISSION COMPLETE');
     Logger.log('============================================================');
 
-    Logger.log('Admin Email: ' + (adminSent ? 'SUCCESS' : 'FAILED'));
-    Logger.log('Client Email: ' + (clientSent ? 'SUCCESS' : 'FAILED'));
-    Logger.log('Sheet: ' + (sheetSaved ? 'SUCCESS' : 'FAILED'));
+    Logger.log(
+      'Contact Preference: ' +
+      String(client.contactPreference || 'NOT PROVIDED')
+    );
+
+    Logger.log(
+      'Admin Email: ' +
+      (adminSent ? 'SUCCESS' : 'FAILED')
+    );
+
+    Logger.log(
+      'Client Email: ' +
+      (clientSent ? 'SUCCESS' : 'FAILED')
+    );
+
+    Logger.log(
+      'Sheet: ' +
+      (sheetSaved ? 'SUCCESS' : 'FAILED')
+    );
+
     Logger.log('============================================================');
 
 
@@ -381,13 +468,24 @@ function doPost(e) {
     // ------------------------------------------------------------------------
 
     return createJsonResponse({
+
       status: 'success',
+
       message: 'Enquiry received successfully.',
+
       diagnostics: {
+
         adminEmail: adminSent,
+
         clientEmail: clientSent,
-        sheet: sheetSaved
+
+        sheet: sheetSaved,
+
+        contactPreference:
+          client.contactPreference || ''
+
       }
+
     });
 
 
@@ -396,253 +494,682 @@ function doPost(e) {
     Logger.log('============================================================');
     Logger.log('❌ FATAL ERROR IN doPost()');
     Logger.log('============================================================');
+
     Logger.log(error.toString());
+
     Logger.log(error.stack || '');
+
     Logger.log('============================================================');
 
+
     return createJsonResponse({
+
       status: 'error',
+
       message: 'Unable to process the enquiry.'
+
     });
   }
 }
 
-// ============================================================================
-// HELPER FUNCTIONS
-// ============================================================================
 
 /**
- * Parses incoming POST event payload from JSON or standard Form inputs.
+ * ============================================================================
+ * parseIncomingParameters()
+ * ============================================================================
+ *
+ * Reads JSON, e.parameter and e.parameters.
  */
 function parseIncomingParameters(e) {
-  const rawParams = {};
-  if (!e) return rawParams;
 
-  // 1. Check JSON body
-  if (e.postData && e.postData.contents) {
+  const rawParams = {};
+
+
+  if (!e) {
+    return rawParams;
+  }
+
+
+  // --------------------------------------------------------------------------
+  // JSON BODY
+  // --------------------------------------------------------------------------
+
+  if (
+    e.postData &&
+    e.postData.contents
+  ) {
+
     try {
-      const jsonBody = JSON.parse(e.postData.contents);
-      if (typeof jsonBody === 'object' && jsonBody !== null) {
-        Object.keys(jsonBody).forEach(key => {
+
+      const jsonBody =
+        JSON.parse(e.postData.contents);
+
+
+      if (
+        typeof jsonBody === 'object' &&
+        jsonBody !== null
+      ) {
+
+        Object.keys(jsonBody).forEach(function(key) {
+
           rawParams[key] = jsonBody[key];
+
         });
+
+
         return rawParams;
       }
+
+
     } catch (err) {
-      // Ignore JSON parse errors and fallback to parameters
+
+      Logger.log(
+        'JSON body was not valid JSON — using form parameters.'
+      );
     }
   }
 
-  // 2. Check query/form parameters
+
+  // --------------------------------------------------------------------------
+  // SINGLE PARAMETERS
+  // --------------------------------------------------------------------------
+
   if (e.parameter) {
-    Object.keys(e.parameter).forEach(key => {
+
+    Object.keys(e.parameter).forEach(function(key) {
+
       rawParams[key] = e.parameter[key];
+
     });
   }
 
+
+  // --------------------------------------------------------------------------
+  // MULTI-VALUE PARAMETERS
+  // --------------------------------------------------------------------------
+
   if (e.parameters) {
-    Object.keys(e.parameters).forEach(key => {
-      if (Array.isArray(e.parameters[key]) && e.parameters[key].length > 1) {
-        rawParams[key] = e.parameters[key].join(', ');
+
+    Object.keys(e.parameters).forEach(function(key) {
+
+      const values = e.parameters[key];
+
+
+      if (
+        Array.isArray(values) &&
+        values.length > 1
+      ) {
+
+        rawParams[key] = values.join(', ');
+
+      } else if (
+        Array.isArray(values) &&
+        values.length === 1 &&
+        !(key in rawParams)
+      ) {
+
+        rawParams[key] = values[0];
+
       }
+
     });
   }
+
 
   return rawParams;
 }
 
+
 /**
- * Constructs data structures and dispatches the Admin Notification email.
+ * ============================================================================
+ * sendAdminEmail()
+ * ============================================================================
  */
-function sendAdminEmail(payload, displaySchema, moderation, adminEmail) {
+function sendAdminEmail(
+  payload,
+  displaySchema,
+  moderation,
+  adminEmail
+) {
+
   const client = payload.client || {};
   const request = payload.request || {};
-  const spamResult = moderation.spamResult || {};
-  const reviewResult = moderation.reviewResult || {};
 
-  const formattedDate = Utilities.formatDate(
-    new Date(),
-    Session.getScriptTimeZone() || 'Pacific/Auckland',
-    'dd MMMM yyyy, h:mm a'
-  );
+  const spamResult =
+    moderation.spamResult || {};
+
+  const reviewResult =
+    moderation.reviewResult || {};
+
+
+  const formattedDate =
+    Utilities.formatDate(
+      new Date(),
+      Session.getScriptTimeZone() ||
+        'Pacific/Auckland',
+      'dd MMMM yyyy, h:mm a'
+    );
+
+
+  // --------------------------------------------------------------------------
+  // IMPORTANT:
+  // Keep contactPreference as contactPreference.
+  // Do NOT rename it to preferredContact.
+  // --------------------------------------------------------------------------
 
   const clientData = {
-    name: client.name || 'Website Visitor',
-    firstName: client.name ? client.name.split(' ')[0] : 'there',
-    email: client.email || 'N/A',
-    phone: client.phone || 'N/A',
-    location: client.location || 'N/A',
-    preferredContact: client.contactPreference || 'Not provided',
-    isPreviousCustomer: !!client.usedBefore,
-    contactingAs: client.contactingAs || 'Not provided'
+
+    name:
+      client.name ||
+      'Website Visitor',
+
+    firstName:
+      client.name
+        ? client.name.split(' ')[0]
+        : 'there',
+
+    email:
+      client.email ||
+      'N/A',
+
+    phone:
+      client.phone ||
+      'N/A',
+
+    location:
+      client.location ||
+      'N/A',
+
+    contactPreference:
+      client.contactPreference ||
+      'Not provided',
+
+    isPreviousCustomer:
+      !!client.usedBefore,
+
+    contactingAs:
+      client.contactingAs ||
+      'Not provided'
+
   };
 
+
+  Logger.log(
+    'ADMIN EMAIL contactPreference = "' +
+    clientData.contactPreference +
+    '"'
+  );
+
+
   const requestData = {
-    helpCategory: request.helpCategory || 'Not specified',
-    userGoal: request.userGoal || 'Not specified',
-    urgency: request.urgency || 'Not specified'
+
+    helpCategory:
+      request.helpCategory ||
+      'Not specified',
+
+    userGoal:
+      request.userGoal ||
+      'Not specified',
+
+    urgency:
+      request.urgency ||
+      'Not specified'
+
   };
+
 
   const secEvalData = {
-    isSpam: !!spamResult.isSpam,
-    requiresReview: !!reviewResult.needsReview,
-    isUrgent: !!moderation.isUrgent,
-    spamScore: spamResult.isSpam ? 100 : 0,
-    statusText: spamResult.isSpam
-      ? 'Flagged Spam'
-      : (reviewResult.needsReview ? 'Requires Review' : 'Passed Security Check'),
-    spamFlags: spamResult.matchedKeywords || [],
-    reviewFlags: reviewResult.matchedKeywords || [],
+
+    isSpam:
+      !!spamResult.isSpam,
+
+    requiresReview:
+      !!reviewResult.needsReview,
+
+    isUrgent:
+      !!moderation.isUrgent,
+
+    spamScore:
+      spamResult.isSpam
+        ? 100
+        : 0,
+
+    statusText:
+      spamResult.isSpam
+        ? 'Flagged Spam'
+        : (
+            reviewResult.needsReview
+              ? 'Requires Review'
+              : 'Passed Security Check'
+          ),
+
+    spamFlags:
+      spamResult.matchedKeywords ||
+      [],
+
+    reviewFlags:
+      reviewResult.matchedKeywords ||
+      [],
+
     flags: [
-      ...(spamResult.matchedKeywords || []).map(k => 'SPAM: ' + k),
-      ...(reviewResult.matchedKeywords || []).map(k => 'REVIEW: ' + k)
+
+      ...(spamResult.matchedKeywords || [])
+        .map(function(k) {
+          return 'SPAM: ' + k;
+        }),
+
+      ...(reviewResult.matchedKeywords || [])
+        .map(function(k) {
+          return 'REVIEW: ' + k;
+        })
+
     ]
+
   };
 
-  const adminTemplate = HtmlService.createTemplateFromFile('AdminEmail');
-  adminTemplate.submissionDate = formattedDate;
-  adminTemplate.client = clientData;
-  adminTemplate.request = requestData;
-  adminTemplate.secEval = secEvalData;
 
-  const adminHtmlBody = adminTemplate.evaluate().getContent();
+  const adminTemplate =
+    HtmlService.createTemplateFromFile(
+      'AdminEmail'
+    );
 
-MailApp.sendEmail({
-  to: adminEmail,
-  replyTo: clientData.email !== 'N/A' ? clientData.email : adminEmail,
-  subject: EMAIL_SUBJECTS.admin(
-    moderation.subjectPrefix,
-    clientData.name,
-    requestData.helpCategory
-  ),
-  htmlBody: adminHtmlBody
-});
+
+  adminTemplate.submissionDate =
+    formattedDate;
+
+  adminTemplate.client =
+    clientData;
+
+  adminTemplate.request =
+    requestData;
+
+  adminTemplate.secEval =
+    secEvalData;
+
+
+  const adminHtmlBody =
+    adminTemplate
+      .evaluate()
+      .getContent();
+
+
+  MailApp.sendEmail({
+
+    to: adminEmail,
+
+    replyTo:
+      clientData.email !== 'N/A'
+        ? clientData.email
+        : adminEmail,
+
+    subject:
+      EMAIL_SUBJECTS.admin(
+        moderation.subjectPrefix,
+        clientData.name,
+        requestData.helpCategory
+      ),
+
+    htmlBody:
+      adminHtmlBody
+
+  });
+
 
   return true;
 }
 
+
 /**
- * Sends a confirmation email back to the submitter.
+ * ============================================================================
+ * sendClientConfirmation()
+ * ============================================================================
  */
-function sendClientConfirmation(payload, displaySchema, adminEmail) {
+function sendClientConfirmation(
+  payload,
+  displaySchema,
+  adminEmail
+) {
+
   const client = payload.client || {};
   const request = payload.request || {};
 
-  const formattedDate = Utilities.formatDate(
-    new Date(),
-    Session.getScriptTimeZone() || 'Pacific/Auckland',
-    'dd MMMM yyyy, h:mm a'
-  );
+
+  const formattedDate =
+    Utilities.formatDate(
+      new Date(),
+      Session.getScriptTimeZone() ||
+        'Pacific/Auckland',
+      'dd MMMM yyyy, h:mm a'
+    );
+
+
+  // --------------------------------------------------------------------------
+  // CRITICAL FIX
+  //
+  // ClientEmail.html expects:
+  //
+  //   client.contactPreference
+  //
+  // Therefore this object MUST contain:
+  //
+  //   contactPreference
+  //
+  // NOT:
+  //
+  //   preferredContact
+  // --------------------------------------------------------------------------
 
   const clientData = {
-    name: client.name || 'Website Visitor',
-    firstName: client.name ? client.name.split(' ')[0] : 'there',
-    email: client.email || 'N/A',
-    phone: client.phone || 'N/A',
-    location: client.location || 'N/A',
-    preferredContact: client.contactPreference || 'Not provided',
-    isPreviousCustomer: !!client.usedBefore,
-    contactingAs: client.contactingAs || 'Not provided'
+
+    name:
+      client.name ||
+      'Website Visitor',
+
+    firstName:
+      client.name
+        ? client.name.split(' ')[0]
+        : 'there',
+
+    email:
+      client.email ||
+      'N/A',
+
+    phone:
+      client.phone ||
+      'N/A',
+
+    location:
+      client.location ||
+      'N/A',
+
+    contactPreference:
+      client.contactPreference ||
+      'Not provided',
+
+    isPreviousCustomer:
+      !!client.usedBefore,
+
+    contactingAs:
+      client.contactingAs ||
+      'Not provided'
+
   };
+
+
+  Logger.log('============================================================');
+  Logger.log('CLIENT EMAIL DATA');
+  Logger.log('============================================================');
+
+  Logger.log(
+    'clientData.contactPreference = "' +
+    clientData.contactPreference +
+    '"'
+  );
+
+  Logger.log(
+    'clientData.email = "' +
+    clientData.email +
+    '"'
+  );
+
+  Logger.log(JSON.stringify(clientData, null, 2));
+
+  Logger.log('============================================================');
+
 
   const requestData = {
-    helpCategory: request.helpCategory || 'Not specified',
-    userGoal: request.userGoal || 'Not specified',
-    urgency: request.urgency || 'Not specified'
+
+    helpCategory:
+      request.helpCategory ||
+      'Not specified',
+
+    userGoal:
+      request.userGoal ||
+      'Not specified',
+
+    urgency:
+      request.urgency ||
+      'Not specified'
+
   };
 
-  const clientTemplate = HtmlService.createTemplateFromFile('ClientEmail');
-  clientTemplate.submissionDate = formattedDate;
-  clientTemplate.client = clientData;
-  clientTemplate.request = requestData;
 
-  const clientHtmlBody = clientTemplate.evaluate().getContent();
+  const clientTemplate =
+    HtmlService.createTemplateFromFile(
+      'ClientEmail'
+    );
+
+
+  clientTemplate.submissionDate =
+    formattedDate;
+
+  clientTemplate.client =
+    clientData;
+
+  clientTemplate.request =
+    requestData;
+
+
+  const clientHtmlBody =
+    clientTemplate
+      .evaluate()
+      .getContent();
+
 
   MailApp.sendEmail({
-    to: clientData.email,
-    replyTo: adminEmail,
-    subject: EMAIL_SUBJECTS.client(
-      clientData.name,
-      requestData.helpCategory
-    ),
-    htmlBody: clientHtmlBody
+
+    to:
+      clientData.email,
+
+    replyTo:
+      adminEmail,
+
+    subject:
+      EMAIL_SUBJECTS.client(
+        clientData.name,
+        requestData.helpCategory
+      ),
+
+    htmlBody:
+      clientHtmlBody
+
   });
+
 
   return true;
 }
 
+
 /**
- * Appends the mapped website submission into the Google Sheet.
+ * ============================================================================
+ * saveToSheet()
+ * ============================================================================
  */
 function saveToSheet(payload) {
-  const SPREADSHEET_ID = '1xKJWg66c4h4rdRjRg-BrTqpS_V76RYYJfF_6V2lJ-1g';
+
+  const SPREADSHEET_ID =
+    '1xKJWg66c4h4rdRjRg-BrTqpS_V76RYYJfF_6V2lJ-1g';
+
 
   try {
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    if (!ss) return false;
-    
-    // Look for 'Website Submissions' tab, fallback to the first tab if missing
-    let sheet = ss.getSheetByName('Website Submissions');
-    if (!sheet) {
-      sheet = ss.getSheets()[0];
+
+    const ss =
+      SpreadsheetApp.openById(
+        SPREADSHEET_ID
+      );
+
+
+    if (!ss) {
+      return false;
     }
 
-    const client = payload.client || {};
-    const request = payload.request || {};
+
+    let sheet =
+      ss.getSheetByName(
+        'Website Submissions'
+      );
+
+
+    if (!sheet) {
+
+      sheet =
+        ss.getSheets()[0];
+
+    }
+
+
+    const client =
+      payload.client || {};
+
+    const request =
+      payload.request || {};
+
+
+    // ------------------------------------------------------------------------
+    // IMPORTANT:
+    // Use the canonical schema key.
+    // ------------------------------------------------------------------------
+
+    const contactPreference =
+      client.contactPreference || '';
+
+
+    Logger.log(
+      'SHEET contactPreference = "' +
+      contactPreference +
+      '"'
+    );
+
 
     sheet.appendRow([
-      payload.submissionDate || new Date(),
-      client.name || '',
-      client.email || '',
-      client.phone || '',
-      client.location || '',
-      client.contactPreference || '',
-      client.contactingAs || '',
-      client.usedBefore ? 'Yes' : 'No',
-      request.helpCategory || '',
-      request.userGoal || '',
-      request.urgency || ''
+
+      payload.submissionDate ||
+        new Date(),
+
+      client.name ||
+        '',
+
+      client.email ||
+        '',
+
+      client.phone ||
+        '',
+
+      client.location ||
+        '',
+
+      contactPreference,
+
+      client.contactingAs ||
+        '',
+
+      client.usedBefore
+        ? 'Yes'
+        : 'No',
+
+      request.helpCategory ||
+        '',
+
+      request.userGoal ||
+        '',
+
+      request.urgency ||
+        ''
+
     ]);
 
+
     return true;
+
+
   } catch (err) {
-    Logger.log('saveToSheet error: ' + err.toString());
+
+    Logger.log(
+      'saveToSheet error: ' +
+      err.toString()
+    );
+
+    Logger.log(
+      err.stack || ''
+    );
+
     return false;
   }
 }
 
+
 /**
- * Checks script cache to enforce a user submission cooldown.
+ * ============================================================================
+ * isRateLimited()
+ * ============================================================================
  */
-function isRateLimited(email, rateLimitConfig) {
+function isRateLimited(
+  email,
+  rateLimitConfig
+) {
+
   try {
-    const cache = CacheService.getScriptCache();
-    const cacheKey = 'rl_' + Utilities.base64Encode(email);
-    const cached = cache.get(cacheKey);
+
+    const cache =
+      CacheService.getScriptCache();
+
+
+    const cacheKey =
+      'rl_' +
+      Utilities.base64Encode(email);
+
+
+    const cached =
+      cache.get(cacheKey);
+
 
     if (cached) {
       return true;
     }
 
-    const cooldownSec = rateLimitConfig.cooldownSeconds || 60;
-    cache.put(cacheKey, '1', cooldownSec);
+
+    const cooldownSec =
+      rateLimitConfig.cooldownSeconds ||
+      CONFIG.DEFAULT_COOLDOWN_SEC ||
+      60;
+
+
+    cache.put(
+      cacheKey,
+      '1',
+      cooldownSec
+    );
+
+
     return false;
+
+
   } catch (err) {
-    Logger.log('Rate limit check error: ' + err.toString());
+
+    Logger.log(
+      'Rate limit check error: ' +
+      err.toString()
+    );
+
     return false;
   }
 }
 
+
 /**
- * Helper to build standard JSON response objects for Web Apps.
+ * ============================================================================
+ * createJsonResponse()
+ * ============================================================================
  */
 function createJsonResponse(data) {
+
   return ContentService
-    .createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON);
+
+    .createTextOutput(
+      JSON.stringify(data)
+    )
+
+    .setMimeType(
+      ContentService.MimeType.JSON
+    );
 }
-
-
-
-
-

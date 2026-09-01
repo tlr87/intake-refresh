@@ -451,3 +451,365 @@ function testDoPostHandler() {
   Logger.log('✅ doPost(e) TEST PASSED');
   Logger.log('============================================================');
 }
+
+
+function testContactPreferenceEventMapping() {
+
+  Logger.log('========================================');
+  Logger.log('CONTACT PREFERENCE EVENT MAPPING TEST');
+  Logger.log('========================================');
+
+  const schema = getFieldSchema_();
+
+  if (!schema || !schema.contactPreference) {
+    throw new Error(
+      'FIELD_SCHEMA.contactPreference could not be loaded.'
+    );
+  }
+
+  const field = schema.contactPreference;
+
+  Logger.log('Schema key: ' + field.key);
+  Logger.log('Schema formField: ' + field.formField);
+  Logger.log('Schema entryId: ' + field.entryId);
+
+  // ------------------------------------------------------------
+  // Simulate doPost(e)
+  // ------------------------------------------------------------
+
+  const postEvent = {
+    parameter: {
+      form_contactPreference: 'Email'
+    },
+    parameters: {
+      form_contactPreference: ['Email']
+    }
+  };
+
+  Logger.log('');
+  Logger.log('--- doPost(e) simulation ---');
+
+  Logger.log(
+    'e.parameter.form_contactPreference = ' +
+    JSON.stringify(postEvent.parameter.form_contactPreference)
+  );
+
+  Logger.log(
+    'e.parameters.form_contactPreference = ' +
+    JSON.stringify(postEvent.parameters.form_contactPreference)
+  );
+
+  const postValue =
+    postEvent.parameter[field.formField];
+
+  Logger.log(
+    'Resolved POST value = ' +
+    JSON.stringify(postValue)
+  );
+
+  if (postValue !== 'Email') {
+    throw new Error(
+      'POST mapping FAILED: expected Email, got ' +
+      JSON.stringify(postValue)
+    );
+  }
+
+  // ------------------------------------------------------------
+  // Simulate onFormSubmit(e)
+  // ------------------------------------------------------------
+
+  const formEvent = {
+    namedValues: {
+      'How would you prefer us to contact you?': ['Email']
+    }
+  };
+
+  Logger.log('');
+  Logger.log('--- onFormSubmit(e) simulation ---');
+
+  Logger.log(
+    'namedValues = ' +
+    JSON.stringify(formEvent.namedValues, null, 2)
+  );
+
+  const title = field.title;
+
+  const formValue =
+    formEvent.namedValues[title];
+
+  Logger.log(
+    'Lookup using schema title = ' +
+    JSON.stringify(formValue)
+  );
+
+  if (!formValue) {
+    throw new Error(
+      'FORM SUBMIT mapping FAILED: no value found for schema title: ' +
+      title
+    );
+  }
+
+  const resolvedFormValue =
+    Array.isArray(formValue)
+      ? formValue[0]
+      : formValue;
+
+  Logger.log(
+    'Resolved Form value = ' +
+    JSON.stringify(resolvedFormValue)
+  );
+
+  if (resolvedFormValue !== 'Email') {
+    throw new Error(
+      'FORM SUBMIT mapping FAILED: expected Email, got ' +
+      JSON.stringify(resolvedFormValue)
+    );
+  }
+
+  // ------------------------------------------------------------
+  // Simulate final client object
+  // ------------------------------------------------------------
+
+  const client = {};
+
+  client[field.key] = postValue;
+
+  Logger.log('');
+  Logger.log('--- Final client object ---');
+
+  Logger.log(
+    JSON.stringify(client, null, 2)
+  );
+
+  if (client.contactPreference !== 'Email') {
+    throw new Error(
+      'CLIENT mapping FAILED: contactPreference is not Email.'
+    );
+  }
+
+  // ------------------------------------------------------------
+  // Final result
+  // ------------------------------------------------------------
+
+  Logger.log('');
+  Logger.log('========================================');
+  Logger.log('PASS');
+  Logger.log('========================================');
+
+  Logger.log(
+    'contactPreference = ' +
+    client.contactPreference
+  );
+
+  return true;
+}
+
+
+
+
+
+
+/**
+ * ============================================================================
+ * TEST — doPost() CONTACT PREFERENCE
+ * ============================================================================
+ *
+ * Tests the exact WordPress POST structure:
+ *
+ * form_contactPreference = "Email"
+ *
+ * Expected:
+ *   payload.client.contactPreference = "Email"
+ *   Admin email = "Email"
+ *   Client email = "Email"
+ *   Sheet = "Email"
+ * ============================================================================
+ */
+function testDoPostContactPreference() {
+
+  Logger.log('============================================================');
+  Logger.log('RD3 TECH — doPost CONTACT PREFERENCE TEST');
+  Logger.log('============================================================');
+
+  // --------------------------------------------------------------------------
+  // Simulate the exact POST coming from WordPress
+  // --------------------------------------------------------------------------
+
+  const e = {
+
+    parameter: {
+
+      form_name: 'Jane Doe',
+
+      form_email: 'jane.doe@example.com',
+
+      form_phone: '021 123 4567',
+
+      form_location: 'Whangarei',
+
+      form_contactPreference: 'Email',
+
+      form_usedBefore: 'Yes',
+
+      form_contactingAs: 'Home or Family',
+
+      form_helpCategory: 'Help with Something Broken?',
+
+      form_userGoal: 'Need help with TV setup',
+
+      form_urgency: 'High',
+
+      form_honeypot: ''
+
+    },
+
+    parameters: {
+
+      form_name: ['Jane Doe'],
+
+      form_email: ['jane.doe@example.com'],
+
+      form_phone: ['021 123 4567'],
+
+      form_location: ['Whangarei'],
+
+      form_contactPreference: ['Email'],
+
+      form_usedBefore: ['Yes'],
+
+      form_contactingAs: ['Home or Family'],
+
+      form_helpCategory: ['Help with Something Broken?'],
+
+      form_userGoal: ['Need help with TV setup'],
+
+      form_urgency: ['High'],
+
+      form_honeypot: ['']
+
+    }
+
+  };
+
+
+  // --------------------------------------------------------------------------
+  // STEP 1 — Test POST parameter extraction
+  // --------------------------------------------------------------------------
+
+  Logger.log('');
+  Logger.log('--- STEP 1: parseIncomingParameters() ---');
+
+  const rawParams = parseIncomingParameters(e);
+
+  Logger.log(
+    'form_contactPreference = "' +
+    String(rawParams.form_contactPreference || '') +
+    '"'
+  );
+
+
+  if (rawParams.form_contactPreference !== 'Email') {
+
+    throw new Error(
+      'FAIL: parseIncomingParameters() did not return "Email".'
+    );
+
+  }
+
+  Logger.log('PASS: POST parameter contains Email');
+
+
+  // --------------------------------------------------------------------------
+  // STEP 2 — Test Mapping.gs
+  // --------------------------------------------------------------------------
+
+  Logger.log('');
+  Logger.log('--- STEP 2: mapFormPayload() ---');
+
+  const mapped = mapFormPayload(rawParams);
+
+  const payload = mapped.payload || {};
+
+  const client = payload.client || {};
+
+  Logger.log('Mapped client object:');
+  Logger.log(JSON.stringify(client, null, 2));
+
+  Logger.log(
+    'payload.client.contactPreference = "' +
+    String(client.contactPreference || '') +
+    '"'
+  );
+
+
+  if (client.contactPreference !== 'Email') {
+
+    throw new Error(
+      'FAIL: mapFormPayload() lost contactPreference. ' +
+      'Expected "Email", got "' +
+      String(client.contactPreference || '') +
+      '"'
+    );
+
+  }
+
+  Logger.log('PASS: Mapping returned contactPreference = Email');
+
+
+  // --------------------------------------------------------------------------
+  // STEP 3 — Test complete doPost()
+  // --------------------------------------------------------------------------
+
+  Logger.log('');
+  Logger.log('--- STEP 3: doPost() ---');
+
+  const result = doPost(e);
+
+  Logger.log('');
+  Logger.log('doPost() RESPONSE:');
+
+  if (result) {
+
+    Logger.log(
+      result.getContent()
+    );
+
+  } else {
+
+    Logger.log(
+      'doPost() returned no response.'
+    );
+
+  }
+
+
+  // --------------------------------------------------------------------------
+  // FINAL RESULT
+  // --------------------------------------------------------------------------
+
+  Logger.log('');
+  Logger.log('============================================================');
+  Logger.log('FINAL RESULT');
+  Logger.log('============================================================');
+
+  Logger.log(
+    'Expected contactPreference: Email'
+  );
+
+  Logger.log(
+    'Mapped contactPreference: ' +
+    String(client.contactPreference || 'NOT PROVIDED')
+  );
+
+  if (client.contactPreference === 'Email') {
+
+    Logger.log('PASS — doPost received and mapped Email');
+
+  } else {
+
+    Logger.log('FAIL — contactPreference was lost');
+
+  }
+
+  Logger.log('============================================================');
+}
