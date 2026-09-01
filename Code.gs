@@ -137,7 +137,11 @@ function onFormSubmit(e) {
     MailApp.sendEmail({
       to: adminEmail,
       replyTo: clientData.email !== 'N/A' ? clientData.email : adminEmail,
-      subject: `${subjectPrefix}[New Enquiry] ${clientData.name} | ${requestData.helpCategory} — RD3 Tech`,
+      subject: EMAIL_SUBJECTS.admin(
+        subjectPrefix,
+        clientData.name,
+        requestData.helpCategory
+      ),
       htmlBody: adminHtmlBody
     });
     Logger.log('✅ Admin email sent');
@@ -166,6 +170,7 @@ function onFormSubmit(e) {
         ),
         htmlBody: clientHtmlBody
       });
+
       Logger.log('✅ Client email sent');
     } catch (err) {
       Logger.log('⚠️ Client email failed: ' + err.message);

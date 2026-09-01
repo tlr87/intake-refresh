@@ -1,13 +1,20 @@
 <!DOCTYPE html>
+
 <html>
 <head>
   <base target="_top">
 
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <title>RD3 Tech — Admin</title>
 
   <style>
+
+    /* ================================================================
+       RESET
+       ================================================================ */
+
     * {
       box-sizing: border-box;
     }
@@ -23,11 +30,25 @@
       font-family: Arial, Helvetica, sans-serif;
       background: #0f172a;
       color: #e2e8f0;
+      font-size: 14px;
+      line-height: 1.6;
     }
 
     a {
       text-decoration: none;
     }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+
+    /* ================================================================
+       PAGE
+       ================================================================ */
 
     .page {
       min-height: 100vh;
@@ -39,6 +60,7 @@
       max-width: 1100px;
       margin: 0 auto;
     }
+
 
     /* ================================================================
        HEADER
@@ -74,6 +96,7 @@
       line-height: 1.5;
     }
 
+
     /* ================================================================
        NAVIGATION
        ================================================================ */
@@ -92,7 +115,11 @@
       border: 1px solid #334155;
       color: #cbd5e1;
       font-size: 13px;
-      transition: 0.15s ease;
+
+      transition:
+        background 0.15s ease,
+        color 0.15s ease,
+        border-color 0.15s ease;
     }
 
     .nav a:hover {
@@ -105,6 +132,7 @@
       border-color: #2563eb;
       color: #ffffff;
     }
+
 
     /* ================================================================
        INTRO
@@ -132,6 +160,7 @@
       font-size: 14px;
       line-height: 1.7;
     }
+
 
     /* ================================================================
        SECTION
@@ -169,8 +198,9 @@
       padding: 24px;
     }
 
+
     /* ================================================================
-       MAIN WORKFLOW
+       WORKFLOW
        ================================================================ */
 
     .workflow {
@@ -194,12 +224,17 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
+
       width: 28px;
       height: 28px;
+
       margin-bottom: 10px;
+
       border-radius: 50%;
+
       background: #2563eb;
       color: #ffffff;
+
       font-size: 12px;
       font-weight: 700;
     }
@@ -217,6 +252,7 @@
       line-height: 1.55;
     }
 
+
     /* ================================================================
        ADMIN CARDS
        ================================================================ */
@@ -232,9 +268,11 @@
       display: block;
       height: 100%;
       padding: 20px;
+
       background: #0f172a;
       border: 1px solid #334155;
       border-radius: 10px;
+
       transition:
         border-color 0.15s ease,
         background 0.15s ease,
@@ -271,13 +309,110 @@
       display: inline-block;
       margin-top: 14px;
       padding: 5px 8px;
+
       border-radius: 5px;
+
       background: #1e293b;
       border: 1px solid #334155;
+
       color: #93c5fd;
+
       font-family: Consolas, Monaco, monospace;
       font-size: 11px;
     }
+
+
+    /* ================================================================
+       EXPORT TO SHEETS
+       ================================================================ */
+
+    .export-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+
+      gap: 20px;
+      flex-wrap: wrap;
+
+      padding: 20px;
+
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 10px;
+    }
+
+    .export-info {
+      flex: 1;
+      min-width: 240px;
+    }
+
+    .export-info h3 {
+      margin: 0 0 6px;
+      color: #f8fafc;
+      font-size: 16px;
+    }
+
+    .export-info p {
+      margin: 0;
+      color: #94a3b8;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .export-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+
+      min-width: 170px;
+
+      padding: 11px 16px;
+
+      border: 1px solid #2563eb;
+      border-radius: 8px;
+
+      background: #2563eb;
+      color: #ffffff;
+
+      font-size: 13px;
+      font-weight: 700;
+
+      cursor: pointer;
+
+      transition:
+        background 0.15s ease,
+        border-color 0.15s ease,
+        opacity 0.15s ease;
+    }
+
+    .export-button:hover {
+      background: #1d4ed8;
+      border-color: #1d4ed8;
+    }
+
+    .export-button:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    .export-status {
+      width: 100%;
+      margin-top: 4px;
+
+      color: #94a3b8;
+
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .export-status.success {
+      color: #86efac;
+    }
+
+    .export-status.error {
+      color: #fca5a5;
+    }
+
 
     /* ================================================================
        WIKI CARDS
@@ -286,6 +421,7 @@
     .wiki-card {
       position: relative;
       padding: 20px;
+
       background: #0f172a;
       border: 1px solid #334155;
       border-radius: 10px;
@@ -307,10 +443,13 @@
     .wiki-list {
       margin: 14px 0 0;
       padding-left: 18px;
+
       color: #cbd5e1;
+
       font-size: 12px;
       line-height: 1.7;
     }
+
 
     /* ================================================================
        SCHEMA STATUS
@@ -320,9 +459,12 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+
       gap: 20px;
       flex-wrap: wrap;
+
       padding: 18px 20px;
+
       background: #0f172a;
       border: 1px solid #334155;
       border-radius: 10px;
@@ -343,16 +485,23 @@
 
     .status-badge {
       display: inline-block;
+
       padding: 7px 11px;
+
       border-radius: 6px;
+
       background: #14532d;
       border: 1px solid #166534;
+
       color: #bbf7d0;
+
       font-size: 11px;
       font-weight: 700;
+
       text-transform: uppercase;
       letter-spacing: 0.4px;
     }
+
 
     /* ================================================================
        QUICK REFERENCE
@@ -366,9 +515,12 @@
     .reference-table th,
     .reference-table td {
       padding: 11px 10px;
+
       border-bottom: 1px solid #334155;
+
       text-align: left;
       vertical-align: top;
+
       font-size: 13px;
     }
 
@@ -383,9 +535,11 @@
 
     .reference-table code {
       color: #93c5fd;
+
       font-family: Consolas, Monaco, monospace;
       font-size: 12px;
     }
+
 
     /* ================================================================
        FOOTER
@@ -393,10 +547,13 @@
 
     .footer {
       padding: 20px 0 8px;
+
       color: #64748b;
+
       font-size: 12px;
       text-align: center;
     }
+
 
     /* ================================================================
        MOBILE
@@ -438,8 +595,18 @@
         display: block;
         overflow-x: auto;
       }
+
+      .export-card {
+        align-items: stretch;
+      }
+
+      .export-button {
+        width: 100%;
+      }
     }
+
   </style>
+
 </head>
 
 <body>
@@ -448,762 +615,1199 @@
 
   <div class="container">
 
-    <!-- ============================================================
-         HEADER
-         ============================================================ -->
+```
+<!-- ============================================================
+     HEADER
+     ============================================================ -->
 
-    <header class="header">
+<header class="header">
 
-      <div class="header-top">
+  <div class="header-top">
 
-        <div class="brand">
-          <h1>RD3 Tech Admin</h1>
-          <p>
-            Form, schema, template and spreadsheet administration
-          </p>
-        </div>
+    <div class="brand">
 
-        <nav class="nav" aria-label="Admin navigation">
-
-          <a
-            id="nav-home"
-            class="active"
-            href="#"
-          >
-            Home
-          </a>
-
-          <a
-            id="nav-email-templates"
-            href="#"
-          >
-            Email Templates
-          </a>
-
-          <a
-            id="nav-web-form"
-            href="#"
-          >
-            Web Form
-          </a>
-
-          <a
-            id="nav-editor"
-            href="#"
-          >
-            JSON Editor
-          </a>
-
-        </nav>
-
-      </div>
-
-    </header>
-
-
-    <!-- ============================================================
-         INTRO
-         ============================================================ -->
-
-    <section class="intro">
-
-      <h2>
-        RD3 Tech Configuration &amp; Development Hub
-      </h2>
+      <h1>
+        RD3 Tech Admin
+      </h1>
 
       <p>
-        This administration area is the working reference for the
-        RD3 Tech enquiry system. FIELD_SCHEMA is the central
-        relationship between the Google Form, website form,
-        email templates and spreadsheet output. When the form
-        changes, use these pages to identify what code and
-        templates need to be updated.
+        Form, schema, template and spreadsheet administration
       </p>
 
-    </section>
+    </div>
 
 
-    <!-- ============================================================
-         WORKFLOW
-         ============================================================ -->
+    <nav
+      class="nav"
+      aria-label="Admin navigation"
+    >
 
-    <section class="section">
+      <a
+        id="nav-home"
+        class="active"
+        href="#"
+      >
+        Home
+      </a>
 
-      <div class="section-header">
+      <a
+        id="nav-email-templates"
+        href="#"
+      >
+        Email Templates
+      </a>
 
-        <h2>
-          How the System Fits Together
-        </h2>
+      <a
+        id="nav-web-form"
+        href="#"
+      >
+        Web Form
+      </a>
+
+      <a
+        id="nav-editor"
+        href="#"
+      >
+        JSON Editor
+      </a>
+
+    </nav>
+
+  </div>
+
+</header>
+
+
+<!-- ============================================================
+     INTRO
+     ============================================================ -->
+
+<section class="intro">
+
+  <h2>
+    RD3 Tech Configuration &amp; Development Hub
+  </h2>
+
+  <p>
+    This administration area is the working reference for the
+    RD3 Tech enquiry system. FIELD_SCHEMA is the central
+    relationship between the Google Form, website form,
+    email templates and spreadsheet output. When the form
+    changes, use these pages to identify what code and
+    templates need to be updated.
+  </p>
+
+</section>
+
+
+<!-- ============================================================
+     WORKFLOW
+     ============================================================ -->
+
+<section class="section">
+
+  <div class="section-header">
+
+    <h2>
+      How the System Fits Together
+    </h2>
+
+    <p>
+      The basic relationship between the form, FIELD_SCHEMA,
+      web form, templates and spreadsheet.
+    </p>
+
+  </div>
+
+
+  <div class="section-body">
+
+    <div class="workflow">
+
+
+      <div class="workflow-step">
+
+        <div class="workflow-number">
+          1
+        </div>
+
+        <h3>
+          Google Form
+        </h3>
 
         <p>
-          The basic relationship between the form, FIELD_SCHEMA,
-          web form, templates and spreadsheet.
+          The questions, entry IDs and response structure
+          originate from the Google Form.
         </p>
 
       </div>
 
-      <div class="section-body">
 
-        <div class="workflow">
+      <div class="workflow-step">
 
-          <div class="workflow-step">
-
-            <div class="workflow-number">1</div>
-
-            <h3>Google Form</h3>
-
-            <p>
-              The questions, entry IDs and response structure
-              originate from the Google Form.
-            </p>
-
-          </div>
-
-
-          <div class="workflow-step">
-
-            <div class="workflow-number">2</div>
-
-            <h3>FIELD_SCHEMA</h3>
-
-            <p>
-              The schema provides the stable keys and relationships
-              used throughout the application.
-            </p>
-
-          </div>
-
-
-          <div class="workflow-step">
-
-            <div class="workflow-number">3</div>
-
-            <h3>Web Form</h3>
-
-            <p>
-              FluentSnippets PHP and standalone HTML use the schema
-              relationship when collecting website enquiries.
-            </p>
-
-          </div>
-
-
-          <div class="workflow-step">
-
-            <div class="workflow-number">4</div>
-
-            <h3>Spreadsheet</h3>
-
-            <p>
-              Submitted values are mapped into the appropriate
-              spreadsheet fields.
-            </p>
-
-          </div>
-
-
-          <div class="workflow-step">
-
-            <div class="workflow-number">5</div>
-
-            <h3>Email Templates</h3>
-
-            <p>
-              AdminEmail and ClientEmail use the processed request
-              and client data to create the appropriate emails.
-            </p>
-
-          </div>
-
+        <div class="workflow-number">
+          2
         </div>
 
-      </div>
-
-    </section>
-
-
-    <!-- ============================================================
-         ADMIN TOOLS
-         ============================================================ -->
-
-    <section class="section">
-
-      <div class="section-header">
-
-        <h2>
-          Administration
-        </h2>
-
-        <p>
-          Tools used to maintain the RD3 Tech enquiry system.
-        </p>
-
-      </div>
-
-      <div class="section-body">
-
-        <div class="grid">
-
-          <!-- EMAIL TEMPLATES -->
-
-          <a
-            id="card-email-templates"
-            class="card-link"
-            href="#"
-          >
-
-            <div class="card-icon">✉️</div>
-
-            <h3>
-              Email Templates
-            </h3>
-
-            <p>
-              Documentation and working reference for AdminEmail
-              and ClientEmail. Shows how template variables,
-              FIELD_SCHEMA tags, security evaluation and client
-              request data are used.
-            </p>
-
-            <span class="card-tag">
-              ?page=emailtemplates
-            </span>
-
-          </a>
-
-
-          <!-- WEB FORM -->
-
-          <a
-            id="card-web-form"
-            class="card-link"
-            href="#"
-          >
-
-            <div class="card-icon">🌐</div>
-
-            <h3>
-              Web Form
-            </h3>
-
-            <p>
-              Documentation for the website enquiry form, including
-              FluentSnippets PHP and the standalone HTML version,
-              field mapping, validation, honeypot handling and
-              spreadsheet submission.
-            </p>
-
-            <span class="card-tag">
-              ?page=webform
-            </span>
-
-          </a>
-
-
-          <!-- REFERENCE -->
-
-          <a
-            id="card-reference"
-            class="card-link"
-            href="#"
-          >
-
-            <div class="card-icon">📚</div>
-
-            <h3>
-              FIELD_SCHEMA Reference
-            </h3>
-
-            <p>
-              Live reference generated from FIELD_SCHEMA. Use this
-              page to compare Google Form fields, schema keys,
-              data types and the tags used by templates and forms.
-            </p>
-
-            <span class="card-tag">
-              ?page=reference
-            </span>
-
-          </a>
-
-
-          <!-- JSON EDITOR -->
-
-          <a
-            id="card-editor"
-            class="card-link"
-            href="#"
-          >
-
-            <div class="card-icon">📝</div>
-
-            <h3>
-              JSON Editor
-            </h3>
-
-            <p>
-              View and edit the configuration stored in Script
-              Properties. Use this when maintaining the live
-              configuration and schema data.
-            </p>
-
-            <span class="card-tag">
-              ?page=editor
-            </span>
-
-          </a>
-
-        </div>
-
-      </div>
-
-    </section>
-
-
-    <!-- ============================================================
-         WIKI
-         ============================================================ -->
-
-    <section class="section">
-
-      <div class="section-header">
-
-        <h2>
-          Development Wiki
-        </h2>
-
-        <p>
-          Use these pages when changing the form or updating code.
-        </p>
-
-      </div>
-
-      <div class="section-body">
-
-        <div class="grid">
-
-          <div class="wiki-card">
-
-            <h3>
-              ✉️ Email Template Wiki
-            </h3>
-
-            <p>
-              The Email Templates page explains exactly where
-              FIELD_SCHEMA values appear in the email templates.
-            </p>
-
-            <ul class="wiki-list">
-              <li>AdminEmail structure</li>
-              <li>ClientEmail structure</li>
-              <li>FIELD_SCHEMA relationship</li>
-              <li>Template tags</li>
-              <li>Old → New field comparison</li>
-              <li>SPAM detection display</li>
-              <li>REVIEW / out-of-scope display</li>
-              <li>URGENT request display</li>
-            </ul>
-
-          </div>
-
-
-          <div class="wiki-card">
-
-            <h3>
-              🌐 Web Form Wiki
-            </h3>
-
-            <p>
-              The Web Form page explains how the website form
-              connects to the Apps Script endpoint and spreadsheet.
-            </p>
-
-            <ul class="wiki-list">
-              <li>FluentSnippets PHP</li>
-              <li>Standalone HTML</li>
-              <li>FIELD_SCHEMA mapping</li>
-              <li>HTML field IDs</li>
-              <li>POST payload keys</li>
-              <li>Validation</li>
-              <li>Honeypot protection</li>
-              <li>Spreadsheet output</li>
-            </ul>
-
-          </div>
-
-        </div>
-
-      </div>
-
-    </section>
-
-
-    <!-- ============================================================
-         SCHEMA STATUS
-         ============================================================ -->
-
-    <section class="section">
-
-      <div class="section-header">
-
-        <h2>
+        <h3>
           FIELD_SCHEMA
-        </h2>
+        </h3>
 
         <p>
-          Production configuration source.
+          The schema provides the stable keys and relationships
+          used throughout the application.
         </p>
 
       </div>
 
-      <div class="section-body">
 
-        <div class="status-card">
+      <div class="workflow-step">
 
-          <div class="status-info">
-
-            <h3>
-              Live Schema Configuration
-            </h3>
-
-            <p>
-              FIELD_SCHEMA is the primary relationship source used
-              by the RD3 Tech application. Documentation pages should
-              use this data rather than maintaining separate copies
-              of field definitions.
-            </p>
-
-          </div>
-
-          <div class="status-badge">
-            PRIMARY SOURCE
-          </div>
-
+        <div class="workflow-number">
+          3
         </div>
 
-      </div>
-
-    </section>
-
-
-    <!-- ============================================================
-         QUICK REFERENCE
-         ============================================================ -->
-
-    <section class="section">
-
-      <div class="section-header">
-
-        <h2>
-          Quick Field Relationship
-        </h2>
+        <h3>
+          Web Form
+        </h3>
 
         <p>
-          Example of how one field travels through the system.
+          FluentSnippets PHP and standalone HTML use the schema
+          relationship when collecting website enquiries.
         </p>
 
       </div>
 
-      <div class="section-body">
 
-        <table class="reference-table">
+      <div class="workflow-step">
 
-          <thead>
-
-            <tr>
-              <th>Layer</th>
-              <th>Example</th>
-              <th>Purpose</th>
-            </tr>
-
-          </thead>
-
-          <tbody>
-
-            <tr>
-              <td>Google Form</td>
-
-              <td>
-                Name
-              </td>
-
-              <td>
-                Question presented to the user.
-              </td>
-            </tr>
-
-            <tr>
-              <td>Entry ID</td>
-
-              <td>
-                <code>entry.943904063</code>
-              </td>
-
-              <td>
-                Google Form submission identifier.
-              </td>
-            </tr>
-
-            <tr>
-              <td>Schema Key</td>
-
-              <td>
-                <code>name</code>
-              </td>
-
-              <td>
-                Stable application-level field name.
-              </td>
-            </tr>
-
-            <tr>
-              <td>Template Tag</td>
-
-              <td>
-                <code>&lt;?= request.name ?&gt;</code>
-              </td>
-
-              <td>
-                Value inserted into a template.
-              </td>
-            </tr>
-
-            <tr>
-              <td>Web Form Payload</td>
-
-              <td>
-                <code>name</code>
-              </td>
-
-              <td>
-                Key submitted by the website form.
-              </td>
-            </tr>
-
-            <tr>
-              <td>Spreadsheet</td>
-
-              <td>
-                Name column
-              </td>
-
-              <td>
-                Final stored enquiry value.
-              </td>
-            </tr>
-
-          </tbody>
-
-        </table>
-
-      </div>
-
-    </section>
-
-
-    <!-- ============================================================
-         CHANGE WORKFLOW
-         ============================================================ -->
-
-    <section class="section">
-
-      <div class="section-header">
-
-        <h2>
-          When the Google Form Changes
-        </h2>
-
-        <p>
-          Recommended maintenance workflow.
-        </p>
-
-      </div>
-
-      <div class="section-body">
-
-        <div class="grid">
-
-          <div class="wiki-card">
-
-            <h3>1. Update the Form</h3>
-
-            <p>
-              Make the required change to the Google Form.
-              Record the changed question, entry ID and intended
-              schema key.
-            </p>
-
-          </div>
-
-
-          <div class="wiki-card">
-
-            <h3>2. Update FIELD_SCHEMA</h3>
-
-            <p>
-              Use the schema workflow to establish the new
-              relationship before changing dependent code.
-            </p>
-
-          </div>
-
-
-          <div class="wiki-card">
-
-            <h3>3. Check Email Templates</h3>
-
-            <p>
-              Use the Email Templates wiki to identify old tags,
-              new tags and any AdminEmail or ClientEmail sections
-              affected by the change.
-            </p>
-
-          </div>
-
-
-          <div class="wiki-card">
-
-            <h3>4. Check Web Form</h3>
-
-            <p>
-              Use the Web Form wiki to update the FluentSnippets
-              PHP and standalone HTML versions where required.
-            </p>
-
-          </div>
-
-
-          <div class="wiki-card">
-
-            <h3>5. Check Spreadsheet Output</h3>
-
-            <p>
-              Confirm that the submitted schema key is mapped to
-              the correct spreadsheet column.
-            </p>
-
-          </div>
-
-
-          <div class="wiki-card">
-
-            <h3>6. Test Everything</h3>
-
-            <p>
-              Submit a controlled test and verify the form,
-              spreadsheet output, AdminEmail and ClientEmail.
-            </p>
-
-          </div>
-
+        <div class="workflow-number">
+          4
         </div>
 
+        <h3>
+          Spreadsheet
+        </h3>
+
+        <p>
+          Submitted values are mapped into the appropriate
+          spreadsheet fields.
+        </p>
+
       </div>
 
-    </section>
+
+      <div class="workflow-step">
+
+        <div class="workflow-number">
+          5
+        </div>
+
+        <h3>
+          Email Templates
+        </h3>
+
+        <p>
+          AdminEmail and ClientEmail use the processed request
+          and client data to create the appropriate emails.
+        </p>
+
+      </div>
 
 
-    <!-- ============================================================
-         FOOTER
-         ============================================================ -->
+    </div>
 
-    <footer class="footer">
-      RD3 Tech &nbsp;|&nbsp;
-      Configuration &amp; Development Reference
-    </footer>
+  </div>
+
+</section>
+
+
+<!-- ============================================================
+     ADMINISTRATION
+     ============================================================ -->
+
+<section class="section">
+
+  <div class="section-header">
+
+    <h2>
+      Administration
+    </h2>
+
+    <p>
+      Tools used to maintain the RD3 Tech enquiry system.
+    </p>
+
+  </div>
+
+
+  <div class="section-body">
+
+    <div class="grid">
+
+
+      <!-- EMAIL TEMPLATES -->
+
+      <a
+        id="card-email-templates"
+        class="card-link"
+        href="#"
+      >
+
+        <div class="card-icon">
+          ✉️
+        </div>
+
+        <h3>
+          Email Templates
+        </h3>
+
+        <p>
+          Documentation and working reference for AdminEmail
+          and ClientEmail. Shows how template variables,
+          FIELD_SCHEMA tags, security evaluation and client
+          request data are used.
+        </p>
+
+        <span class="card-tag">
+          ?page=emailtemplates
+        </span>
+
+      </a>
+
+
+      <!-- WEB FORM -->
+
+      <a
+        id="card-web-form"
+        class="card-link"
+        href="#"
+      >
+
+        <div class="card-icon">
+          🌐
+        </div>
+
+        <h3>
+          Web Form
+        </h3>
+
+        <p>
+          Documentation for the website enquiry form, including
+          FluentSnippets PHP and the standalone HTML version,
+          field mapping, validation, honeypot handling and
+          spreadsheet submission.
+        </p>
+
+        <span class="card-tag">
+          ?page=webform
+        </span>
+
+      </a>
+
+
+      <!-- JSON EDITOR -->
+
+      <a
+        id="card-editor"
+        class="card-link"
+        href="#"
+      >
+
+        <div class="card-icon">
+          📝
+        </div>
+
+        <h3>
+          JSON Editor
+        </h3>
+
+        <p>
+          View and edit the configuration stored in Script
+          Properties. Use this when maintaining the live
+          configuration and schema data.
+        </p>
+
+        <span class="card-tag">
+          ?page=editor
+        </span>
+
+      </a>
+
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- ============================================================
+     EXPORT TO SHEETS
+     ============================================================ -->
+
+<section class="section">
+
+  <div class="section-header">
+
+    <h2>
+      Spreadsheet
+    </h2>
+
+    <p>
+      Manage the RD3 Tech enquiry spreadsheet.
+    </p>
+
+  </div>
+
+
+  <div class="section-body">
+
+    <div class="export-card">
+
+
+      <div class="export-info">
+
+        <h3>
+          Export to Google Sheets
+        </h3>
+
+        <p>
+          Run the server-side Apps Script export function to
+          write the current RD3 Tech enquiry data to the
+          configured Google Spreadsheet.
+        </p>
+
+      </div>
+
+
+      <button
+        type="button"
+        id="export-sheets-button"
+        class="export-button"
+      >
+        Export to Sheets
+      </button>
+
+
+      <div
+        id="export-sheets-status"
+        class="export-status"
+        role="status"
+        aria-live="polite"
+      ></div>
+
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- ============================================================
+     DEVELOPMENT WIKI
+     ============================================================ -->
+
+<section class="section">
+
+  <div class="section-header">
+
+    <h2>
+      Development Wiki
+    </h2>
+
+    <p>
+      Use these pages when changing the form or updating code.
+    </p>
+
+  </div>
+
+
+  <div class="section-body">
+
+    <div class="grid">
+
+
+      <div class="wiki-card">
+
+        <h3>
+          ✉️ Email Template Wiki
+        </h3>
+
+        <p>
+          The Email Templates page explains exactly where
+          FIELD_SCHEMA values appear in the email templates.
+        </p>
+
+        <ul class="wiki-list">
+
+          <li>
+            AdminEmail structure
+          </li>
+
+          <li>
+            ClientEmail structure
+          </li>
+
+          <li>
+            FIELD_SCHEMA relationship
+          </li>
+
+          <li>
+            Template tags
+          </li>
+
+          <li>
+            Old → New field comparison
+          </li>
+
+          <li>
+            SPAM detection display
+          </li>
+
+          <li>
+            REVIEW / out-of-scope display
+          </li>
+
+          <li>
+            URGENT request display
+          </li>
+
+        </ul>
+
+      </div>
+
+
+      <div class="wiki-card">
+
+        <h3>
+          🌐 Web Form Wiki
+        </h3>
+
+        <p>
+          The Web Form page explains how the website form
+          connects to the Apps Script endpoint and spreadsheet.
+        </p>
+
+        <ul class="wiki-list">
+
+          <li>
+            FluentSnippets PHP
+          </li>
+
+          <li>
+            Standalone HTML
+          </li>
+
+          <li>
+            FIELD_SCHEMA mapping
+          </li>
+
+          <li>
+            HTML field IDs
+          </li>
+
+          <li>
+            POST payload keys
+          </li>
+
+          <li>
+            Validation
+          </li>
+
+          <li>
+            Honeypot protection
+          </li>
+
+          <li>
+            Spreadsheet output
+          </li>
+
+        </ul>
+
+      </div>
+
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- ============================================================
+     FIELD_SCHEMA STATUS
+     ============================================================ -->
+
+<section class="section">
+
+  <div class="section-header">
+
+    <h2>
+      FIELD_SCHEMA
+    </h2>
+
+    <p>
+      Production configuration source.
+    </p>
+
+  </div>
+
+
+  <div class="section-body">
+
+    <div class="status-card">
+
+
+      <div class="status-info">
+
+        <h3>
+          Live Schema Configuration
+        </h3>
+
+        <p>
+          FIELD_SCHEMA is the primary relationship source used
+          by the RD3 Tech application. Documentation pages should
+          use this data rather than maintaining separate copies
+          of field definitions.
+        </p>
+
+      </div>
+
+
+      <div class="status-badge">
+        PRIMARY SOURCE
+      </div>
+
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- ============================================================
+     QUICK REFERENCE
+     ============================================================ -->
+
+<section class="section">
+
+  <div class="section-header">
+
+    <h2>
+      Quick Field Relationship
+    </h2>
+
+    <p>
+      Example of how one field travels through the system.
+    </p>
+
+  </div>
+
+
+  <div class="section-body">
+
+    <table class="reference-table">
+
+      <thead>
+
+        <tr>
+          <th>Layer</th>
+          <th>Example</th>
+          <th>Purpose</th>
+        </tr>
+
+      </thead>
+
+
+      <tbody>
+
+        <tr>
+
+          <td>
+            Google Form
+          </td>
+
+          <td>
+            Name
+          </td>
+
+          <td>
+            Question presented to the user.
+          </td>
+
+        </tr>
+
+
+        <tr>
+
+          <td>
+            Entry ID
+          </td>
+
+          <td>
+            <code>entry.943904063</code>
+          </td>
+
+          <td>
+            Google Form submission identifier.
+          </td>
+
+        </tr>
+
+
+        <tr>
+
+          <td>
+            Schema Key
+          </td>
+
+          <td>
+            <code>name</code>
+          </td>
+
+          <td>
+            Stable application-level field name.
+          </td>
+
+        </tr>
+
+
+        <tr>
+
+          <td>
+            Template Tag
+          </td>
+
+          <td>
+            <code>&lt;?= request.name ?&gt;</code>
+          </td>
+
+          <td>
+            Value inserted into a template.
+          </td>
+
+        </tr>
+
+
+        <tr>
+
+          <td>
+            Web Form Payload
+          </td>
+
+          <td>
+            <code>name</code>
+          </td>
+
+          <td>
+            Key submitted by the website form.
+          </td>
+
+        </tr>
+
+
+        <tr>
+
+          <td>
+            Spreadsheet
+          </td>
+
+          <td>
+            Name column
+          </td>
+
+          <td>
+            Final stored enquiry value.
+          </td>
+
+        </tr>
+
+
+      </tbody>
+
+    </table>
+
+  </div>
+
+</section>
+
+
+<!-- ============================================================
+     CHANGE WORKFLOW
+     ============================================================ -->
+
+<section class="section">
+
+  <div class="section-header">
+
+    <h2>
+      When the Google Form Changes
+    </h2>
+
+    <p>
+      Recommended maintenance workflow.
+    </p>
+
+  </div>
+
+
+  <div class="section-body">
+
+    <div class="grid">
+
+
+      <div class="wiki-card">
+
+        <h3>
+          1. Update the Form
+        </h3>
+
+        <p>
+          Make the required change to the Google Form.
+          Record the changed question, entry ID and intended
+          schema key.
+        </p>
+
+      </div>
+
+
+      <div class="wiki-card">
+
+        <h3>
+          2. Update FIELD_SCHEMA
+        </h3>
+
+        <p>
+          Use the schema workflow to establish the new
+          relationship before changing dependent code.
+        </p>
+
+      </div>
+
+
+      <div class="wiki-card">
+
+        <h3>
+          3. Check Email Templates
+        </h3>
+
+        <p>
+          Use the Email Templates wiki to identify old tags,
+          new tags and any AdminEmail or ClientEmail sections
+          affected by the change.
+        </p>
+
+      </div>
+
+
+      <div class="wiki-card">
+
+        <h3>
+          4. Check Web Form
+        </h3>
+
+        <p>
+          Use the Web Form wiki to update the FluentSnippets
+          PHP and standalone HTML versions where required.
+        </p>
+
+      </div>
+
+
+      <div class="wiki-card">
+
+        <h3>
+          5. Check Spreadsheet Output
+        </h3>
+
+        <p>
+          Confirm that the submitted schema key is mapped to
+          the correct spreadsheet column.
+        </p>
+
+      </div>
+
+
+      <div class="wiki-card">
+
+        <h3>
+          6. Test Everything
+        </h3>
+
+        <p>
+          Submit a controlled test and verify the form,
+          spreadsheet output, AdminEmail and ClientEmail.
+        </p>
+
+      </div>
+
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- ============================================================
+     FOOTER
+     ============================================================ -->
+
+<footer class="footer">
+
+  RD3 Tech &nbsp;|&nbsp;
+  Configuration &amp; Development Reference
+
+</footer>
+```
 
   </div>
 
 </div>
 
-
 <script>
-  /*
-   * ========================================================================
-   * RD3 TECH ADMIN NAVIGATION
-   * ========================================================================
-   *
-   * The Web App URL is supplied by the Apps Script template/router.
-   *
-   * This avoids hard-coding the deployment URL into Index.html.
-   * ========================================================================
-   */
 
-  const baseUrl =
-    <?!= JSON.stringify(webAppUrl || '') ?>;
+/*
+ * ============================================================================
+ * RD3 TECH ADMIN — NAVIGATION
+ * ============================================================================
+ *
+ * The Web App URL is supplied by the Apps Script template/router.
+ *
+ * This avoids hard-coding the deployment URL into Index.html.
+ * ============================================================================
+ */
 
-
-  /*
-   * ========================================================================
-   * ROUTE BUILDER
-   * ========================================================================
-   */
-
-  function pageUrl(page) {
-
-    if (!baseUrl) {
-      return '#';
-    }
-
-    return baseUrl + '?page=' + encodeURIComponent(page);
-  }
+const baseUrl =
+  <?!= JSON.stringify(webAppUrl || '') ?>;
 
 
-  /*
-   * ========================================================================
-   * NAVIGATION LINKS
-   * ========================================================================
-   */
+/*
+ * ============================================================================
+ * ROUTE BUILDER
+ * ============================================================================
+ */
 
-  document.getElementById('nav-home').href =
-    baseUrl || '#';
-
-  document.getElementById('nav-email-templates').href =
-    pageUrl('emailtemplates');
-
-  document.getElementById('nav-web-form').href =
-    pageUrl('webform');
-
-  document.getElementById('nav-editor').href =
-    pageUrl('editor');
-
-
-  /*
-   * ========================================================================
-   * ADMIN CARDS
-   * ========================================================================
-   */
-
-  document.getElementById('card-email-templates').href =
-    pageUrl('emailtemplates');
-
-  document.getElementById('card-web-form').href =
-    pageUrl('webform');
-
-  document.getElementById('card-reference').href =
-    pageUrl('reference');
-
-  document.getElementById('card-editor').href =
-    pageUrl('editor');
-
-
-  /*
-   * ========================================================================
-   * SAFETY CHECK
-   * ========================================================================
-   *
-   * If the router has not supplied a Web App URL, keep the page visible
-   * rather than throwing a JavaScript error.
-   * ========================================================================
-   */
+function pageUrl(page) {
 
   if (!baseUrl) {
+    return '#';
+  }
 
-    console.warn(
-      'RD3 Tech Admin: webAppUrl was not supplied by the router.'
+  return baseUrl +
+    '?page=' +
+    encodeURIComponent(page);
+
+}
+
+
+/*
+ * ============================================================================
+ * NAVIGATION LINKS
+ * ============================================================================
+ */
+
+document.getElementById('nav-home').href =
+  baseUrl || '#';
+
+document.getElementById('nav-email-templates').href =
+  pageUrl('emailtemplates');
+
+document.getElementById('nav-web-form').href =
+  pageUrl('webform');
+
+document.getElementById('nav-editor').href =
+  pageUrl('editor');
+
+
+/*
+ * ============================================================================
+ * ADMIN CARDS
+ * ============================================================================
+ */
+
+document.getElementById('card-email-templates').href =
+  pageUrl('emailtemplates');
+
+document.getElementById('card-web-form').href =
+  pageUrl('webform');
+
+document.getElementById('card-editor').href =
+  pageUrl('editor');
+
+
+/*
+ * ============================================================================
+ * EXPORT TO SHEETS
+ * ============================================================================
+ *
+ * The browser does NOT directly access the spreadsheet.
+ *
+ * Instead:
+ *
+ *     Index.html
+ *          ↓
+ *     google.script.run
+ *          ↓
+ *     exportToSheets()
+ *          ↓
+ *     Google Spreadsheet
+ *
+ * The server-side Apps Script function is responsible for:
+ *
+ *     - locating the configured spreadsheet
+ *     - reading the enquiry data
+ *     - mapping FIELD_SCHEMA
+ *     - writing/updating spreadsheet values
+ *     - returning a success message
+ *
+ * Expected server-side function:
+ *
+ *     exportToSheets()
+ *
+ * ============================================================================
+ */
+
+const exportButton =
+  document.getElementById(
+    'export-sheets-button'
+  );
+
+const exportStatus =
+  document.getElementById(
+    'export-sheets-status'
+  );
+
+
+/*
+ * ============================================================================
+ * EXPORT STATUS
+ * ============================================================================
+ */
+
+function setExportStatus(
+  message,
+  type
+) {
+
+  if (!exportStatus) {
+    return;
+  }
+
+  exportStatus.textContent =
+    message || '';
+
+  exportStatus.className =
+    'export-status' +
+    (
+      type
+        ? ' ' + type
+        : ''
     );
 
-  }
+}
+
+
+/*
+ * ============================================================================
+ * EXPORT HANDLER
+ * ============================================================================
+ */
+
+if (exportButton) {
+
+  exportButton.addEventListener(
+    'click',
+    function() {
+
+      /*
+       * Clear previous status.
+       */
+
+      setExportStatus(
+        '',
+        ''
+      );
+
+
+      /*
+       * Prevent double-clicks while the export
+       * is running.
+       */
+
+      exportButton.disabled =
+        true;
+
+      exportButton.textContent =
+        'Exporting...';
+
+
+      /*
+       * Confirm that the Apps Script client API
+       * is available.
+       */
+
+      if (
+        typeof google === 'undefined' ||
+        !google.script ||
+        !google.script.run
+      ) {
+
+        setExportStatus(
+          'Apps Script server communication is unavailable.',
+          'error'
+        );
+
+        exportButton.disabled =
+          false;
+
+        exportButton.textContent =
+          'Export to Sheets';
+
+        return;
+
+      }
+
+
+      /*
+       * Execute the server-side function.
+       */
+
+      google.script.run
+
+        .withSuccessHandler(
+          function(result) {
+
+            exportButton.disabled =
+              false;
+
+            exportButton.textContent =
+              'Export to Sheets';
+
+
+            /*
+             * Default success message.
+             */
+
+            let message =
+              'Export completed successfully.';
+
+
+            /*
+             * Support an object response:
+             *
+             * {
+             *     message: '...'
+             * }
+             */
+
+            if (
+              result &&
+              typeof result === 'object' &&
+              result.message
+            ) {
+
+              message =
+                String(
+                  result.message
+                );
+
+            }
+
+
+            /*
+             * Support a plain string response.
+             */
+
+            else if (
+              typeof result === 'string' &&
+              result.trim()
+            ) {
+
+              message =
+                result;
+
+            }
+
+
+            setExportStatus(
+              message,
+              'success'
+            );
+
+          }
+        )
+
+        .withFailureHandler(
+          function(error) {
+
+            console.error(
+              'RD3 exportToSheets failed:',
+              error
+            );
+
+
+            exportButton.disabled =
+              false;
+
+            exportButton.textContent =
+              'Export to Sheets';
+
+
+            let message =
+              'The export failed. Please check the Apps Script logs.';
+
+
+            if (
+              error &&
+              error.message
+            ) {
+
+              message =
+                String(
+                  error.message
+                );
+
+            }
+
+
+            setExportStatus(
+              message,
+              'error'
+            );
+
+          }
+        )
+
+        .exportToSheets();
+
+    }
+  );
+
+}
+
+
+/*
+ * ============================================================================
+ * SAFETY CHECK
+ * ============================================================================
+ *
+ * If the router has not supplied a Web App URL, keep the page visible
+ * rather than throwing a JavaScript error.
+ * ============================================================================
+ */
+
+if (!baseUrl) {
+
+  console.warn(
+    'RD3 Tech Admin: webAppUrl was not supplied by the router.'
+  );
+
+}
+
 </script>
 
 </body>
