@@ -1,123 +1,939 @@
-
-
 <!DOCTYPE html>
+
 <html>
 <head>
   <base target="_top">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>RD3 Tech — JSON Editor</title>
+
   <style>
-    :root {
-      --bg: #0f172a;
-      --panel: #1e293b;
-      --border: #334155;
-      --text: #f8fafc;
-      --muted: #94a3b8;
-      --accent: #0284c7;
-      --accent-hover: #0369a1;
-      --error: #ef4444;
-      --success: #22c55e;
-      --danger: #dc2626;
-      --info: #0ea5e9;
+
+    /* ================================================================
+       RD3 TECH — DARK ADMIN THEME
+       ================================================================ */
+
+    * {
+      box-sizing: border-box;
     }
-    body { font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 20px; background: var(--bg); color: var(--text); }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
-    .title { font-size: 18px; font-weight: 700; color: #38bdf8; }
-    
-    /* Dynamic Tab Bar */
-    .tabs-nav { display: flex; gap: 4px; border-bottom: 2px solid var(--border); margin-bottom: 16px; overflow-x: auto; padding-bottom: 2px; align-items: center; }
-    .tab-wrapper { position: relative; display: flex; align-items: center; }
-    
-    .tab-btn { 
-      background: #090d16; color: var(--muted); border: 1px solid var(--border); border-bottom: none; 
-      border-radius: 6px 6px 0 0; padding: 10px 12px 10px 14px; font-weight: 600; font-size: 12px; 
-      cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; white-space: nowrap; 
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
     }
-    .tab-btn:hover { color: var(--text); background: var(--panel); }
-    .tab-btn.active { background: var(--panel); color: #38bdf8; border-color: var(--accent); border-bottom: 2px solid var(--panel); margin-bottom: -2px; }
-    
-    /* Tab Context Actions */
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+
+    a {
+      text-decoration: none;
+    }
+
+    button,
+    textarea {
+      font-family: inherit;
+    }
+
+    .page {
+      min-height: 100vh;
+      padding: 28px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+
+    /* ================================================================
+       HEADER
+       ================================================================ */
+
+    .header {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      padding: 22px 26px;
+      margin-bottom: 20px;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .brand h1 {
+      margin: 0;
+      color: #f8fafc;
+      font-size: 24px;
+      line-height: 1.2;
+    }
+
+    .brand p {
+      margin: 7px 0 0;
+      color: #94a3b8;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+
+    /* ================================================================
+       NAVIGATION
+       ================================================================ */
+
+    .nav {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .nav a {
+      display: inline-block;
+      padding: 9px 14px;
+      border-radius: 8px;
+      background: #0f172a;
+      border: 1px solid #334155;
+      color: #cbd5e1;
+      font-size: 13px;
+      transition: 0.15s ease;
+    }
+
+    .nav a:hover {
+      background: #334155;
+      color: #ffffff;
+    }
+
+    .nav a.active {
+      background: #2563eb;
+      border-color: #2563eb;
+      color: #ffffff;
+    }
+
+
+    /* ================================================================
+       ACTION BAR
+       ================================================================ */
+
+    .action-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 14px;
+
+      padding: 16px 20px;
+      margin-bottom: 16px;
+    }
+
+    .action-title {
+      color: #f8fafc;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .action-subtitle {
+      margin-top: 4px;
+      color: #94a3b8;
+      font-size: 12px;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+
+    /* ================================================================
+       BUTTONS
+       ================================================================ */
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+
+      border: none;
+      border-radius: 7px;
+
+      padding: 9px 14px;
+
+      font-size: 12px;
+      font-weight: 700;
+
+      cursor: pointer;
+
+      transition:
+        background 0.15s ease,
+        border-color 0.15s ease,
+        opacity 0.15s ease;
+    }
+
+    .btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: #2563eb;
+      color: #ffffff;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: #1d4ed8;
+    }
+
+    .btn-secondary {
+      background: #0f172a;
+      color: #cbd5e1;
+      border: 1px solid #334155;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: #334155;
+      color: #ffffff;
+    }
+
+    .btn-info {
+      background: #0284c7;
+      color: #ffffff;
+    }
+
+    .btn-info:hover:not(:disabled) {
+      background: #0369a1;
+    }
+
+
+    /* ================================================================
+       TABS
+       ================================================================ */
+
+    .tabs-panel {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .tabs-nav {
+      display: flex;
+      gap: 5px;
+
+      padding: 12px 12px 0;
+
+      background: #172033;
+
+      border-bottom: 1px solid #334155;
+
+      overflow-x: auto;
+    }
+
+    .tab-wrapper {
+      position: relative;
+      display: flex;
+      align-items: stretch;
+    }
+
+    .tab-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      background: #0f172a;
+      color: #94a3b8;
+
+      border: 1px solid #334155;
+      border-bottom: none;
+
+      border-radius: 7px 7px 0 0;
+
+      padding: 10px 12px;
+
+      font-size: 12px;
+      font-weight: 700;
+
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .tab-btn:hover {
+      background: #334155;
+      color: #ffffff;
+    }
+
+    .tab-btn.active {
+      background: #1e293b;
+      color: #93c5fd;
+
+      border-color: #2563eb;
+
+      margin-bottom: -1px;
+    }
+
+
+    /* ================================================================
+       TAB STATUS
+       ================================================================ */
+
+    .badge {
+      display: inline-block;
+
+      padding: 3px 6px;
+
+      border-radius: 5px;
+
+      font-size: 9px;
+      font-weight: 700;
+
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .badge.valid {
+      background: #14532d;
+      color: #bbf7d0;
+      border: 1px solid #166534;
+    }
+
+    .badge.invalid {
+      background: #7f1d1d;
+      color: #fecaca;
+      border: 1px solid #991b1b;
+    }
+
+
+    /* ================================================================
+       TAB MENU
+       ================================================================ */
+
     .tab-menu-trigger {
-      background: transparent; border: none; color: var(--muted); padding: 2px 4px; border-radius: 4px;
-      font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0.6;
+      background: transparent;
+      border: none;
+
+      color: #94a3b8;
+
+      padding: 1px 3px;
+
+      border-radius: 4px;
+
+      font-size: 14px;
+
+      cursor: pointer;
     }
-    .tab-btn:hover .tab-menu-trigger, .tab-btn.active .tab-menu-trigger { opacity: 1; }
-    .tab-menu-trigger:hover { background: rgba(255,255,255,0.1); color: var(--text); }
-    
+
+    .tab-menu-trigger:hover {
+      background: #334155;
+      color: #ffffff;
+    }
+
     .dropdown-menu {
-      display: none; position: absolute; top: 100%; right: 0; background: #0f172a; border: 1px solid var(--border);
-      border-radius: 6px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5); z-index: 50; min-width: 140px; padding: 4px 0; margin-top: 4px;
+      display: none;
+
+      position: absolute;
+
+      top: 100%;
+      right: 0;
+
+      min-width: 170px;
+
+      margin-top: 5px;
+
+      background: #0f172a;
+
+      border: 1px solid #334155;
+      border-radius: 7px;
+
+      box-shadow:
+        0 15px 30px rgba(0, 0, 0, 0.45);
+
+      z-index: 50;
+
+      padding: 5px;
     }
-    .dropdown-menu.show { display: block; }
+
+    .dropdown-menu.show {
+      display: block;
+    }
+
     .dropdown-item {
-      padding: 8px 12px; font-size: 12px; color: var(--text); cursor: pointer; display: flex; align-items: center; gap: 8px;
+      padding: 9px 11px;
+
+      color: #cbd5e1;
+
+      font-size: 12px;
+      font-weight: 600;
+
+      border-radius: 5px;
+
+      cursor: pointer;
     }
-    .dropdown-item:hover { background: var(--panel); }
 
-    .tab-content { display: none; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
-    .tab-content.active { display: block; }
+    .dropdown-item:hover {
+      background: #1e293b;
+      color: #ffffff;
+    }
 
-    .meta-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .prop-title { font-size: 13px; font-weight: 700; color: #e2e8f0; font-family: monospace; }
-    .action-btns { display: flex; gap: 8px; align-items: center; }
 
-    .badge { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; display: inline-block; text-transform: uppercase; }
-    .badge.valid { background: #14532d; color: #4ade80; }
-    .badge.invalid { background: #7f1d1d; color: #fca5a5; }
+    /* ================================================================
+       TAB CONTENT
+       ================================================================ */
 
-    textarea { width: 100%; height: 340px; font-family: monospace; font-size: 13px; padding: 12px; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box; background: #090d16; color: #e2e8f0; resize: vertical; line-height: 1.4; }
-    textarea:focus { border-color: var(--accent); outline: none; }
-    textarea.has-error { border-color: var(--error); background: #1c0d12; }
-    .error-msg { font-size: 12px; color: #fca5a5; margin-top: 6px; min-height: 16px; }
+    .tab-content {
+      display: none;
 
-    .controls { display: flex; gap: 12px; align-items: center; background: var(--panel); padding: 14px; border-radius: 8px; border: 1px solid var(--border); margin-top: 16px; }
-    .btn { background: var(--accent); color: #ffffff; border: none; padding: 10px 20px; font-size: 13px; font-weight: 600; border-radius: 6px; cursor: pointer; }
-    .btn:disabled { background: #475569; cursor: not-allowed; opacity: 0.6; }
+      padding: 20px;
+    }
 
-    .btn-secondary { background: #334155; color: #f8fafc; padding: 6px 12px; font-size: 11px; font-weight: 600; border: none; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
-    .btn-secondary:hover { background: #475569; }
+    .tab-content.active {
+      display: block;
+    }
 
-    .btn-test { background: var(--info); color: #ffffff; padding: 6px 12px; font-size: 11px; font-weight: 600; border: none; border-radius: 4px; cursor: pointer; }
 
-    #status { font-size: 13px; font-weight: 600; display: none; padding: 8px 14px; border-radius: 6px; }
-    .status-success { background: #14532d; color: #4ade80; }
-    .status-error { background: #7f1d1d; color: #fca5a5; }
+    /* ================================================================
+       PROPERTY HEADER
+       ================================================================ */
 
-    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); z-index: 1000; justify-content: center; align-items: center; }
-    .modal-box { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; width: 80%; max-width: 500px; display: flex; flex-direction: column; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border-bottom: 1px solid var(--border); }
-    .modal-title { font-weight: 700; font-size: 15px; color: #38bdf8; }
-    .modal-close { background: transparent; border: none; color: var(--muted); font-size: 18px; cursor: pointer; }
-    .modal-body { padding: 18px; overflow-y: auto; flex-grow: 1; font-size: 13px; color: var(--text); }
-    .modal-footer { padding: 12px 18px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+    .meta-bar {
+      display: flex;
 
-    .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; text-align: center; }
-    .summary-card { background: #090d16; padding: 8px; border-radius: 6px; border: 1px solid var(--border); }
-    .summary-card .num { font-size: 16px; font-weight: 700; }
-    .summary-card .lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; }
-    .test-log { background: #090d16; color: #e2e8f0; font-family: monospace; font-size: 12px; padding: 12px; border-radius: 6px; white-space: pre-wrap; word-break: break-all; border: 1px solid var(--border); margin-top: 12px; max-height: 250px; overflow-y: auto; }
+      justify-content: space-between;
+      align-items: center;
+
+      gap: 15px;
+      flex-wrap: wrap;
+
+      margin-bottom: 12px;
+    }
+
+    .prop-title {
+      color: #f8fafc;
+
+      font-family: Consolas, Monaco, monospace;
+
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .property-actions {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      flex-wrap: wrap;
+    }
+
+
+    /* ================================================================
+       JSON EDITOR
+       ================================================================ */
+
+    .editor-shell {
+      background: #0f172a;
+
+      border: 1px solid #334155;
+
+      border-radius: 10px;
+
+      padding: 10px;
+    }
+
+    textarea {
+      width: 100%;
+
+      min-height: 420px;
+
+      display: block;
+
+      padding: 14px;
+
+      resize: vertical;
+
+      border: 1px solid #334155;
+      border-radius: 7px;
+
+      background: #020617;
+      color: #e2e8f0;
+
+      font-family:
+        Consolas,
+        Monaco,
+        "Courier New",
+        monospace;
+
+      font-size: 13px;
+
+      line-height: 1.55;
+
+      outline: none;
+    }
+
+    textarea:focus {
+      border-color: #2563eb;
+
+      box-shadow:
+        0 0 0 1px #2563eb;
+    }
+
+    textarea.has-error {
+      border-color: #ef4444;
+
+      background: #170b10;
+    }
+
+    .error-msg {
+      min-height: 18px;
+
+      margin-top: 7px;
+
+      color: #fca5a5;
+
+      font-family:
+        Consolas,
+        Monaco,
+        monospace;
+
+      font-size: 11px;
+    }
+
+
+    /* ================================================================
+       SAVE AREA
+       ================================================================ */
+
+    .save-panel {
+      display: flex;
+
+      justify-content: space-between;
+      align-items: center;
+
+      gap: 15px;
+      flex-wrap: wrap;
+
+      margin-top: 16px;
+
+      padding: 16px 18px;
+
+      background: #1e293b;
+
+      border: 1px solid #334155;
+
+      border-radius: 12px;
+    }
+
+    .save-info {
+      color: #94a3b8;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    #status {
+      display: none;
+
+      padding: 8px 12px;
+
+      border-radius: 6px;
+
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .status-success {
+      display: inline-block !important;
+
+      background: #14532d;
+
+      border: 1px solid #166534;
+
+      color: #bbf7d0;
+    }
+
+    .status-error {
+      display: inline-block !important;
+
+      background: #7f1d1d;
+
+      border: 1px solid #991b1b;
+
+      color: #fecaca;
+    }
+
+
+    /* ================================================================
+       EMPTY STATE
+       ================================================================ */
+
+    .empty-state {
+      padding: 50px 20px;
+
+      text-align: center;
+
+      background: #0f172a;
+
+      border: 1px solid #334155;
+
+      border-radius: 10px;
+    }
+
+    .empty-state h3 {
+      margin: 0 0 8px;
+
+      color: #f8fafc;
+
+      font-size: 16px;
+    }
+
+    .empty-state p {
+      margin: 0;
+
+      color: #94a3b8;
+
+      font-size: 13px;
+    }
+
+
+    /* ================================================================
+       MODAL
+       ================================================================ */
+
+    .modal-overlay {
+      display: none;
+
+      position: fixed;
+
+      inset: 0;
+
+      width: 100%;
+      height: 100%;
+
+      background: rgba(2, 6, 23, 0.82);
+
+      z-index: 1000;
+
+      justify-content: center;
+      align-items: center;
+
+      padding: 20px;
+    }
+
+    .modal-box {
+      width: 100%;
+      max-width: 700px;
+
+      max-height: 90vh;
+
+      display: flex;
+      flex-direction: column;
+
+      background: #1e293b;
+
+      border: 1px solid #334155;
+
+      border-radius: 12px;
+
+      box-shadow:
+        0 25px 50px rgba(0, 0, 0, 0.55);
+    }
+
+    .modal-header {
+      display: flex;
+
+      justify-content: space-between;
+      align-items: center;
+
+      padding: 15px 18px;
+
+      border-bottom: 1px solid #334155;
+    }
+
+    .modal-title {
+      color: #93c5fd;
+
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .modal-close {
+      background: transparent;
+
+      border: none;
+
+      color: #94a3b8;
+
+      font-size: 20px;
+
+      cursor: pointer;
+    }
+
+    .modal-close:hover {
+      color: #ffffff;
+    }
+
+    .modal-body {
+      padding: 18px;
+
+      overflow-y: auto;
+
+      color: #e2e8f0;
+    }
+
+    .modal-footer {
+      display: flex;
+
+      justify-content: flex-end;
+
+      gap: 8px;
+
+      padding: 12px 18px;
+
+      border-top: 1px solid #334155;
+    }
+
+
+    /* ================================================================
+       TEST SUMMARY
+       ================================================================ */
+
+    .summary-grid {
+      display: grid;
+
+      grid-template-columns:
+        repeat(4, 1fr);
+
+      gap: 9px;
+
+      margin-bottom: 12px;
+    }
+
+    .summary-card {
+      padding: 11px;
+
+      text-align: center;
+
+      background: #0f172a;
+
+      border: 1px solid #334155;
+
+      border-radius: 7px;
+    }
+
+    .summary-card .num {
+      color: #f8fafc;
+
+      font-size: 17px;
+      font-weight: 700;
+    }
+
+    .summary-card .lbl {
+      margin-top: 3px;
+
+      color: #94a3b8;
+
+      font-size: 9px;
+      font-weight: 700;
+
+      text-transform: uppercase;
+    }
+
+    .test-log {
+      min-height: 120px;
+
+      max-height: 300px;
+
+      overflow-y: auto;
+
+      padding: 13px;
+
+      background: #020617;
+
+      border: 1px solid #334155;
+
+      border-radius: 7px;
+
+      color: #cbd5e1;
+
+      font-family:
+        Consolas,
+        Monaco,
+        monospace;
+
+      font-size: 11px;
+
+      line-height: 1.5;
+
+      white-space: pre-wrap;
+
+      word-break: break-word;
+    }
+
+
+    /* ================================================================
+       MOBILE
+       ================================================================ */
+
+    @media (max-width: 700px) {
+
+      .page {
+        padding: 14px;
+      }
+
+      .header {
+        padding: 20px;
+      }
+
+      .nav {
+        width: 100%;
+      }
+
+      .nav a {
+        flex: 1;
+        text-align: center;
+      }
+
+      .action-bar {
+        padding: 15px;
+      }
+
+      .action-buttons {
+        width: 100%;
+      }
+
+      .action-buttons .btn {
+        flex: 1;
+      }
+
+      .tab-content {
+        padding: 14px;
+      }
+
+      textarea {
+        min-height: 350px;
+      }
+
+      .summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
   </style>
+
 </head>
+
 <body>
-  <div class="header">
-  <div class="title">
-    RD3 Tech — Protected Configuration Editor
+
+<div class="page">
+
+  <div class="container">
+
+
+<!-- ============================================================
+     HEADER
+     ============================================================ -->
+
+<header class="header">
+
+  <div class="header-top">
+
+    <div class="brand">
+
+      <h1>
+        RD3 Tech JSON Editor
+      </h1>
+
+      <p>
+        Protected configuration and Script Properties administration
+      </p>
+
+    </div>
+
+
+    <nav
+      class="nav"
+      aria-label="Admin navigation"
+    >
+
+      <a
+        id="nav-home"
+        href="#"
+      >
+        Home
+      </a>
+
+      <a
+        id="nav-email-templates"
+        href="#"
+      >
+        Email Templates
+      </a>
+
+      <a
+        id="nav-web-form"
+        href="#"
+      >
+        Web Form
+      </a>
+
+      <a
+        id="nav-editor"
+        class="active"
+        href="#"
+      >
+        JSON Editor
+      </a>
+
+    </nav>
+
   </div>
 
-  <div class="action-btns">
+</header>
 
-    <a
-      href="?page=fieldSchema"
-      target="_blank"
-      class="btn-secondary"
-      style="text-decoration:none;"
+
+<!-- ============================================================
+     ACTION BAR
+     ============================================================ -->
+
+<section class="action-bar">
+
+  <div>
+
+    <div class="action-title">
+      Protected Configuration Editor
+    </div>
+
+    <div class="action-subtitle">
+      Edit, validate, backup, import and restore Script Properties.
+    </div>
+
+  </div>
+
+
+  <div class="action-buttons">
+
+    <button
+      class="btn btn-secondary"
+      onclick="exportBackupJSON()"
     >
-      📚 FIELD_SCHEMA Reference
-    </a>
-
-    <button class="btn-secondary" onclick="exportBackupJSON()">
       📥 Backup
     </button>
 
-    <button class="btn-secondary" onclick="triggerImportJSON()">
+    <button
+      class="btn btn-secondary"
+      onclick="triggerImportJSON()"
+    >
       📤 Import
     </button>
 
@@ -130,397 +946,1651 @@
     >
 
   </div>
+
+</section>
+
+
+<!-- ============================================================
+     SERVER DATA
+     ============================================================ -->
+
+<div
+  id="rawServerData"
+  style="display:none;"
+><?!= initialDataJson ?></div>
+
+
+<!-- ============================================================
+     EDITOR
+     ============================================================ -->
+
+<section class="tabs-panel">
+
+  <div
+    id="tabsNav"
+    class="tabs-nav"
+  ></div>
+
+  <div
+    id="panelsContainer"
+  ></div>
+
+</section>
+
+
+<!-- ============================================================
+     SAVE
+     ============================================================ -->
+
+<section class="save-panel">
+
+  <div class="save-info">
+
+    Changes are held in the editor until
+    <strong>Save All Configurations</strong>
+    is pressed.
+
+  </div>
+
+
+  <div
+    style="
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+    "
+  >
+
+    <div id="status"></div>
+
+    <button
+      id="saveBtn"
+      class="btn btn-primary"
+      onclick="saveConfigs()"
+    >
+      💾 Save All Configurations
+    </button>
+
+  </div>
+
+</section>
+
+
+  </div>
+
 </div>
 
-  <div id="rawServerData" style="display:none;"><?!= initialDataJson ?></div>
+<!-- ================================================================
+     VALIDATION MODAL
+     ================================================================ -->
 
-  <div id="tabsNav" class="tabs-nav"></div>
-  <div id="panelsContainer"></div>
+<div
+  id="testModal"
+  class="modal-overlay"
+>
 
-  <div class="controls">
-    <button id="saveBtn" class="btn" onclick="saveConfigs()">Save All Configurations</button>
-    <div id="status"></div>
+  <div class="modal-box">
+
+
+<div class="modal-header">
+
+  <div class="modal-title">
+    Google Form Validation Results
   </div>
 
-  <!-- Form Validation Test Modal -->
-  <div id="testModal" class="modal-overlay">
-    <div class="modal-box" style="max-width:700px;">
-      <div class="modal-header">
-        <div class="modal-title">Google Form Validation Results</div>
-        <button class="modal-close" onclick="closeModal('testModal')">&times;</button>
+  <button
+    class="modal-close"
+    onclick="closeModal('testModal')"
+  >
+    &times;
+  </button>
+
+</div>
+
+
+<div class="modal-body">
+
+  <div class="summary-grid">
+
+    <div class="summary-card">
+
+      <div
+        class="num"
+        id="statConfigured"
+      >
+        0
       </div>
-      <div class="modal-body">
-        <div class="summary-grid">
-          <div class="summary-card"><div class="num" id="statConfigured">0</div><div class="lbl">Configured</div></div>
-          <div class="summary-card"><div class="num" style="color: #4ade80;" id="statPassed">0</div><div class="lbl">Passed</div></div>
-          <div class="summary-card"><div class="num" style="color: #fca5a5;" id="statFailed">0</div><div class="lbl">Failed</div></div>
-          <div class="summary-card"><div class="num" style="color: #fde047;" id="statUnaccounted">0</div><div class="lbl">Unaccounted</div></div>
-        </div>
-        <div id="modalLog" class="test-log">Running test...</div>
+
+      <div class="lbl">
+        Configured
       </div>
-      <div class="modal-footer">
-        <button class="btn-secondary" onclick="closeModal('testModal')">Close</button>
-      </div>
+
     </div>
+
+
+    <div class="summary-card">
+
+      <div
+        class="num"
+        id="statPassed"
+        style="color:#4ade80;"
+      >
+        0
+      </div>
+
+      <div class="lbl">
+        Passed
+      </div>
+
+    </div>
+
+
+    <div class="summary-card">
+
+      <div
+        class="num"
+        id="statFailed"
+        style="color:#fca5a5;"
+      >
+        0
+      </div>
+
+      <div class="lbl">
+        Failed
+      </div>
+
+    </div>
+
+
+    <div class="summary-card">
+
+      <div
+        class="num"
+        id="statUnaccounted"
+        style="color:#fde047;"
+      >
+        0
+      </div>
+
+      <div class="lbl">
+        Unaccounted
+      </div>
+
+    </div>
+
   </div>
 
-  <script>
-    var configData = {};
-    var activeTabKey = '';
 
-    function escapeHtml(str) {
-      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-    }
+  <div
+    id="modalLog"
+    class="test-log"
+  >
+    Running test...
+  </div>
 
-    function init() {
-      try {
-        var rawText = document.getElementById('rawServerData').textContent;
-        configData = JSON.parse(rawText) || {};
-        activeTabKey = Object.keys(configData)[0] || '';
-        renderEditorUI();
-      } catch(e) {
-        document.getElementById('panelsContainer').innerHTML = 
-          '<div style="color:var(--error); padding:20px;">Failed to render configurations: ' + escapeHtml(e.message) + '</div>';
+</div>
+
+
+<div class="modal-footer">
+
+  <button
+    class="btn btn-secondary"
+    onclick="closeModal('testModal')"
+  >
+    Close
+  </button>
+
+</div>
+
+
+  </div>
+
+</div>
+
+<script>
+
+/* ========================================================================
+   RD3 TECH JSON EDITOR
+   ======================================================================== */
+
+var configData = {};
+
+var activeTabKey = '';
+
+
+/* ========================================================================
+   ROUTER URL
+   ========================================================================
+
+   IMPORTANT:
+
+   This is the same mechanism used by the working Admin page.
+
+   The router supplies:
+
+       webAppUrl
+
+   The editor then builds:
+
+       /exec?page=editor
+       /exec?page=webform
+       /exec?page=emailtemplates
+       /exec?page=reference
+
+   We do NOT use userCodeAppPanel.
+   We do NOT hard-code a deployment URL.
+   ======================================================================== */
+
+const baseUrl =
+  <?!= JSON.stringify(webAppUrl || '') ?>;
+
+
+/* ========================================================================
+   ROUTE BUILDER
+   ======================================================================== */
+
+function pageUrl(page) {
+
+  if (!baseUrl) {
+    return '#';
+  }
+
+  return baseUrl +
+    '?page=' +
+    encodeURIComponent(page);
+}
+
+
+/* ========================================================================
+   NAVIGATION
+   ======================================================================== */
+
+function initialiseNavigation() {
+
+  var home =
+    document.getElementById('nav-home');
+
+  var email =
+    document.getElementById('nav-email-templates');
+
+  var webform =
+    document.getElementById('nav-web-form');
+
+  var reference =
+    document.getElementById('nav-reference');
+
+  var editor =
+    document.getElementById('nav-editor');
+
+
+  if (home) {
+    home.href = baseUrl || '#';
+  }
+
+  if (email) {
+    email.href = pageUrl('emailtemplates');
+  }
+
+  if (webform) {
+    webform.href = pageUrl('webform');
+  }
+
+  if (reference) {
+    reference.href = pageUrl('reference');
+  }
+
+  if (editor) {
+    editor.href = pageUrl('editor');
+  }
+
+
+  if (!baseUrl) {
+
+    console.warn(
+      'RD3 Tech JSON Editor: webAppUrl was not supplied by the router.'
+    );
+
+  }
+
+}
+
+
+/* ========================================================================
+   HTML ESCAPING
+   ======================================================================== */
+
+function escapeHtml(str) {
+
+  return String(str)
+
+    .replace(/&/g, '&amp;')
+
+    .replace(/</g, '&lt;')
+
+    .replace(/>/g, '&gt;')
+
+    .replace(/"/g, '&quot;')
+
+    .replace(/'/g, '&#039;');
+
+}
+
+
+/* ========================================================================
+   INITIALISE
+   ======================================================================== */
+
+function init() {
+
+  initialiseNavigation();
+
+
+  try {
+
+    var rawText =
+      document
+        .getElementById('rawServerData')
+        .textContent;
+
+
+    configData =
+      JSON.parse(rawText) || {};
+
+
+    activeTabKey =
+      Object.keys(configData)[0] || '';
+
+
+    renderEditorUI();
+
+
+  } catch (e) {
+
+    document
+      .getElementById('panelsContainer')
+      .innerHTML =
+
+      '<div class="empty-state">' +
+
+        '<h3>Failed to Load Configuration</h3>' +
+
+        '<p>' +
+          escapeHtml(e.message) +
+        '</p>' +
+
+      '</div>';
+
+  }
+
+
+  document.addEventListener(
+    'click',
+    function(e) {
+
+      if (!e.target.closest('.tab-wrapper')) {
+
+        closeAllDropdowns();
+
       }
 
-      document.addEventListener('click', function(e) {
-        if (!e.target.closest('.tab-wrapper')) {
-          closeAllDropdowns();
-        }
-      });
     }
+  );
 
-    function renderEditorUI() {
-      var navContainer = document.getElementById('tabsNav');
-      var panelsContainer = document.getElementById('panelsContainer');
-      
-      navContainer.innerHTML = '';
-      panelsContainer.innerHTML = '';
+}
 
-      var keys = Object.keys(configData);
 
-      if (keys.length === 0) {
-        panelsContainer.innerHTML = '<div style="padding: 40px; text-align: center; background: var(--panel); border-radius: 8px;">' +
-            '<p style="color: var(--muted);">No properties found in Script Properties.</p>' +
-          '</div>';
-        document.getElementById('saveBtn').disabled = true;
-        return;
-      }
+/* ========================================================================
+   RENDER EDITOR
+   ======================================================================== */
 
-      if (keys.indexOf(activeTabKey) === -1) {
-        activeTabKey = keys[0];
-      }
+function renderEditorUI() {
 
-      keys.forEach(function(key) {
-        var wrapper = document.createElement('div');
-        wrapper.className = 'tab-wrapper';
+  var navContainer =
+    document.getElementById('tabsNav');
 
-        var tabBtn = document.createElement('button');
-        tabBtn.className = 'tab-btn' + (key === activeTabKey ? ' active' : '');
-        tabBtn.onclick = function(e) { 
-          if (!e.target.closest('.tab-menu-trigger')) switchTab(key); 
-        };
-        
-        tabBtn.innerHTML = '<span>' + escapeHtml(key) + '</span>' +
-          '<span id="dot-' + escapeHtml(key) + '" class="badge valid">Valid</span>' +
-          '<span class="tab-menu-trigger" onclick="toggleTabMenu(event, \'' + escapeHtml(key) + '\')">⋮</span>';
+  var panelsContainer =
+    document.getElementById('panelsContainer');
 
-        var dropdown = document.createElement('div');
-        dropdown.className = 'dropdown-menu';
-        dropdown.id = 'menu-' + key;
-        dropdown.innerHTML = 
-          '<div class="dropdown-item" onclick="formatJSON(\'' + escapeHtml(key) + '\')">✨ Format JSON</div>' +
-          '<div class="dropdown-item" onclick="restoreFallback(\'' + escapeHtml(key) + '\')">↺ Restore Default</div>';
 
-        wrapper.appendChild(tabBtn);
-        wrapper.appendChild(dropdown);
-        navContainer.appendChild(wrapper);
+  navContainer.innerHTML = '';
 
-        var valStr = typeof configData[key] === 'object' 
-          ? JSON.stringify(configData[key], null, 2) 
-          : String(configData[key]);
+  panelsContainer.innerHTML = '';
 
-        var panel = document.createElement('div');
-        panel.id = 'panel-' + key;
-        panel.className = 'tab-content' + (key === activeTabKey ? ' active' : '');
-        
-        var testButtonHtml = (key === 'FORM_CONFIG') 
-          ? '<button class="btn-test" onclick="runFormValidationTest(this)">🔍 Validate Google Form IDs</button>' 
-          : '';
 
-        panel.innerHTML = '<div class="meta-bar">' +
-            '<span class="prop-title">Script Property: ' + escapeHtml(key) + '</span>' +
-            '<div class="action-btns">' +
-              testButtonHtml +
-              '<button class="btn-secondary" onclick="restoreFallback(\'' + escapeHtml(key) + '\')">Restore Default</button>' +
-              '<button class="btn-secondary" onclick="formatJSON(\'' + escapeHtml(key) + '\')">Format JSON</button>' +
-            '</div>' +
-          '</div>' +
-          '<textarea id="' + escapeHtml(key) + '" oninput="validateField(\'' + escapeHtml(key) + '\')">' + escapeHtml(valStr) + '</textarea>' +
-          '<div id="err-' + escapeHtml(key) + '" class="error-msg"></div>';
+  var keys =
+    Object.keys(configData);
 
-        panelsContainer.appendChild(panel);
-      });
 
-      keys.forEach(function(key) { validateField(key); });
-    }
+  if (keys.length === 0) {
 
-    function toggleTabMenu(e, key) {
-      e.stopPropagation();
-      closeAllDropdowns();
-      var menu = document.getElementById('menu-' + key);
-      if (menu) menu.classList.toggle('show');
-    }
+    panelsContainer.innerHTML =
 
-    function closeAllDropdowns() {
-      var menus = document.querySelectorAll('.dropdown-menu');
-      menus.forEach(function(m) { m.classList.remove('show'); });
-    }
+      '<div class="empty-state">' +
 
-    function switchTab(selectedKey) {
-      activeTabKey = selectedKey;
-      var keys = Object.keys(configData);
-      
-      var buttons = document.querySelectorAll('.tab-btn');
-      for (var i = 0; i < buttons.length; i++) {
-        buttons[i].classList.toggle('active', keys[i] === selectedKey);
-      }
+        '<h3>No Properties Found</h3>' +
 
-      var panels = document.querySelectorAll('.tab-content');
-      for (var j = 0; j < panels.length; j++) {
-        panels[j].classList.toggle('active', panels[j].id === 'panel-' + selectedKey);
-      }
-    }
+        '<p>' +
+          'No configuration properties were supplied by the server.' +
+        '</p>' +
 
-    function closeModal(id) {
-      document.getElementById(id).style.display = 'none';
-    }
+      '</div>';
 
-    function validateField(key) {
-      var textarea = document.getElementById(key);
-      var dot = document.getElementById('dot-' + key);
-      var errDiv = document.getElementById('err-' + key);
-      if (!textarea) return false;
-      
-      try {
-        var parsed = JSON.parse(textarea.value);
-        if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-          throw new Error('Config must be a valid JSON Object {}');
+
+    document
+      .getElementById('saveBtn')
+      .disabled = true;
+
+
+    return;
+
+  }
+
+
+  if (keys.indexOf(activeTabKey) === -1) {
+
+    activeTabKey = keys[0];
+
+  }
+
+
+  keys.forEach(function(key) {
+
+
+    /* --------------------------------------------------------------
+       TAB WRAPPER
+       -------------------------------------------------------------- */
+
+    var wrapper =
+      document.createElement('div');
+
+    wrapper.className =
+      'tab-wrapper';
+
+
+    /* --------------------------------------------------------------
+       TAB BUTTON
+       -------------------------------------------------------------- */
+
+    var tabBtn =
+      document.createElement('button');
+
+    tabBtn.className =
+      'tab-btn' +
+      (key === activeTabKey ? ' active' : '');
+
+
+    tabBtn.onclick =
+      function(e) {
+
+        if (
+          !e.target.closest('.tab-menu-trigger')
+        ) {
+
+          switchTab(key);
+
         }
 
-        textarea.classList.remove('has-error');
-        if (dot) {
-          dot.className = 'badge valid';
-          dot.textContent = 'Valid';
-        }
-        if (errDiv) errDiv.textContent = '';
-        checkGlobalValidity();
-        return true;
-      } catch (e) {
-        textarea.classList.add('has-error');
-        if (dot) {
-          dot.className = 'badge invalid';
-          dot.textContent = 'Error';
-        }
-        if (errDiv) errDiv.textContent = e.message;
-        checkGlobalValidity();
-        return false;
-      }
-    }
-
-    function checkGlobalValidity() {
-      var keys = Object.keys(configData);
-      var allValid = keys.length > 0;
-      
-      keys.forEach(function(key) {
-        var textarea = document.getElementById(key);
-        if (!textarea) {
-          allValid = false;
-          return;
-        }
-        try {
-          var parsed = JSON.parse(textarea.value);
-          if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) allValid = false;
-        } catch(e) {
-          allValid = false;
-        }
-      });
-
-      document.getElementById('saveBtn').disabled = !allValid;
-    }
-
-    function formatJSON(key) {
-      closeAllDropdowns();
-      var textarea = document.getElementById(key);
-      if (!textarea) return;
-      try {
-        var parsed = JSON.parse(textarea.value);
-        textarea.value = JSON.stringify(parsed, null, 2);
-        validateField(key);
-      } catch(e) {}
-    }
-
-    function restoreFallback(key) {
-      closeAllDropdowns();
-      var statusDiv = document.getElementById('status');
-      statusDiv.className = '';
-      statusDiv.style.display = 'block';
-      statusDiv.textContent = 'Fetching fallback data for ' + key + '...';
-
-      google.script.run
-        .withSuccessHandler(function(rawResponse) {
-          try {
-            var fallbackData = typeof rawResponse === 'string' ? JSON.parse(rawResponse) : rawResponse;
-            configData[key] = fallbackData;
-            var textarea = document.getElementById(key);
-            if (textarea) {
-              textarea.value = JSON.stringify(fallbackData, null, 2);
-              validateField(key);
-            }
-            statusDiv.className = 'status-success';
-            statusDiv.textContent = '✔ Restored "' + key + '" from fallback provider!';
-            setTimeout(function() { statusDiv.style.display = 'none'; }, 4000);
-          } catch(e) {
-            statusDiv.className = 'status-error';
-            statusDiv.textContent = 'Error parsing fallback JSON: ' + e.message;
-          }
-        })
-        .withFailureHandler(function(err) {
-          statusDiv.className = 'status-error';
-          statusDiv.textContent = 'Restore failed: ' + err.message;
-        })
-        .resetKeyToFallback(key);
-    }
-
-    function exportBackupJSON() {
-      var exportData = {};
-      var keys = Object.keys(configData);
-
-      for (var i = 0; i < keys.length; i++) {
-        var key = keys[i];
-        var textarea = document.getElementById(key);
-        if (textarea) {
-          try {
-            exportData[key] = JSON.parse(textarea.value);
-          } catch(e) {
-            exportData[key] = textarea.value;
-          }
-        } else {
-          exportData[key] = configData[key];
-        }
-      }
-
-      var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
-      var downloadAnchor = document.createElement('a');
-      var timeStamp = new Date().toISOString().slice(0, 10);
-      
-      downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", "script_properties_backup_" + timeStamp + ".json");
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      downloadAnchor.remove();
-    }
-
-    function triggerImportJSON() {
-      document.getElementById('importFileInput').click();
-    }
-
-    function importBackupJSON(event) {
-      var file = event.target.files[0];
-      if (!file) return;
-
-      var reader = new FileReader();
-      reader.onload = function(e) {
-        try {
-          var importedObj = JSON.parse(e.target.result);
-          if (typeof importedObj !== 'object' || importedObj === null || Array.isArray(importedObj)) {
-            throw new Error('Imported JSON must be a top-level key-value object.');
-          }
-
-          configData = importedObj;
-          activeTabKey = Object.keys(configData)[0] || '';
-          renderEditorUI();
-          
-          var statusDiv = document.getElementById('status');
-          statusDiv.className = 'status-success';
-          statusDiv.style.display = 'block';
-          statusDiv.textContent = '✔ Backup file imported into editor UI!';
-          setTimeout(function() { statusDiv.style.display = 'none'; }, 4000);
-        } catch(err) {
-          alert('Failed to import JSON file: ' + err.message);
-        }
-        event.target.value = '';
       };
-      reader.readAsText(file);
+
+
+    tabBtn.innerHTML =
+
+      '<span>' +
+
+        escapeHtml(key) +
+
+      '</span>' +
+
+      '<span ' +
+
+        'id="dot-' +
+        escapeHtml(key) +
+        '" ' +
+
+        'class="badge valid"' +
+
+      '>' +
+
+        'Valid' +
+
+      '</span>' +
+
+      '<button ' +
+
+        'type="button" ' +
+
+        'class="tab-menu-trigger" ' +
+
+        'onclick="toggleTabMenu(event, \'' +
+        escapeHtml(key) +
+        '\')"' +
+
+      '>' +
+
+        '⋮' +
+
+      '</button>';
+
+
+    /* --------------------------------------------------------------
+       DROPDOWN
+       -------------------------------------------------------------- */
+
+    var dropdown =
+      document.createElement('div');
+
+    dropdown.className =
+      'dropdown-menu';
+
+    dropdown.id =
+      'menu-' + key;
+
+
+    dropdown.innerHTML =
+
+      '<div ' +
+
+        'class="dropdown-item" ' +
+
+        'onclick="formatJSON(\'' +
+        escapeHtml(key) +
+        '\')"' +
+
+      '>' +
+
+        '✨ Format JSON' +
+
+      '</div>' +
+
+
+      '<div ' +
+
+        'class="dropdown-item" ' +
+
+        'onclick="restoreFallback(\'' +
+        escapeHtml(key) +
+        '\')"' +
+
+      '>' +
+
+        '↺ Restore Default' +
+
+      '</div>';
+
+
+    wrapper.appendChild(tabBtn);
+
+    wrapper.appendChild(dropdown);
+
+    navContainer.appendChild(wrapper);
+
+
+    /* --------------------------------------------------------------
+       VALUE
+       -------------------------------------------------------------- */
+
+    var valStr;
+
+    if (
+      typeof configData[key] === 'object'
+    ) {
+
+      valStr =
+        JSON.stringify(
+          configData[key],
+          null,
+          2
+        );
+
+    } else {
+
+      valStr =
+        String(configData[key]);
+
     }
 
-    function runFormValidationTest(btn) {
-      var origText = btn.innerHTML;
-      btn.disabled = true;
-      btn.innerHTML = '⏳ Validating...';
 
-      google.script.run
-        .withSuccessHandler(function(res) {
-          btn.disabled = false;
-          btn.innerHTML = origText;
-          showValidationModal(res);
-        })
-        .withFailureHandler(function(err) {
-          btn.disabled = false;
-          btn.innerHTML = origText;
-          alert('Validation failed to execute: ' + err.message);
-        })
-        .runFormValidationFromUi();
+    /* --------------------------------------------------------------
+       PANEL
+       -------------------------------------------------------------- */
+
+    var panel =
+      document.createElement('div');
+
+    panel.id =
+      'panel-' + key;
+
+    panel.className =
+      'tab-content' +
+      (key === activeTabKey ? ' active' : '');
+
+
+    var testButtonHtml = '';
+
+
+    if (key === 'FORM_CONFIG') {
+
+      testButtonHtml =
+
+        '<button ' +
+
+          'class="btn btn-info" ' +
+
+          'onclick="runFormValidationTest(this)"' +
+
+        '>' +
+
+          '🔍 Validate Google Form IDs' +
+
+        '</button>';
+
     }
 
-    function showValidationModal(res) {
-      document.getElementById('statConfigured').textContent = res.totalConfigured;
-      document.getElementById('statPassed').textContent = res.passed;
-      document.getElementById('statFailed').textContent = res.failed;
-      document.getElementById('statUnaccounted').textContent = res.unaccounted;
-      document.getElementById('modalLog').textContent = res.details ? res.details.join('\n') : 'No log details available.';
-      document.getElementById('testModal').style.display = 'flex';
-    }
 
-    function saveConfigs() {
-      var payload = {};
-      var keys = Object.keys(configData);
-      var statusDiv = document.getElementById('status');
-      
-      for (var i = 0; i < keys.length; i++) {
-        var key = keys[i];
-        var textarea = document.getElementById(key);
-        try {
-          payload[key] = JSON.parse(textarea.value);
-        } catch (e) {
-          statusDiv.className = 'status-error';
-          statusDiv.style.display = 'block';
-          statusDiv.textContent = 'Save blocked: Syntax error in ' + key;
-          return;
-        }
+    panel.innerHTML =
+
+      '<div class="meta-bar">' +
+
+        '<div class="prop-title">' +
+
+          'Script Property: ' +
+
+          escapeHtml(key) +
+
+        '</div>' +
+
+
+        '<div class="property-actions">' +
+
+          testButtonHtml +
+
+
+          '<button ' +
+
+            'class="btn btn-secondary" ' +
+
+            'onclick="restoreFallback(\'' +
+            escapeHtml(key) +
+            '\')"' +
+
+          '>' +
+
+            '↺ Restore Default' +
+
+          '</button>' +
+
+
+          '<button ' +
+
+            'class="btn btn-secondary" ' +
+
+            'onclick="formatJSON(\'' +
+            escapeHtml(key) +
+            '\')"' +
+
+          '>' +
+
+            '✨ Format JSON' +
+
+          '</button>' +
+
+        '</div>' +
+
+      '</div>' +
+
+
+      '<div class="editor-shell">' +
+
+        '<textarea ' +
+
+          'id="' +
+          escapeHtml(key) +
+          '" ' +
+
+          'spellcheck="false" ' +
+
+          'oninput="validateField(\'' +
+          escapeHtml(key) +
+          '\')"' +
+
+        '>' +
+
+          escapeHtml(valStr) +
+
+        '</textarea>' +
+
+
+    '<div ' +
+
+      'id="err-' +
+      escapeHtml(key) +
+      '" ' +
+
+      'class="error-msg"' +
+
+    '></div>' +
+
+  '</div>';
+
+
+panelsContainer.appendChild(panel);
+
+
+});
+
+keys.forEach(function(key) {
+
+
+validateField(key);
+
+
+});
+
+}
+
+/* ========================================================================
+TAB MENU
+======================================================================== */
+
+function toggleTabMenu(e, key) {
+
+e.stopPropagation();
+
+closeAllDropdowns();
+
+var menu =
+document.getElementById(
+'menu-' + key
+);
+
+if (menu) {
+
+
+menu.classList.toggle('show');
+
+
+}
+
+}
+
+/* ========================================================================
+CLOSE MENUS
+======================================================================== */
+
+function closeAllDropdowns() {
+
+var menus =
+document.querySelectorAll(
+'.dropdown-menu'
+);
+
+menus.forEach(
+function(menu) {
+
+
+  menu.classList.remove('show');
+
+}
+
+
+);
+
+}
+
+/* ========================================================================
+SWITCH TAB
+======================================================================== */
+
+function switchTab(selectedKey) {
+
+activeTabKey =
+selectedKey;
+
+var keys =
+Object.keys(configData);
+
+var buttons =
+document.querySelectorAll('.tab-btn');
+
+for (
+var i = 0;
+i < buttons.length;
+i++
+) {
+
+
+buttons[i]
+  .classList
+  .toggle(
+    'active',
+    keys[i] === selectedKey
+  );
+
+
+}
+
+var panels =
+document.querySelectorAll(
+'.tab-content'
+);
+
+for (
+var j = 0;
+j < panels.length;
+j++
+) {
+
+
+panels[j]
+  .classList
+  .toggle(
+    'active',
+    panels[j].id ===
+    'panel-' + selectedKey
+  );
+
+
+}
+
+}
+
+/* ========================================================================
+VALIDATE FIELD
+======================================================================== */
+
+function validateField(key) {
+
+var textarea =
+document.getElementById(key);
+
+var dot =
+document.getElementById(
+'dot-' + key
+);
+
+var errDiv =
+document.getElementById(
+'err-' + key
+);
+
+if (!textarea) {
+
+
+return false;
+
+
+}
+
+try {
+
+
+var parsed =
+  JSON.parse(
+    textarea.value
+  );
+
+
+if (
+  typeof parsed !== 'object' ||
+  parsed === null ||
+  Array.isArray(parsed)
+) {
+
+  throw new Error(
+    'Config must be a valid JSON Object {}'
+  );
+
+}
+
+
+textarea
+  .classList
+  .remove('has-error');
+
+
+if (dot) {
+
+  dot.className =
+    'badge valid';
+
+  dot.textContent =
+    'Valid';
+
+}
+
+
+if (errDiv) {
+
+  errDiv.textContent =
+    '';
+
+}
+
+
+checkGlobalValidity();
+
+return true;
+
+
+} catch (e) {
+
+
+textarea
+  .classList
+  .add('has-error');
+
+
+if (dot) {
+
+  dot.className =
+    'badge invalid';
+
+  dot.textContent =
+    'Error';
+
+}
+
+
+if (errDiv) {
+
+  errDiv.textContent =
+    e.message;
+
+}
+
+
+checkGlobalValidity();
+
+return false;
+
+
+}
+
+}
+
+/* ========================================================================
+GLOBAL VALIDITY
+======================================================================== */
+
+function checkGlobalValidity() {
+
+var keys =
+Object.keys(configData);
+
+var allValid =
+keys.length > 0;
+
+keys.forEach(function(key) {
+
+
+var textarea =
+  document.getElementById(key);
+
+
+if (!textarea) {
+
+  allValid = false;
+
+  return;
+
+}
+
+
+try {
+
+  var parsed =
+    JSON.parse(
+      textarea.value
+    );
+
+
+  if (
+    typeof parsed !== 'object' ||
+    parsed === null ||
+    Array.isArray(parsed)
+  ) {
+
+    allValid = false;
+
+  }
+
+
+} catch (e) {
+
+  allValid = false;
+
+}
+
+
+});
+
+document
+.getElementById('saveBtn')
+.disabled = !allValid;
+
+}
+
+/* ========================================================================
+FORMAT JSON
+======================================================================== */
+
+function formatJSON(key) {
+
+closeAllDropdowns();
+
+var textarea =
+document.getElementById(key);
+
+if (!textarea) {
+
+
+return;
+
+
+}
+
+try {
+
+
+var parsed =
+  JSON.parse(
+    textarea.value
+  );
+
+
+textarea.value =
+  JSON.stringify(
+    parsed,
+    null,
+    2
+  );
+
+
+validateField(key);
+
+
+} catch (e) {
+
+
+/* Existing validation message remains visible. */
+
+
+}
+
+}
+
+/* ========================================================================
+RESTORE FALLBACK
+======================================================================== */
+
+function restoreFallback(key) {
+
+closeAllDropdowns();
+
+var statusDiv =
+document.getElementById('status');
+
+statusDiv.className = '';
+
+statusDiv.style.display =
+'inline-block';
+
+statusDiv.textContent =
+'Fetching fallback data for ' +
+key +
+'...';
+
+google.script.run
+
+
+.withSuccessHandler(
+  function(rawResponse) {
+
+    try {
+
+      var fallbackData =
+        typeof rawResponse === 'string'
+          ? JSON.parse(rawResponse)
+          : rawResponse;
+
+
+      configData[key] =
+        fallbackData;
+
+
+      var textarea =
+        document.getElementById(key);
+
+
+      if (textarea) {
+
+        textarea.value =
+          JSON.stringify(
+            fallbackData,
+            null,
+            2
+          );
+
+
+        validateField(key);
+
       }
 
-      document.getElementById('saveBtn').disabled = true;
-      statusDiv.className = '';
-      statusDiv.style.display = 'block';
-      statusDiv.textContent = 'Saving to Script Properties...';
 
-      google.script.run
-        .withSuccessHandler(function() {
-          statusDiv.className = 'status-success';
-          statusDiv.textContent = '✔ All properties successfully updated!';
-          checkGlobalValidity();
-          setTimeout(function() { statusDiv.style.display = 'none'; }, 4000);
-        })
-        .withFailureHandler(function(err) {
-          statusDiv.className = 'status-error';
-          statusDiv.textContent = 'Save failed: ' + err.message;
-          checkGlobalValidity();
-        })
-        .saveAllConfigs(payload);
+      statusDiv.className =
+        'status-success';
+
+
+      statusDiv.textContent =
+        '✔ Restored "' +
+        key +
+        '" from fallback provider!';
+
+
+      setTimeout(
+        function() {
+
+          statusDiv.style.display =
+            'none';
+
+        },
+        4000
+      );
+
+
+    } catch (e) {
+
+      statusDiv.className =
+        'status-error';
+
+
+      statusDiv.textContent =
+        'Error parsing fallback JSON: ' +
+        e.message;
+
     }
 
-    document.addEventListener('DOMContentLoaded', init);
-  </script>
+  }
+)
+
+.withFailureHandler(
+  function(err) {
+
+    statusDiv.className =
+      'status-error';
+
+
+    statusDiv.textContent =
+      'Restore failed: ' +
+      err.message;
+
+  }
+)
+
+.resetKeyToFallback(key);
+
+
+}
+
+/* ========================================================================
+EXPORT BACKUP
+======================================================================== */
+
+function exportBackupJSON() {
+
+var exportData = {};
+
+var keys =
+Object.keys(configData);
+
+for (
+var i = 0;
+i < keys.length;
+i++
+) {
+
+
+var key =
+  keys[i];
+
+
+var textarea =
+  document.getElementById(key);
+
+
+if (textarea) {
+
+  try {
+
+    exportData[key] =
+      JSON.parse(
+        textarea.value
+      );
+
+  } catch (e) {
+
+    exportData[key] =
+      textarea.value;
+
+  }
+
+} else {
+
+  exportData[key] =
+    configData[key];
+
+}
+
+
+}
+
+var dataStr =
+'data:text/json;charset=utf-8,' +
+encodeURIComponent(
+JSON.stringify(
+exportData,
+null,
+2
+)
+);
+
+var downloadAnchor =
+document.createElement('a');
+
+var timeStamp =
+new Date()
+.toISOString()
+.slice(0, 10);
+
+downloadAnchor.setAttribute(
+'href',
+dataStr
+);
+
+downloadAnchor.setAttribute(
+'download',
+'script_properties_backup_' +
+timeStamp +
+'.json'
+);
+
+document.body.appendChild(
+downloadAnchor
+);
+
+downloadAnchor.click();
+
+downloadAnchor.remove();
+
+}
+
+/* ========================================================================
+IMPORT
+======================================================================== */
+
+function triggerImportJSON() {
+
+document
+.getElementById(
+'importFileInput'
+)
+.click();
+
+}
+
+/* ========================================================================
+IMPORT BACKUP
+======================================================================== */
+
+function importBackupJSON(event) {
+
+var file =
+event.target.files[0];
+
+if (!file) {
+
+
+return;
+
+
+}
+
+var reader =
+new FileReader();
+
+reader.onload =
+function(e) {
+
+
+  try {
+
+    var importedObj =
+      JSON.parse(
+        e.target.result
+      );
+
+
+    if (
+      typeof importedObj !== 'object' ||
+      importedObj === null ||
+      Array.isArray(importedObj)
+    ) {
+
+      throw new Error(
+        'Imported JSON must be a top-level key-value object.'
+      );
+
+    }
+
+
+    configData =
+      importedObj;
+
+
+    activeTabKey =
+      Object.keys(
+        configData
+      )[0] || '';
+
+
+    renderEditorUI();
+
+
+    var statusDiv =
+      document.getElementById(
+        'status'
+      );
+
+
+    statusDiv.className =
+      'status-success';
+
+
+    statusDiv.style.display =
+      'inline-block';
+
+
+    statusDiv.textContent =
+      '✔ Backup file imported into editor UI!';
+
+
+    setTimeout(
+      function() {
+
+        statusDiv.style.display =
+          'none';
+
+      },
+      4000
+    );
+
+
+  } catch (err) {
+
+    alert(
+      'Failed to import JSON file: ' +
+      err.message
+    );
+
+  }
+
+
+  event.target.value =
+    '';
+
+};
+
+
+reader.readAsText(file);
+
+}
+
+/* ========================================================================
+FORM VALIDATION TEST
+======================================================================== */
+
+function runFormValidationTest(btn) {
+
+var origText =
+btn.innerHTML;
+
+btn.disabled =
+true;
+
+btn.innerHTML =
+'⏳ Validating...';
+
+google.script.run
+
+
+.withSuccessHandler(
+  function(res) {
+
+    btn.disabled =
+      false;
+
+
+    btn.innerHTML =
+      origText;
+
+
+    showValidationModal(res);
+
+  }
+)
+
+.withFailureHandler(
+  function(err) {
+
+    btn.disabled =
+      false;
+
+
+    btn.innerHTML =
+      origText;
+
+
+    alert(
+      'Validation failed to execute: ' +
+      err.message
+    );
+
+  }
+)
+
+.runFormValidationFromUi();
+
+
+}
+
+/* ========================================================================
+SHOW VALIDATION MODAL
+======================================================================== */
+
+function showValidationModal(res) {
+
+document
+.getElementById('statConfigured')
+.textContent =
+res.totalConfigured;
+
+document
+.getElementById('statPassed')
+.textContent =
+res.passed;
+
+document
+.getElementById('statFailed')
+.textContent =
+res.failed;
+
+document
+.getElementById('statUnaccounted')
+.textContent =
+res.unaccounted;
+
+document
+.getElementById('modalLog')
+.textContent =
+res.details
+? res.details.join('\n')
+: 'No log details available.';
+
+document
+.getElementById('testModal')
+.style.display =
+'flex';
+
+}
+
+/* ========================================================================
+CLOSE MODAL
+======================================================================== */
+
+function closeModal(id) {
+
+document
+.getElementById(id)
+.style.display =
+'none';
+
+}
+
+/* ========================================================================
+SAVE CONFIGURATIONS
+======================================================================== */
+
+function saveConfigs() {
+
+var payload = {};
+
+var keys =
+Object.keys(configData);
+
+var statusDiv =
+document.getElementById('status');
+
+for (
+var i = 0;
+i < keys.length;
+i++
+) {
+
+
+var key =
+  keys[i];
+
+
+var textarea =
+  document.getElementById(key);
+
+
+try {
+
+  payload[key] =
+    JSON.parse(
+      textarea.value
+    );
+
+
+} catch (e) {
+
+  statusDiv.className =
+    'status-error';
+
+
+  statusDiv.style.display =
+    'inline-block';
+
+
+  statusDiv.textContent =
+    'Save blocked: Syntax error in ' +
+    key;
+
+
+  return;
+
+}
+
+
+}
+
+document
+.getElementById('saveBtn')
+.disabled = true;
+
+statusDiv.className =
+'';
+
+statusDiv.style.display =
+'inline-block';
+
+statusDiv.textContent =
+'Saving to Script Properties...';
+
+google.script.run
+
+
+.withSuccessHandler(
+  function() {
+
+    statusDiv.className =
+      'status-success';
+
+
+    statusDiv.textContent =
+      '✔ All properties successfully updated!';
+
+
+    checkGlobalValidity();
+
+
+    setTimeout(
+      function() {
+
+        statusDiv.style.display =
+          'none';
+
+      },
+      4000
+    );
+
+  }
+)
+
+.withFailureHandler(
+  function(err) {
+
+    statusDiv.className =
+      'status-error';
+
+
+    statusDiv.textContent =
+      'Save failed: ' +
+      err.message;
+
+
+    checkGlobalValidity();
+
+  }
+)
+
+.saveAllConfigs(payload);
+
+
+}
+
+/* ========================================================================
+START
+======================================================================== */
+
+document.addEventListener(
+'DOMContentLoaded',
+init
+);
+
+</script>
+
 </body>
 </html>

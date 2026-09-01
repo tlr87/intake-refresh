@@ -1,0 +1,2160 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+  <base target="_top">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  >
+
+  <style>
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+    }
+
+    body {
+      background: #0f172a;
+      color: #e2e8f0;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .page {
+      min-height: 100vh;
+      padding: 28px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+
+    /* ================================================================
+       HEADER
+       ================================================================ */
+
+    .header {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      padding: 24px 28px;
+      margin-bottom: 20px;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .brand h1 {
+      margin: 0;
+      color: #f8fafc;
+      font-size: 26px;
+    }
+
+    .brand p {
+      margin: 7px 0 0;
+      color: #94a3b8;
+      font-size: 14px;
+    }
+
+    .nav {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .nav a {
+      display: inline-block;
+      padding: 9px 14px;
+      border-radius: 8px;
+      background: #0f172a;
+      border: 1px solid #334155;
+      color: #cbd5e1;
+      text-decoration: none;
+      font-size: 13px;
+    }
+
+    .nav a:hover {
+      background: #334155;
+      color: #fff;
+    }
+
+    .nav a.active {
+      background: #2563eb;
+      border-color: #2563eb;
+      color: #fff;
+    }
+
+
+    /* ================================================================
+       INTRO
+       ================================================================ */
+
+    .intro {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      padding: 24px 28px;
+      margin-bottom: 20px;
+    }
+
+    .intro h2 {
+      margin: 0 0 10px;
+      color: #f8fafc;
+      font-size: 21px;
+    }
+
+    .intro p {
+      margin: 0;
+      color: #94a3b8;
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+
+    /* ================================================================
+       SECTION
+       ================================================================ */
+
+    .section {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+
+    .section-header {
+      padding: 18px 24px;
+      background: #172033;
+      border-bottom: 1px solid #334155;
+    }
+
+    .section-header h2 {
+      margin: 0;
+      color: #f8fafc;
+      font-size: 18px;
+    }
+
+    .section-header p {
+      margin: 6px 0 0;
+      color: #94a3b8;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .section-body {
+      padding: 24px;
+    }
+
+
+    /* ================================================================
+       CARDS
+       ================================================================ */
+
+    .grid {
+      display: grid;
+      grid-template-columns:
+        repeat(auto-fit, minmax(280px, 1fr));
+      gap: 14px;
+    }
+
+    .card {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 18px;
+    }
+
+    .card h3 {
+      margin: 0 0 8px;
+      color: #f8fafc;
+      font-size: 15px;
+    }
+
+    .card p {
+      margin: 0;
+      color: #94a3b8;
+      font-size: 13px;
+      line-height: 1.65;
+    }
+
+    .tag {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 4px 8px;
+      border-radius: 5px;
+      background: #1e3a8a;
+      color: #bfdbfe;
+      font-family: monospace;
+      font-size: 11px;
+    }
+
+
+    /* ================================================================
+       ALERT CARDS
+       ================================================================ */
+
+    .logic-grid {
+      display: grid;
+      grid-template-columns:
+        repeat(auto-fit, minmax(250px, 1fr));
+      gap: 14px;
+    }
+
+    .logic-card {
+      padding: 18px;
+      border-radius: 10px;
+      background: #0f172a;
+    }
+
+    .logic-card h3 {
+      margin: 0 0 9px;
+      font-size: 15px;
+    }
+
+    .logic-card p {
+      margin: 0;
+      color: #cbd5e1;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .logic-card code {
+      display: block;
+      margin-top: 12px;
+      padding: 10px;
+      background: #020617;
+      border-radius: 6px;
+      color: #cbd5e1;
+      overflow-x: auto;
+    }
+
+    .logic-spam {
+      border: 1px solid #a235dc;
+    }
+
+    .logic-review {
+      border: 1px solid #f59e0b;
+    }
+
+    .logic-urgent {
+      border: 1px solid #ff0000;
+    }
+
+
+    /* ================================================================
+       TABLE
+       ================================================================ */
+
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid #334155;
+      border-radius: 10px;
+    }
+
+    table.reference-table {
+      width: 100%;
+      min-width: 950px;
+      border-collapse: collapse;
+    }
+
+    .reference-table th,
+    .reference-table td {
+      padding: 11px 12px;
+      border-bottom: 1px solid #334155;
+      text-align: left;
+      vertical-align: top;
+      font-size: 12px;
+    }
+
+    .reference-table th {
+      background: #172033;
+      color: #f8fafc;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .reference-table td {
+      color: #cbd5e1;
+    }
+
+    .reference-table tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .reference-table code {
+      color: #93c5fd;
+      font-family: Consolas, Monaco, monospace;
+      word-break: break-word;
+    }
+
+
+    /* ================================================================
+       SOURCE CODE
+       ================================================================ */
+
+    .source-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .source-header h3 {
+      margin: 0;
+      color: #f8fafc;
+      font-size: 16px;
+    }
+
+    .source-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: 1px solid #475569;
+      border-radius: 7px;
+      padding: 8px 12px;
+      background: #0f172a;
+      color: #cbd5e1;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    button:hover {
+      background: #334155;
+      color: #ffffff;
+    }
+
+    button.primary {
+      background: #2563eb;
+      border-color: #2563eb;
+      color: #ffffff;
+    }
+
+    pre.source {
+      margin: 0;
+      max-height: 650px;
+      overflow: auto;
+      padding: 18px;
+      background: #020617;
+      border: 1px solid #334155;
+      border-radius: 9px;
+      color: #cbd5e1;
+      font-family: Consolas, Monaco, monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      white-space: pre;
+    }
+
+
+    /* ================================================================
+       COMPARISON
+       ================================================================ */
+
+    .comparison {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .comparison-table {
+      width: 100%;
+      min-width: 850px;
+      border-collapse: collapse;
+    }
+
+    .comparison-table th,
+    .comparison-table td {
+      padding: 11px;
+      border: 1px solid #334155;
+      text-align: left;
+      vertical-align: top;
+      font-size: 12px;
+    }
+
+    .comparison-table th {
+      background: #172033;
+      color: #f8fafc;
+    }
+
+    .old-value {
+      color: #fca5a5;
+    }
+
+    .new-value {
+      color: #86efac;
+    }
+
+    .arrow {
+      color: #93c5fd;
+      font-size: 18px;
+      text-align: center;
+    }
+
+
+    /* ================================================================
+       EMPTY / ERROR
+       ================================================================ */
+
+    .empty {
+      padding: 20px;
+      border: 1px dashed #475569;
+      border-radius: 8px;
+      color: #94a3b8;
+      font-size: 13px;
+    }
+
+    .error {
+      padding: 16px;
+      border: 1px solid #ef4444;
+      border-radius: 8px;
+      background: #450a0a;
+      color: #fecaca;
+      font-size: 13px;
+    }
+
+
+    /* ================================================================
+       FOOTER
+       ================================================================ */
+
+    .footer {
+      padding: 20px 0 8px;
+      color: #64748b;
+      text-align: center;
+      font-size: 12px;
+    }
+
+
+    /* ================================================================
+       MOBILE
+       ================================================================ */
+
+    @media (max-width: 650px) {
+
+      .page {
+        padding: 14px;
+      }
+
+      .header,
+      .intro,
+      .section-body {
+        padding: 18px;
+      }
+
+      .section-header {
+        padding: 16px 18px;
+      }
+
+      .nav {
+        width: 100%;
+      }
+
+      .nav a {
+        flex: 1;
+        text-align: center;
+      }
+
+    }
+
+  </style>
+
+</head>
+
+
+<body>
+
+<div class="page">
+
+<div class="container">
+
+
+<!-- ================================================================
+     HEADER
+     ================================================================ -->
+
+<div class="header">
+
+  <div class="header-top">
+
+    <div class="brand">
+
+      <h1>
+        ✉️ RD3 Tech — Email Templates
+      </h1>
+
+      <p>
+        AdminEmail, ClientEmail, FIELD_SCHEMA and template tags
+      </p>
+
+    </div>
+
+    <div class="nav">
+
+      <a id="nav-home" href="#">
+        Home
+      </a>
+
+      <a id="nav-editor" href="#">
+        JSON Editor
+      </a>
+
+      <a id="nav-reference" href="#">
+        Reference
+      </a>
+
+      <a class="active" href="#">
+        Email Templates
+      </a>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- ================================================================
+     INTRO
+     ================================================================ -->
+
+<div class="intro">
+
+  <h2>
+    Email Template Wiki
+  </h2>
+
+  <p>
+    This page documents how the RD3 Tech email templates use the
+    current FIELD_SCHEMA. It is intended to be the working reference
+    when changing Google Form fields, updating template tags, or
+    modifying the AdminEmail and ClientEmail templates.
+  </p>
+
+  <br>
+
+  <p>
+    <strong>
+      FIELD_SCHEMA is the source of truth.
+    </strong>
+    The relationship tables below are generated from the current
+    schema rather than manually maintained lists.
+  </p>
+
+</div>
+
+
+<!-- ================================================================
+     TEMPLATE OVERVIEW
+     ================================================================ -->
+
+<div class="section">
+
+  <div class="section-header">
+
+    <h2>
+      How The Email Templates Work
+    </h2>
+
+    <p>
+      The two templates have different purposes.
+    </p>
+
+  </div>
+
+  <div class="section-body">
+
+    <div class="grid">
+
+      <div class="card">
+
+        <h3>
+          AdminEmail
+        </h3>
+
+        <p>
+          Internal notification sent to RD3 Tech. It contains the
+          submission details, client information, request information,
+          and internal security/scope information.
+        </p>
+
+        <span class="tag">
+          INTERNAL
+        </span>
+
+      </div>
+
+      <div class="card">
+
+        <h3>
+          ClientEmail
+        </h3>
+
+        <p>
+          Customer-facing confirmation. It confirms the enquiry,
+          displays relevant submitted information, and explains
+          what happens next.
+        </p>
+
+        <span class="tag">
+          CLIENT
+        </span>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- ================================================================
+     FLOW
+     ================================================================ -->
+
+<div class="section">
+
+  <div class="section-header">
+
+    <h2>
+      Email Data Flow
+    </h2>
+
+    <p>
+      Understanding this flow helps identify where a field should
+      be changed.
+    </p>
+
+  </div>
+
+  <div class="section-body">
+
+    <div class="grid">
+
+      <div class="card">
+
+        <h3>1. Google Form</h3>
+
+        <p>
+          The visitor submits the form and Google supplies the
+          submitted values and Entry IDs.
+        </p>
+
+      </div>
+
+      <div class="card">
+
+        <h3>2. FIELD_SCHEMA</h3>
+
+        <p>
+          FIELD_SCHEMA identifies the field, its key, Entry ID,
+          data type, label and aliases.
+        </p>
+
+      </div>
+
+      <div class="card">
+
+        <h3>3. Request Data</h3>
+
+        <p>
+          The submission is normalised into the request/client
+          objects used by the processing pipeline.
+        </p>
+
+      </div>
+
+      <div class="card">
+
+        <h3>4. Email Template</h3>
+
+        <p>
+          AdminEmail and ClientEmail use template expressions to
+          insert the appropriate values.
+        </p>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- ================================================================
+     SPAM / REVIEW / URGENT
+     ================================================================ -->
+
+<div class="section">
+
+  <div class="section-header">
+
+    <h2>
+      AdminEmail — SPAM, REVIEW and URGENT
+    </h2>
+
+    <p>
+      These are separate conditions. A submission may trigger
+      one, two or all three.
+    </p>
+
+  </div>
+
+  <div class="section-body">
+
+    <div class="logic-grid">
+
+      <div class="logic-card logic-spam">
+
+        <h3>
+          🟣 SPAM
+        </h3>
+
+        <p>
+          Indicates that the automated security/spam evaluation
+          has identified the submission as spam or suspicious.
+        </p>
+
+        <code>
+          safeSec.isSpam
+        </code>
+
+        <p style="margin-top:12px;">
+          AdminEmail displays <strong>SPAM DETECTED</strong> and
+          lists the terms or triggers that caused the flag when
+          those terms are available.
+        </p>
+
+      </div>
+
+
+      <div class="logic-card logic-review">
+
+        <h3>
+          🟠 REVIEW
+        </h3>
+
+        <p>
+          Indicates that the submission has triggered a configured
+          scope/review condition.
+        </p>
+
+        <code>
+          safeSec.requiresReview
+        </code>
+
+        <p style="margin-top:12px;">
+          AdminEmail displays <strong>REQUIRES REVIEW</strong> and
+          lists the matched review terms where available.
+        </p>
+
+      </div>
+
+
+      <div class="logic-card logic-urgent">
+
+        <h3>
+          🔴 URGENT
+        </h3>
+
+        <p>
+          Indicates that the submitted urgency has been marked
+          High or Urgent.
+        </p>
+
+        <code>
+          safeReq.urgency === 'High'
+          safeReq.urgency === 'Urgent'
+        </code>
+
+        <p style="margin-top:12px;">
+          AdminEmail displays <strong>URGENT REQUEST</strong> and
+          identifies the submitted urgency level.
+        </p>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- ================================================================
+     WHERE TO EDIT
+     ================================================================ -->
+
+<div class="section">
+
+  <div class="section-header">
+
+    <h2>
+      Where Should I Add or Change Code?
+    </h2>
+
+    <p>
+      Use this section when maintaining the templates.
+    </p>
+
+  </div>
+
+  <div class="section-body">
+
+    <div class="grid">
+
+      <div class="card">
+
+        <h3>
+          Adding a field to AdminEmail
+        </h3>
+
+        <p>
+          First confirm the field exists in FIELD_SCHEMA. Then
+          add the appropriate template output inside the relevant
+          AdminEmail table or section.
+        </p>
+
+        <span class="tag">
+          AdminEmail.html
+        </span>
+
+      </div>
+
+      <div class="card">
+
+        <h3>
+          Adding a field to ClientEmail
+        </h3>
+
+        <p>
+          Confirm the FIELD_SCHEMA key and then add the field to
+          the customer-facing section where the information should
+          appear.
+        </p>
+
+        <span class="tag">
+          ClientEmail.html
+        </span>
+
+      </div>
+
+      <div class="card">
+
+        <h3>
+          Changing a field name
+        </h3>
+
+        <p>
+          Do not simply change the template tag. Update FIELD_SCHEMA
+          first, then use the comparison table to identify all
+          affected templates.
+        </p>
+
+        <span class="tag">
+          FIELD_SCHEMA
+        </span>
+
+      </div>
+
+      <div class="card">
+
+        <h3>
+          Changing security behaviour
+        </h3>
+
+        <p>
+          SPAM and REVIEW conditions belong to the security/scope
+          evaluation pipeline. The email template displays those
+          results; it should not be the place where the security
+          decision is made.
+        </p>
+
+        <span class="tag">
+          SECURITY / SCOPE
+        </span>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- ================================================================
+     LIVE FIELD TAG REFERENCE
+     ================================================================ -->
+
+<div class="section">
+
+  <div class="section-header">
+
+    <h2>
+      FIELD_SCHEMA → Email Template Tags
+    </h2>
+
+    <p>
+      Live relationship generated from the current FIELD_SCHEMA.
+    </p>
+
+  </div>
+
+  <div class="section-body">
+
+    <div
+      id="schema-status"
+      class="empty"
+    >
+      Loading FIELD_SCHEMA...
+    </div>
+
+    <div
+      id="schema-table-wrap"
+      class="table-wrap"
+      style="display:none;"
+    >
+
+      <table class="reference-table">
+
+        <thead>
+
+          <tr>
+
+            <th>#</th>
+            <th>Question / Field</th>
+            <th>Entry ID</th>
+            <th>Schema Key</th>
+            <th>Data Type</th>
+            <th>HTML Template Tag</th>
+            <th>AdminEmail</th>
+            <th>ClientEmail</th>
+
+          </tr>
+
+        </thead>
+
+        <tbody id="schema-table-body"></tbody>
+
+      </table>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- ================================================================
+     ADMIN EMAIL RELATIONSHIP
+     ================================================================ -->
+
+<div class="section">
+
+  <div class="section-header">
+
+    <h2>
+      AdminEmail Relationship
+    </h2>
+
+    <p>
+      Use this table when deciding where a field belongs in the
+      internal notification.
+    </p>
+
+  </div>
+
+  <div class="section-body">
+
+    <div
+      id="admin-table-wrap"
+      class="table-wrap"
+    >
+
+      <table class="reference-table">
+
+        <thead>
+
+          <tr>
+            <th>FIELD_SCHEMA Key</th>
+            <th>Template Object</th>
+            <th>Recommended Template Tag</th>
+            <th>Purpose</th>
+          </tr>
+
+        </thead>
+
+        <tbody id="admin-table-body"></tbody>
+
+      </table>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- ================================================================
+     CLIENT EMAIL RELATIONSHIP
+     ================================================================ -->
+
+<div class="section">
+
+  <div class="section-header">
+
+    <h2>
+      ClientEmail Relationship
+    </h2>
+
+    <p>
+      Use this table when deciding which submitted information
+      should be shown to the client.
+    </p>
+
+  </div>
+
+  <div class="section-body">
+
+    <div class="table-wrap">
+
+      <table class="reference-table">
+
+        <thead>
+
+          <tr>
+            <th>FIELD_SCHEMA Key</th>
+            <th>Template Object</th>
+            <th>Recommended Template Tag</th>
+            <th>Purpose</th>
+          </tr>
+
+        </thead>
+
+        <tbody id="client-table-body"></tbody>
+
+      </table>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- ================================================================
+     OLD / NEW COMPARISON
+     ================================================================ -->
+
+<div class="section">
+
+  <div class="section-header">
+
+    <h2>
+      Old → New Template Tag Comparison
+    </h2>
+
+    <p>
+      Use this when Automation has changed the form or FIELD_SCHEMA.
+    </p>
+
+  </div>
+
+  <div class="section-body">
+
+    <div class="empty">
+
+      The live comparison requires the previous FIELD_SCHEMA to be
+      available as a stored snapshot. This section is ready for the
+      snapshot comparison system.
+
+      <br><br>
+
+      When enabled it will show:
+
+      <br><br>
+
+      <code>
+        OLD FIELD → NEW FIELD → OLD TAG → NEW TAG
+      </code>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- ================================================================
+     ADMIN EMAIL SOURCE
+     ================================================================ -->
+
+<div class="section">
+
+  <div class="section-header">
+
+    <h2>
+      AdminEmail — Complete Template
+    </h2>
+
+    <p>
+      Complete documented source. This is shown as code and is
+      not executed by this Reference page.
+    </p>
+
+  </div>
+
+  <div class="section-body">
+
+    <div class="source-header">
+
+      <h3>
+        AdminEmail.html
+      </h3>
+
+      <div class="source-actions">
+
+        <button
+          type="button"
+          onclick="copySource('admin-source')"
+        >
+          Copy Code
+        </button>
+
+        <button
+          type="button"
+          class="primary"
+          onclick="downloadSource('admin-source', 'AdminEmail.html')"
+        >
+          Export Code
+        </button>
+
+      </div>
+
+    </div>
+
+    <pre
+      id="admin-source"
+      class="source"
+    ><?!= adminEmailSource ?></pre>
+
+  </div>
+
+</div>
+
+
+<!-- ================================================================
+     CLIENT EMAIL SOURCE
+     ================================================================ -->
+
+<div class="section">
+
+  <div class="section-header">
+
+    <h2>
+      ClientEmail — Complete Template
+    </h2>
+
+    <p>
+      Complete documented source. This is shown as code and is
+      not executed by this Reference page.
+    </p>
+
+  </div>
+
+  <div class="section-body">
+
+    <div class="source-header">
+
+      <h3>
+        ClientEmail.html
+      </h3>
+
+      <div class="source-actions">
+
+        <button
+          type="button"
+          onclick="copySource('client-source')"
+        >
+          Copy Code
+        </button>
+
+        <button
+          type="button"
+          class="primary"
+          onclick="downloadSource('client-source', 'ClientEmail.html')"
+        >
+          Export Code
+        </button>
+
+      </div>
+
+    </div>
+
+    <pre
+      id="client-source"
+      class="source"
+    ><?!= clientEmailSource ?></pre>
+
+  </div>
+
+</div>
+
+
+<!-- ================================================================
+     FOOTER
+     ================================================================ -->
+
+<div class="footer">
+
+  RD3 Tech &nbsp;|&nbsp;
+  Email Template Reference
+
+</div>
+
+
+</div>
+</div>
+
+
+<!-- ================================================================
+     FIELD_SCHEMA JSON
+     ================================================================ -->
+
+<script
+  type="application/json"
+  id="rd3-field-schema-data"
+><?!= fieldSchemaJson ?></script>
+
+
+<script>
+
+(function () {
+
+  'use strict';
+
+
+  /* ================================================================
+     CONFIGURATION
+     ================================================================ */
+
+  var baseUrl =
+    <?!= JSON.stringify(webAppUrl || '') ?>;
+
+
+  /* ================================================================
+     NAVIGATION
+     ================================================================ */
+
+  var homeLink =
+    document.getElementById('nav-home');
+
+  var editorLink =
+    document.getElementById('nav-editor');
+
+  var referenceLink =
+    document.getElementById('nav-reference');
+
+
+  if (homeLink) {
+    homeLink.href = baseUrl;
+  }
+
+
+  if (editorLink) {
+    editorLink.href =
+      baseUrl + '?page=editor';
+  }
+
+
+  if (referenceLink) {
+    referenceLink.href =
+      baseUrl + '?page=reference';
+  }
+
+
+  /* ================================================================
+     LOAD FIELD_SCHEMA
+     ================================================================ */
+
+  var schemaNode =
+    document.getElementById(
+      'rd3-field-schema-data'
+    );
+
+  var schema = {};
+
+
+  try {
+
+    schema =
+      JSON.parse(
+        schemaNode
+          ? schemaNode.textContent || '{}'
+          : '{}'
+      );
+
+  } catch (error) {
+
+    showSchemaError(
+      'FIELD_SCHEMA could not be loaded.'
+    );
+
+    return;
+
+  }
+
+
+  var fields =
+    normaliseSchema(schema);
+
+
+  if (!fields.length) {
+
+    showSchemaError(
+      'No FIELD_SCHEMA fields are currently configured.'
+    );
+
+    return;
+
+  }
+
+
+  renderMainSchemaTable(fields);
+
+  renderAdminRelationship(fields);
+
+  renderClientRelationship(fields);
+
+
+  /* ================================================================
+     NORMALISE SCHEMA
+     ================================================================ */
+
+  function normaliseSchema(input) {
+
+    var result = [];
+
+
+    if (Array.isArray(input)) {
+
+      input.forEach(function (field) {
+
+        if (
+          field &&
+          typeof field === 'object'
+        ) {
+          result.push(field);
+        }
+
+      });
+
+      return result;
+    }
+
+
+    if (
+      input &&
+      typeof input === 'object'
+    ) {
+
+      Object.keys(input).forEach(
+        function (key) {
+
+          var field =
+            input[key];
+
+          if (
+            field &&
+            typeof field === 'object'
+          ) {
+
+            var copy =
+              Object.assign({}, field);
+
+            if (!copy.key) {
+              copy.key = key;
+            }
+
+            result.push(copy);
+
+          }
+
+        }
+      );
+
+    }
+
+
+    return result;
+  }
+
+
+  /* ================================================================
+     MAIN TABLE
+     ================================================================ */
+
+  function renderMainSchemaTable(fields) {
+
+    var body =
+      document.getElementById(
+        'schema-table-body'
+      );
+
+    var status =
+      document.getElementById(
+        'schema-status'
+      );
+
+    var wrap =
+      document.getElementById(
+        'schema-table-wrap'
+      );
+
+
+    body.innerHTML = '';
+
+
+    fields.forEach(
+      function (field, index) {
+
+        var key =
+          field.key || '';
+
+
+        var title =
+          field.title ||
+          field.label ||
+          field.questionTitle ||
+          '';
+
+
+        var entryId =
+          field.entryId || '';
+
+
+        var type =
+          field.type || '';
+
+
+        var tag =
+          makeRequestTag(key);
+
+
+        var row =
+          document.createElement('tr');
+
+
+        row.innerHTML =
+
+          '<td>' +
+            escapeHtml(index + 1) +
+          '</td>' +
+
+          '<td>' +
+            escapeHtml(title) +
+          '</td>' +
+
+          '<td>' +
+            '<code>' +
+              escapeHtml(entryId) +
+            '</code>' +
+          '</td>' +
+
+          '<td>' +
+            '<code>' +
+              escapeHtml(key) +
+            '</code>' +
+          '</td>' +
+
+          '<td>' +
+            escapeHtml(type) +
+          '</td>' +
+
+          '<td>' +
+            '<code>' +
+              escapeHtml(tag) +
+            '</code>' +
+          '</td>' +
+
+          '<td>' +
+            adminLocation(field) +
+          '</td>' +
+
+          '<td>' +
+            clientLocation(field) +
+          '</td>';
+
+
+        body.appendChild(row);
+
+      }
+    );
+
+
+    status.style.display =
+      'none';
+
+    wrap.style.display =
+      'block';
+  }
+
+
+  /* ================================================================
+     ADMIN RELATIONSHIP
+     ================================================================ */
+
+  function renderAdminRelationship(fields) {
+
+    var body =
+      document.getElementById(
+        'admin-table-body'
+      );
+
+
+    body.innerHTML = '';
+
+
+    fields.forEach(
+      function (field) {
+
+        var key =
+          field.key || '';
+
+
+        var row =
+          document.createElement('tr');
+
+
+        row.innerHTML =
+
+          '<td>' +
+            '<code>' +
+              escapeHtml(key) +
+            '</code>' +
+          '</td>' +
+
+          '<td>' +
+            '<code>' +
+              escapeHtml(
+                adminObjectFor(field)
+              ) +
+            '</code>' +
+          '</td>' +
+
+          '<td>' +
+            '<code>' +
+              escapeHtml(
+                adminTagFor(field)
+              ) +
+            '</code>' +
+          '</td>' +
+
+          '<td>' +
+            escapeHtml(
+              adminPurpose(field)
+            ) +
+          '</td>';
+
+
+        body.appendChild(row);
+
+      }
+    );
+  }
+
+
+  /* ================================================================
+     CLIENT RELATIONSHIP
+     ================================================================ */
+
+  function renderClientRelationship(fields) {
+
+    var body =
+      document.getElementById(
+        'client-table-body'
+      );
+
+
+    body.innerHTML = '';
+
+
+    fields.forEach(
+      function (field) {
+
+        var key =
+          field.key || '';
+
+
+        var row =
+          document.createElement('tr');
+
+
+        row.innerHTML =
+
+          '<td>' +
+            '<code>' +
+              escapeHtml(key) +
+            '</code>' +
+          '</td>' +
+
+          '<td>' +
+            '<code>' +
+              escapeHtml(
+                clientObjectFor(field)
+              ) +
+            '</code>' +
+          '</td>' +
+
+          '<td>' +
+            '<code>' +
+              escapeHtml(
+                clientTagFor(field)
+              ) +
+            '</code>' +
+          '</td>' +
+
+          '<td>' +
+            escapeHtml(
+              clientPurpose(field)
+            ) +
+          '</td>';
+
+
+        body.appendChild(row);
+
+      }
+    );
+  }
+
+
+  /* ================================================================
+     TAGS
+     ================================================================ */
+
+  function makeRequestTag(key) {
+
+    if (!key) {
+      return '';
+    }
+
+    return '<?= request.' + key + ' ?>';
+  }
+
+
+  function adminTagFor(field) {
+
+    var key =
+      field.key || '';
+
+
+    /*
+     * Known AdminEmail object mappings.
+     *
+     * The current template uses client.* for client profile
+     * fields and request.* for request fields.
+     */
+
+    if (
+      key === 'name' ||
+      key === 'email' ||
+      key === 'phone' ||
+      key === 'location' ||
+      key === 'preferredContact' ||
+      key === 'contactingAs'
+    ) {
+
+      return '<?= safeClient.' + key + ' ?>';
+    }
+
+
+    if (key === 'usedBefore') {
+
+      return '<?= safeClient.isPreviousCustomer ?>';
+    }
+
+
+    return '<?= safeReq.' + key + ' ?>';
+  }
+
+
+  function clientTagFor(field) {
+
+    var key =
+      field.key || '';
+
+
+    if (
+      key === 'name' ||
+      key === 'email' ||
+      key === 'phone' ||
+      key === 'location' ||
+      key === 'preferredContact'
+    ) {
+
+      return '<?= safeClient.' + key + ' ?>';
+    }
+
+
+    return '<?= safeReq.' + key + ' ?>';
+  }
+
+
+  /* ================================================================
+     OBJECT LABELS
+     ================================================================ */
+
+  function adminObjectFor(field) {
+
+    var key =
+      field.key || '';
+
+
+    if (
+      key === 'name' ||
+      key === 'email' ||
+      key === 'phone' ||
+      key === 'location' ||
+      key === 'preferredContact' ||
+      key === 'contactingAs' ||
+      key === 'usedBefore'
+    ) {
+
+      return 'client';
+    }
+
+
+    return 'request';
+  }
+
+
+  function clientObjectFor(field) {
+
+    var key =
+      field.key || '';
+
+
+    if (
+      key === 'name' ||
+      key === 'email' ||
+      key === 'phone' ||
+      key === 'location' ||
+      key === 'preferredContact'
+    ) {
+
+      return 'client';
+    }
+
+
+    return 'request';
+  }
+
+
+  /* ================================================================
+     PURPOSE
+     ================================================================ */
+
+  function adminPurpose(field) {
+
+    var key =
+      field.key || '';
+
+
+    if (key === 'name') {
+      return 'Client identification';
+    }
+
+    if (key === 'email') {
+      return 'Client email/contact information';
+    }
+
+    if (key === 'phone') {
+      return 'Client telephone information';
+    }
+
+    if (key === 'location') {
+      return 'Client location';
+    }
+
+    if (key === 'preferredContact') {
+      return 'Preferred contact method';
+    }
+
+    if (key === 'contactingAs') {
+      return 'Client type / relationship';
+    }
+
+    if (key === 'usedBefore') {
+      return 'Previous client status';
+    }
+
+    if (key === 'helpCategory') {
+      return 'Requested area of assistance';
+    }
+
+    if (key === 'userGoal') {
+      return 'Desired outcome';
+    }
+
+    if (key === 'urgency') {
+      return 'Priority / timeframe';
+    }
+
+    return 'Available submission field';
+  }
+
+
+  function clientPurpose(field) {
+
+    var key =
+      field.key || '';
+
+
+    if (key === 'name') {
+      return 'Customer identification';
+    }
+
+    if (key === 'email') {
+      return 'Customer contact information';
+    }
+
+    if (key === 'phone') {
+      return 'Customer telephone information';
+    }
+
+    if (key === 'location') {
+      return 'Customer location';
+    }
+
+    if (key === 'preferredContact') {
+      return 'Preferred contact method';
+    }
+
+    if (key === 'helpCategory') {
+      return 'What the customer needs help with';
+    }
+
+    if (key === 'userGoal') {
+      return 'What the customer is trying to achieve';
+    }
+
+    return 'Available submission field';
+  }
+
+
+  /* ================================================================
+     LOCATION
+     ================================================================ */
+
+  function adminLocation(field) {
+
+    var key =
+      field.key || '';
+
+
+    if (
+      key === 'name' ||
+      key === 'email' ||
+      key === 'phone' ||
+      key === 'location' ||
+      key === 'preferredContact' ||
+      key === 'contactingAs' ||
+      key === 'usedBefore'
+    ) {
+
+      return 'Client Details';
+    }
+
+
+    if (
+      key === 'helpCategory' ||
+      key === 'userGoal'
+    ) {
+
+      return 'How Can We Help?';
+    }
+
+
+    if (key === 'urgency') {
+      return 'Submission Details';
+    }
+
+
+    return 'Available';
+  }
+
+
+  function clientLocation(field) {
+
+    var key =
+      field.key || '';
+
+
+    if (
+      key === 'name' ||
+      key === 'email' ||
+      key === 'phone' ||
+      key === 'location' ||
+      key === 'preferredContact'
+    ) {
+
+      return 'Your Details';
+    }
+
+
+    if (
+      key === 'helpCategory' ||
+      key === 'userGoal'
+    ) {
+
+      return 'What You Asked Us About';
+    }
+
+
+    return 'Available';
+  }
+
+
+  /* ================================================================
+     ERROR
+     ================================================================ */
+
+  function showSchemaError(message) {
+
+    var status =
+      document.getElementById(
+        'schema-status'
+      );
+
+    if (!status) {
+      return;
+    }
+
+    status.className =
+      'error';
+
+    status.textContent =
+      message;
+
+  }
+
+
+  /* ================================================================
+     ESCAPE HTML
+     ================================================================ */
+
+  function escapeHtml(value) {
+
+    return String(
+      value == null
+        ? ''
+        : value
+    )
+
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+
+  }
+
+
+  /* ================================================================
+     COPY SOURCE
+     ================================================================ */
+
+  window.copySource =
+    function (elementId) {
+
+      var element =
+        document.getElementById(
+          elementId
+        );
+
+
+      if (!element) {
+        return;
+      }
+
+
+      var text =
+        element.textContent || '';
+
+
+      if (
+        navigator.clipboard &&
+        navigator.clipboard.writeText
+      ) {
+
+        navigator.clipboard
+          .writeText(text)
+          .then(function () {
+
+            alert(
+              'Code copied to clipboard.'
+            );
+
+          })
+          .catch(function () {
+
+            fallbackCopy(text);
+
+          });
+
+        return;
+      }
+
+
+      fallbackCopy(text);
+
+    };
+
+
+  function fallbackCopy(text) {
+
+    var textarea =
+      document.createElement(
+        'textarea'
+      );
+
+    textarea.value =
+      text;
+
+    textarea.style.position =
+      'fixed';
+
+    textarea.style.opacity =
+      '0';
+
+    document.body.appendChild(
+      textarea
+    );
+
+    textarea.select();
+
+    try {
+
+      document.execCommand(
+        'copy'
+      );
+
+      alert(
+        'Code copied to clipboard.'
+      );
+
+    } catch (error) {
+
+      alert(
+        'Unable to copy automatically. ' +
+        'Select the code and copy it manually.'
+      );
+
+    }
+
+    document.body.removeChild(
+      textarea
+    );
+
+  }
+
+
+  /* ================================================================
+     DOWNLOAD SOURCE
+     ================================================================ */
+
+  window.downloadSource =
+    function (
+      elementId,
+      filename
+    ) {
+
+      var element =
+        document.getElementById(
+          elementId
+        );
+
+
+      if (!element) {
+        return;
+      }
+
+
+      var text =
+        element.textContent || '';
+
+
+      var blob =
+        new Blob(
+          [text],
+          {
+            type:
+              'text/plain;charset=utf-8'
+          }
+        );
+
+
+      var url =
+        URL.createObjectURL(
+          blob
+        );
+
+
+      var link =
+        document.createElement(
+          'a'
+        );
+
+
+      link.href =
+        url;
+
+      link.download =
+        filename;
+
+      document.body.appendChild(
+        link
+      );
+
+      link.click();
+
+      document.body.removeChild(
+        link
+      );
+
+      URL.revokeObjectURL(
+        url
+      );
+
+    };
+
+
+})();
+
+</script>
+
+</body>
+</html>

@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -13,120 +12,431 @@
       box-sizing: border-box;
     }
 
+    html,
     body {
       margin: 0;
-      min-height: 100vh;
+      padding: 0;
+      min-height: 100%;
+    }
+
+    body {
       font-family: Arial, Helvetica, sans-serif;
       background: #0f172a;
       color: #e2e8f0;
     }
 
-    .container {
-      max-width: 1000px;
-      margin: 0 auto;
-      padding: 40px 24px 60px;
+    a {
+      text-decoration: none;
     }
+
+    .page {
+      min-height: 100vh;
+      padding: 28px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    /* ================================================================
+       HEADER
+       ================================================================ */
 
     .header {
-      margin-bottom: 35px;
-    }
-
-    .header h1 {
-      margin: 0 0 10px;
-      font-size: 32px;
-      color: #ffffff;
-    }
-
-    .header p {
-      margin: 0;
-      color: #94a3b8;
-      font-size: 15px;
-    }
-
-    .section-title {
-      margin: 0 0 15px;
-      font-size: 18px;
-      color: #cbd5e1;
-    }
-
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 18px;
-    }
-
-    .card {
-      display: block;
-      padding: 24px;
       background: #1e293b;
       border: 1px solid #334155;
       border-radius: 14px;
-      text-decoration: none;
-      color: inherit;
-      transition:
-        transform 0.15s ease,
-        border-color 0.15s ease,
-        background 0.15s ease;
+      padding: 24px 28px;
+      margin-bottom: 20px;
     }
 
-    .card:hover {
-      transform: translateY(-2px);
-      background: #263449;
-      border-color: #64748b;
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
     }
 
-    .icon {
-      font-size: 30px;
-      margin-bottom: 15px;
+    .brand h1 {
+      margin: 0;
+      color: #f8fafc;
+      font-size: 26px;
+      line-height: 1.2;
     }
 
-    .card h2 {
-      margin: 0 0 8px;
-      font-size: 19px;
+    .brand p {
+      margin: 7px 0 0;
+      color: #94a3b8;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* ================================================================
+       NAVIGATION
+       ================================================================ */
+
+    .nav {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .nav a {
+      display: inline-block;
+      padding: 9px 14px;
+      border-radius: 8px;
+      background: #0f172a;
+      border: 1px solid #334155;
+      color: #cbd5e1;
+      font-size: 13px;
+      transition: 0.15s ease;
+    }
+
+    .nav a:hover {
+      background: #334155;
       color: #ffffff;
     }
 
-    .card p {
+    .nav a.active {
+      background: #2563eb;
+      border-color: #2563eb;
+      color: #ffffff;
+    }
+
+    /* ================================================================
+       INTRO
+       ================================================================ */
+
+    .intro {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      padding: 26px 28px;
+      margin-bottom: 20px;
+    }
+
+    .intro h2 {
+      margin: 0 0 9px;
+      color: #f8fafc;
+      font-size: 21px;
+      line-height: 1.3;
+    }
+
+    .intro p {
       margin: 0;
-      line-height: 1.5;
-      font-size: 14px;
+      max-width: 850px;
       color: #94a3b8;
+      font-size: 14px;
+      line-height: 1.7;
     }
 
-    .footer {
-      margin-top: 45px;
-      padding-top: 20px;
-      border-top: 1px solid #1e293b;
-      color: #64748b;
-      font-size: 12px;
+    /* ================================================================
+       SECTION
+       ================================================================ */
+
+    .section {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      margin-bottom: 20px;
+      overflow: hidden;
     }
 
-    .status {
+    .section-header {
+      padding: 18px 24px;
+      background: #172033;
+      border-bottom: 1px solid #334155;
+    }
+
+    .section-header h2 {
+      margin: 0;
+      color: #f8fafc;
+      font-size: 18px;
+      line-height: 1.4;
+    }
+
+    .section-header p {
+      margin: 6px 0 0;
+      color: #94a3b8;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .section-body {
+      padding: 24px;
+    }
+
+    /* ================================================================
+       MAIN WORKFLOW
+       ================================================================ */
+
+    .workflow {
+      display: grid;
+      grid-template-columns:
+        repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    .workflow-step {
+      position: relative;
+      padding: 18px;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      min-height: 135px;
+    }
+
+    .workflow-number {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      margin-top: 18px;
-      padding: 7px 11px;
-      border-radius: 20px;
-      background: #172033;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      margin-bottom: 10px;
+      border-radius: 50%;
+      background: #2563eb;
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .workflow-step h3 {
+      margin: 0 0 7px;
+      color: #f8fafc;
+      font-size: 14px;
+    }
+
+    .workflow-step p {
+      margin: 0;
       color: #94a3b8;
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    /* ================================================================
+       ADMIN CARDS
+       ================================================================ */
+
+    .grid {
+      display: grid;
+      grid-template-columns:
+        repeat(auto-fit, minmax(280px, 1fr));
+      gap: 14px;
+    }
+
+    .card-link {
+      display: block;
+      height: 100%;
+      padding: 20px;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      transition:
+        border-color 0.15s ease,
+        background 0.15s ease,
+        transform 0.15s ease;
+    }
+
+    .card-link:hover {
+      background: #111c31;
+      border-color: #475569;
+      transform: translateY(-1px);
+    }
+
+    .card-icon {
+      font-size: 24px;
+      line-height: 1;
+      margin-bottom: 13px;
+    }
+
+    .card-link h3 {
+      margin: 0 0 8px;
+      color: #f8fafc;
+      font-size: 16px;
+      line-height: 1.3;
+    }
+
+    .card-link p {
+      margin: 0;
+      color: #94a3b8;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .card-tag {
+      display: inline-block;
+      margin-top: 14px;
+      padding: 5px 8px;
+      border-radius: 5px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #93c5fd;
+      font-family: Consolas, Monaco, monospace;
+      font-size: 11px;
+    }
+
+    /* ================================================================
+       WIKI CARDS
+       ================================================================ */
+
+    .wiki-card {
+      position: relative;
+      padding: 20px;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 10px;
+    }
+
+    .wiki-card h3 {
+      margin: 0 0 8px;
+      color: #f8fafc;
+      font-size: 16px;
+    }
+
+    .wiki-card p {
+      margin: 0;
+      color: #94a3b8;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .wiki-list {
+      margin: 14px 0 0;
+      padding-left: 18px;
+      color: #cbd5e1;
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    /* ================================================================
+       SCHEMA STATUS
+       ================================================================ */
+
+    .status-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+      padding: 18px 20px;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 10px;
+    }
+
+    .status-info h3 {
+      margin: 0 0 5px;
+      color: #f8fafc;
+      font-size: 15px;
+    }
+
+    .status-info p {
+      margin: 0;
+      color: #94a3b8;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 7px 11px;
+      border-radius: 6px;
+      background: #14532d;
+      border: 1px solid #166534;
+      color: #bbf7d0;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    /* ================================================================
+       QUICK REFERENCE
+       ================================================================ */
+
+    .reference-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .reference-table th,
+    .reference-table td {
+      padding: 11px 10px;
+      border-bottom: 1px solid #334155;
+      text-align: left;
+      vertical-align: top;
+      font-size: 13px;
+    }
+
+    .reference-table th {
+      color: #64748b;
+      font-weight: 600;
+    }
+
+    .reference-table td {
+      color: #cbd5e1;
+    }
+
+    .reference-table code {
+      color: #93c5fd;
+      font-family: Consolas, Monaco, monospace;
       font-size: 12px;
     }
 
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #22c55e;
+    /* ================================================================
+       FOOTER
+       ================================================================ */
+
+    .footer {
+      padding: 20px 0 8px;
+      color: #64748b;
+      font-size: 12px;
+      text-align: center;
     }
 
-    @media (max-width: 600px) {
-      .container {
-        padding: 25px 16px 40px;
+    /* ================================================================
+       MOBILE
+       ================================================================ */
+
+    @media (max-width: 650px) {
+
+      .page {
+        padding: 14px;
       }
 
-      .header h1 {
-        font-size: 26px;
+      .header,
+      .intro {
+        padding: 20px;
+      }
+
+      .section-body {
+        padding: 18px;
+      }
+
+      .section-header {
+        padding: 16px 18px;
+      }
+
+      .nav {
+        width: 100%;
+      }
+
+      .nav a {
+        flex: 1;
+        text-align: center;
+      }
+
+      .workflow {
+        grid-template-columns: 1fr;
+      }
+
+      .reference-table {
+        display: block;
+        overflow-x: auto;
       }
     }
   </style>
@@ -134,104 +444,767 @@
 
 <body>
 
+<div class="page">
+
   <div class="container">
 
-    <div class="header">
-      <h1>RD3 TECH — Admin</h1>
+    <!-- ============================================================
+         HEADER
+         ============================================================ -->
+
+    <header class="header">
+
+      <div class="header-top">
+
+        <div class="brand">
+          <h1>RD3 Tech Admin</h1>
+          <p>
+            Form, schema, template and spreadsheet administration
+          </p>
+        </div>
+
+        <nav class="nav" aria-label="Admin navigation">
+
+          <a
+            id="nav-home"
+            class="active"
+            href="#"
+          >
+            Home
+          </a>
+
+          <a
+            id="nav-email-templates"
+            href="#"
+          >
+            Email Templates
+          </a>
+
+          <a
+            id="nav-web-form"
+            href="#"
+          >
+            Web Form
+          </a>
+
+          <a
+            id="nav-editor"
+            href="#"
+          >
+            JSON Editor
+          </a>
+
+        </nav>
+
+      </div>
+
+    </header>
+
+
+    <!-- ============================================================
+         INTRO
+         ============================================================ -->
+
+    <section class="intro">
+
+      <h2>
+        RD3 Tech Configuration &amp; Development Hub
+      </h2>
 
       <p>
-        Internal administration and configuration tools.
+        This administration area is the working reference for the
+        RD3 Tech enquiry system. FIELD_SCHEMA is the central
+        relationship between the Google Form, website form,
+        email templates and spreadsheet output. When the form
+        changes, use these pages to identify what code and
+        templates need to be updated.
       </p>
 
-      <div class="status">
-        <span class="status-dot"></span>
-        Web App Online
+    </section>
+
+
+    <!-- ============================================================
+         WORKFLOW
+         ============================================================ -->
+
+    <section class="section">
+
+      <div class="section-header">
+
+        <h2>
+          How the System Fits Together
+        </h2>
+
+        <p>
+          The basic relationship between the form, FIELD_SCHEMA,
+          web form, templates and spreadsheet.
+        </p>
+
       </div>
-    </div>
+
+      <div class="section-body">
+
+        <div class="workflow">
+
+          <div class="workflow-step">
+
+            <div class="workflow-number">1</div>
+
+            <h3>Google Form</h3>
+
+            <p>
+              The questions, entry IDs and response structure
+              originate from the Google Form.
+            </p>
+
+          </div>
 
 
-    <!--
-    ============================================================================
-    EASY-TO-CHANGE NAVIGATION
-    ============================================================================
+          <div class="workflow-step">
 
-    CHANGE PAGE LINKS HERE.
+            <div class="workflow-number">2</div>
 
-    Current routes:
+            <h3>FIELD_SCHEMA</h3>
 
-      editor
-      reference
+            <p>
+              The schema provides the stable keys and relationships
+              used throughout the application.
+            </p>
 
-    Example:
+          </div>
 
-      /dev?page=editor
-      /dev?page=reference
 
-    ============================================================================
+          <div class="workflow-step">
 
-    IMPORTANT:
-    Keep the route names in sync with WebAppRouter.gs.
-    ============================================================================
-    -->
+            <div class="workflow-number">3</div>
 
-    <h2 class="section-title">
-      Configuration
-    </h2>
+            <h3>Web Form</h3>
 
-    <div class="cards">
+            <p>
+              FluentSnippets PHP and standalone HTML use the schema
+              relationship when collecting website enquiries.
+            </p>
 
-      <!-- JSON EDITOR -->
-      <a
-        class="card"
-        href="<?= webAppUrl ?>?page=editor"
-      >
+          </div>
 
-        <div class="icon">
-          ⚙️
+
+          <div class="workflow-step">
+
+            <div class="workflow-number">4</div>
+
+            <h3>Spreadsheet</h3>
+
+            <p>
+              Submitted values are mapped into the appropriate
+              spreadsheet fields.
+            </p>
+
+          </div>
+
+
+          <div class="workflow-step">
+
+            <div class="workflow-number">5</div>
+
+            <h3>Email Templates</h3>
+
+            <p>
+              AdminEmail and ClientEmail use the processed request
+              and client data to create the appropriate emails.
+            </p>
+
+          </div>
+
         </div>
 
+      </div>
+
+    </section>
+
+
+    <!-- ============================================================
+         ADMIN TOOLS
+         ============================================================ -->
+
+    <section class="section">
+
+      <div class="section-header">
+
         <h2>
-          JSON Editor
+          Administration
         </h2>
 
         <p>
-          View, edit, save and restore the RD3 Tech
-          configuration stored in Script Properties.
+          Tools used to maintain the RD3 Tech enquiry system.
         </p>
 
-      </a>
+      </div>
+
+      <div class="section-body">
+
+        <div class="grid">
+
+          <!-- EMAIL TEMPLATES -->
+
+          <a
+            id="card-email-templates"
+            class="card-link"
+            href="#"
+          >
+
+            <div class="card-icon">✉️</div>
+
+            <h3>
+              Email Templates
+            </h3>
+
+            <p>
+              Documentation and working reference for AdminEmail
+              and ClientEmail. Shows how template variables,
+              FIELD_SCHEMA tags, security evaluation and client
+              request data are used.
+            </p>
+
+            <span class="card-tag">
+              ?page=emailtemplates
+            </span>
+
+          </a>
 
 
-      <!-- REFERENCE -->
-      <a
-        class="card"
-        href="<?= webAppUrl ?>?page=reference"
-      >
+          <!-- WEB FORM -->
 
-        <div class="icon">
-          📖
+          <a
+            id="card-web-form"
+            class="card-link"
+            href="#"
+          >
+
+            <div class="card-icon">🌐</div>
+
+            <h3>
+              Web Form
+            </h3>
+
+            <p>
+              Documentation for the website enquiry form, including
+              FluentSnippets PHP and the standalone HTML version,
+              field mapping, validation, honeypot handling and
+              spreadsheet submission.
+            </p>
+
+            <span class="card-tag">
+              ?page=webform
+            </span>
+
+          </a>
+
+
+          <!-- REFERENCE -->
+
+          <a
+            id="card-reference"
+            class="card-link"
+            href="#"
+          >
+
+            <div class="card-icon">📚</div>
+
+            <h3>
+              FIELD_SCHEMA Reference
+            </h3>
+
+            <p>
+              Live reference generated from FIELD_SCHEMA. Use this
+              page to compare Google Form fields, schema keys,
+              data types and the tags used by templates and forms.
+            </p>
+
+            <span class="card-tag">
+              ?page=reference
+            </span>
+
+          </a>
+
+
+          <!-- JSON EDITOR -->
+
+          <a
+            id="card-editor"
+            class="card-link"
+            href="#"
+          >
+
+            <div class="card-icon">📝</div>
+
+            <h3>
+              JSON Editor
+            </h3>
+
+            <p>
+              View and edit the configuration stored in Script
+              Properties. Use this when maintaining the live
+              configuration and schema data.
+            </p>
+
+            <span class="card-tag">
+              ?page=editor
+            </span>
+
+          </a>
+
         </div>
 
+      </div>
+
+    </section>
+
+
+    <!-- ============================================================
+         WIKI
+         ============================================================ -->
+
+    <section class="section">
+
+      <div class="section-header">
+
         <h2>
-          Reference
+          Development Wiki
         </h2>
 
         <p>
-          View the form field reference, schema mappings,
-          entry IDs and template variables.
+          Use these pages when changing the form or updating code.
         </p>
 
-      </a>
+      </div>
 
-    </div>
+      <div class="section-body">
+
+        <div class="grid">
+
+          <div class="wiki-card">
+
+            <h3>
+              ✉️ Email Template Wiki
+            </h3>
+
+            <p>
+              The Email Templates page explains exactly where
+              FIELD_SCHEMA values appear in the email templates.
+            </p>
+
+            <ul class="wiki-list">
+              <li>AdminEmail structure</li>
+              <li>ClientEmail structure</li>
+              <li>FIELD_SCHEMA relationship</li>
+              <li>Template tags</li>
+              <li>Old → New field comparison</li>
+              <li>SPAM detection display</li>
+              <li>REVIEW / out-of-scope display</li>
+              <li>URGENT request display</li>
+            </ul>
+
+          </div>
 
 
-    <div class="footer">
-      RD3 TECH — Internal Administration Interface
-    </div>
+          <div class="wiki-card">
+
+            <h3>
+              🌐 Web Form Wiki
+            </h3>
+
+            <p>
+              The Web Form page explains how the website form
+              connects to the Apps Script endpoint and spreadsheet.
+            </p>
+
+            <ul class="wiki-list">
+              <li>FluentSnippets PHP</li>
+              <li>Standalone HTML</li>
+              <li>FIELD_SCHEMA mapping</li>
+              <li>HTML field IDs</li>
+              <li>POST payload keys</li>
+              <li>Validation</li>
+              <li>Honeypot protection</li>
+              <li>Spreadsheet output</li>
+            </ul>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- ============================================================
+         SCHEMA STATUS
+         ============================================================ -->
+
+    <section class="section">
+
+      <div class="section-header">
+
+        <h2>
+          FIELD_SCHEMA
+        </h2>
+
+        <p>
+          Production configuration source.
+        </p>
+
+      </div>
+
+      <div class="section-body">
+
+        <div class="status-card">
+
+          <div class="status-info">
+
+            <h3>
+              Live Schema Configuration
+            </h3>
+
+            <p>
+              FIELD_SCHEMA is the primary relationship source used
+              by the RD3 Tech application. Documentation pages should
+              use this data rather than maintaining separate copies
+              of field definitions.
+            </p>
+
+          </div>
+
+          <div class="status-badge">
+            PRIMARY SOURCE
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- ============================================================
+         QUICK REFERENCE
+         ============================================================ -->
+
+    <section class="section">
+
+      <div class="section-header">
+
+        <h2>
+          Quick Field Relationship
+        </h2>
+
+        <p>
+          Example of how one field travels through the system.
+        </p>
+
+      </div>
+
+      <div class="section-body">
+
+        <table class="reference-table">
+
+          <thead>
+
+            <tr>
+              <th>Layer</th>
+              <th>Example</th>
+              <th>Purpose</th>
+            </tr>
+
+          </thead>
+
+          <tbody>
+
+            <tr>
+              <td>Google Form</td>
+
+              <td>
+                Name
+              </td>
+
+              <td>
+                Question presented to the user.
+              </td>
+            </tr>
+
+            <tr>
+              <td>Entry ID</td>
+
+              <td>
+                <code>entry.943904063</code>
+              </td>
+
+              <td>
+                Google Form submission identifier.
+              </td>
+            </tr>
+
+            <tr>
+              <td>Schema Key</td>
+
+              <td>
+                <code>name</code>
+              </td>
+
+              <td>
+                Stable application-level field name.
+              </td>
+            </tr>
+
+            <tr>
+              <td>Template Tag</td>
+
+              <td>
+                <code>&lt;?= request.name ?&gt;</code>
+              </td>
+
+              <td>
+                Value inserted into a template.
+              </td>
+            </tr>
+
+            <tr>
+              <td>Web Form Payload</td>
+
+              <td>
+                <code>name</code>
+              </td>
+
+              <td>
+                Key submitted by the website form.
+              </td>
+            </tr>
+
+            <tr>
+              <td>Spreadsheet</td>
+
+              <td>
+                Name column
+              </td>
+
+              <td>
+                Final stored enquiry value.
+              </td>
+            </tr>
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </section>
+
+
+    <!-- ============================================================
+         CHANGE WORKFLOW
+         ============================================================ -->
+
+    <section class="section">
+
+      <div class="section-header">
+
+        <h2>
+          When the Google Form Changes
+        </h2>
+
+        <p>
+          Recommended maintenance workflow.
+        </p>
+
+      </div>
+
+      <div class="section-body">
+
+        <div class="grid">
+
+          <div class="wiki-card">
+
+            <h3>1. Update the Form</h3>
+
+            <p>
+              Make the required change to the Google Form.
+              Record the changed question, entry ID and intended
+              schema key.
+            </p>
+
+          </div>
+
+
+          <div class="wiki-card">
+
+            <h3>2. Update FIELD_SCHEMA</h3>
+
+            <p>
+              Use the schema workflow to establish the new
+              relationship before changing dependent code.
+            </p>
+
+          </div>
+
+
+          <div class="wiki-card">
+
+            <h3>3. Check Email Templates</h3>
+
+            <p>
+              Use the Email Templates wiki to identify old tags,
+              new tags and any AdminEmail or ClientEmail sections
+              affected by the change.
+            </p>
+
+          </div>
+
+
+          <div class="wiki-card">
+
+            <h3>4. Check Web Form</h3>
+
+            <p>
+              Use the Web Form wiki to update the FluentSnippets
+              PHP and standalone HTML versions where required.
+            </p>
+
+          </div>
+
+
+          <div class="wiki-card">
+
+            <h3>5. Check Spreadsheet Output</h3>
+
+            <p>
+              Confirm that the submitted schema key is mapped to
+              the correct spreadsheet column.
+            </p>
+
+          </div>
+
+
+          <div class="wiki-card">
+
+            <h3>6. Test Everything</h3>
+
+            <p>
+              Submit a controlled test and verify the form,
+              spreadsheet output, AdminEmail and ClientEmail.
+            </p>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- ============================================================
+         FOOTER
+         ============================================================ -->
+
+    <footer class="footer">
+      RD3 Tech &nbsp;|&nbsp;
+      Configuration &amp; Development Reference
+    </footer>
 
   </div>
 
+</div>
+
+
+<script>
+  /*
+   * ========================================================================
+   * RD3 TECH ADMIN NAVIGATION
+   * ========================================================================
+   *
+   * The Web App URL is supplied by the Apps Script template/router.
+   *
+   * This avoids hard-coding the deployment URL into Index.html.
+   * ========================================================================
+   */
+
+  const baseUrl =
+    <?!= JSON.stringify(webAppUrl || '') ?>;
+
+
+  /*
+   * ========================================================================
+   * ROUTE BUILDER
+   * ========================================================================
+   */
+
+  function pageUrl(page) {
+
+    if (!baseUrl) {
+      return '#';
+    }
+
+    return baseUrl + '?page=' + encodeURIComponent(page);
+  }
+
+
+  /*
+   * ========================================================================
+   * NAVIGATION LINKS
+   * ========================================================================
+   */
+
+  document.getElementById('nav-home').href =
+    baseUrl || '#';
+
+  document.getElementById('nav-email-templates').href =
+    pageUrl('emailtemplates');
+
+  document.getElementById('nav-web-form').href =
+    pageUrl('webform');
+
+  document.getElementById('nav-editor').href =
+    pageUrl('editor');
+
+
+  /*
+   * ========================================================================
+   * ADMIN CARDS
+   * ========================================================================
+   */
+
+  document.getElementById('card-email-templates').href =
+    pageUrl('emailtemplates');
+
+  document.getElementById('card-web-form').href =
+    pageUrl('webform');
+
+  document.getElementById('card-reference').href =
+    pageUrl('reference');
+
+  document.getElementById('card-editor').href =
+    pageUrl('editor');
+
+
+  /*
+   * ========================================================================
+   * SAFETY CHECK
+   * ========================================================================
+   *
+   * If the router has not supplied a Web App URL, keep the page visible
+   * rather than throwing a JavaScript error.
+   * ========================================================================
+   */
+
+  if (!baseUrl) {
+
+    console.warn(
+      'RD3 Tech Admin: webAppUrl was not supplied by the router.'
+    );
+
+  }
+</script>
+
 </body>
 </html>
-

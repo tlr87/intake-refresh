@@ -7,52 +7,19 @@
  * FILE:
  *   WebAppRouter.gs
  *
- * PURPOSE:
- *   Central router for the RD3 Tech ADMIN / DEVELOPMENT Web App.
- *
- * DEVELOPMENT ROUTES:
- *
- *   /dev
- *       -> Index.html
- *
- *   /dev?page=editor
- *       -> JSON_Editor.html
- *
- *   /dev?page=reference
- *       -> Reference.html
- *
- *   /dev?page=template
- *       -> TemplateReference.html
- *
- *   /dev?page=webform
- *       -> WebFormReference.html
- *
- *   /dev?page=anything-else
- *       -> RouterError.html
- *
- * IMPORTANT:
- *   This file contains ROUTING ONLY.
- *
- * Configuration logic belongs in:
- *
- *   ConfigEditor.gs
- *
- * Fallback providers belong in their own files.
- *
- * HTML pages remain separate:
+ * CURRENT HTML FILES:
  *
  *   Index.html
  *   JSON_Editor.html
- *   Reference.html
- *   TemplateReference.html
- *   WebFormReference.html
- *   RouterError.html
+ *   ReferenceTemplate.html
+ *   ReferenceWebForm.html
+ *   WebAppRouterError.html
  *
- * NOTE:
- *   This router is intended for the /dev deployment.
+ * IMPORTANT:
  *
- *   The /exec deployment is reserved for the production/front-facing
- *   form application.
+ *   Reference.html DOES NOT EXIST.
+ *   TemplateReference.html DOES NOT EXIST.
+ *   WebFormReference.html DOES NOT EXIST.
  *
  * ============================================================================
  */
@@ -67,9 +34,7 @@ function doGet(e) {
 
   try {
 
-    var page =
-      getRequestedPage_(e);
-
+    var page = getRequestedPage_(e);
 
     /**
      * ------------------------------------------------------------------------
@@ -77,8 +42,23 @@ function doGet(e) {
      * ------------------------------------------------------------------------
      */
     if (!isWebAppUserAuthorized_()) {
-
       return renderAccessDenied_();
+    }
+
+
+    /**
+     * ------------------------------------------------------------------------
+     * PAGE STATUS
+     * ------------------------------------------------------------------------
+     */
+    var pageStatus = getPageStatus_(page);
+
+    if (!pageStatus.functional) {
+
+      return renderRouterError_(
+        page,
+        pageStatus.message
+      );
 
     }
 
@@ -91,7 +71,7 @@ function doGet(e) {
     switch (page) {
 
       /**
-       * Main admin landing page.
+       * ADMIN HOME
        */
       case 'index':
       case '':
@@ -99,7 +79,7 @@ function doGet(e) {
 
 
       /**
-       * JSON Configuration Editor.
+       * JSON CONFIGURATION EDITOR
        */
       case 'editor':
       case 'json_editor':
@@ -108,35 +88,40 @@ function doGet(e) {
 
 
       /**
-       * General reference page.
-       */
-      case 'reference':
-      case 'ref':
-        return renderReference();
-
-
-      /**
-       * Template reference.
+       * EMAIL TEMPLATE REFERENCE
+       *
+       * HTML FILE:
+       *   ReferenceTemplate.html
        */
       case 'template':
+      case 'templates':
+      case 'referencetemplate':
       case 'templatereference':
       case 'template-reference':
+      case 'emailtemplates':
+      case 'email-templates':
         return renderTemplateReference_();
 
 
       /**
-       * Front-facing Web Form reference.
+       * WEB FORM REFERENCE
+       *
+       * HTML FILE:
+       *   ReferenceWebForm.html
        */
       case 'webform':
       case 'webformreference':
+      case 'referencewebform':
       case 'webform-reference':
+      case 'form':
         return renderWebFormReference_();
 
 
       /**
-       * Unknown route.
+       * UNKNOWN ROUTE
        */
       default:
+
         return renderRouterError_(
           page,
           'The requested page is not registered with WebAppRouter.gs.'
@@ -144,14 +129,11 @@ function doGet(e) {
 
     }
 
-
   } catch (err) {
 
     return renderRouterError_(
       'unknown',
-      err && err.message
-        ? err.message
-        : String(err)
+      getErrorMessage_(err)
     );
 
   }
@@ -162,17 +144,6 @@ function doGet(e) {
 /**
  * ============================================================================
  * GET REQUESTED PAGE
- * ============================================================================
- *
- * Safely extracts:
- *
- *   ?page=index
- *   ?page=editor
- *   ?page=reference
- *
- * Defaults to:
- *
- *   index
  * ============================================================================
  */
 function getRequestedPage_(e) {
@@ -191,7 +162,6 @@ function getRequestedPage_(e) {
 
   }
 
-
   return 'index';
 
 }
@@ -199,10 +169,168 @@ function getRequestedPage_(e) {
 
 /**
  * ============================================================================
- * RENDER INDEX
+ * PAGE STATUS
  * ============================================================================
  *
- * Main administration landing page.
+ * Central functionality switch.
+ *
+ * The router controls whether a route is currently functional.
+ *
+ * IMPORTANT:
+ *
+ * Apps Script server-side JavaScript cannot inspect the rendered DOM of
+ * another HTML file.
+ *
+ * Therefore this function does NOT attempt to inspect HTML IDs or classes.
+ *
+ * HTML pages may separately use isDocumentationPage() for browser-side
+ * documentation/status logic.
+ * ============================================================================
+ */
+function getPageStatus_(page) {
+
+  var statuses = {
+
+    index: {
+      functional: true,
+      message: ''
+    },
+
+    editor: {
+      functional: true,
+      message: ''
+    },
+
+    json_editor: {
+      functional: true,
+      message: ''
+    },
+
+    'json-editor': {
+      functional: true,
+      message: ''
+    },
+
+    template: {
+      functional: true,
+      message: ''
+    },
+
+    templates: {
+      functional: true,
+      message: ''
+    },
+
+    referencetemplate: {
+      functional: true,
+      message: ''
+    },
+
+    templatereference: {
+      functional: true,
+      message: ''
+    },
+
+    'template-reference': {
+      functional: true,
+      message: ''
+    },
+
+    emailtemplates: {
+      functional: true,
+      message: ''
+    },
+
+    'email-templates': {
+      functional: true,
+      message: ''
+    },
+
+    webform: {
+      functional: true,
+      message: ''
+    },
+
+    webformreference: {
+      functional: true,
+      message: ''
+    },
+
+    referencewebform: {
+      functional: true,
+      message: ''
+    },
+
+    'webform-reference': {
+      functional: true,
+      message: ''
+    },
+
+    form: {
+      functional: true,
+      message: ''
+    }
+
+  };
+
+
+  /**
+   * --------------------------------------------------------------------------
+   * UNKNOWN ROUTE
+   * --------------------------------------------------------------------------
+   *
+   * Unknown routes are allowed through so the switch statement can produce
+   * the proper WebAppRouterError.html page.
+   */
+  if (
+    !Object.prototype.hasOwnProperty.call(
+      statuses,
+      page
+    )
+  ) {
+
+    return {
+      functional: true,
+      message: ''
+    };
+
+  }
+
+
+  return statuses[page];
+
+}
+
+
+/**
+ * ============================================================================
+ * CREATE PAGE UNAVAILABLE STATUS
+ * ============================================================================
+ */
+function createPageUnavailableStatus_(page, reason) {
+
+  return {
+
+    functional: false,
+
+    message:
+      'The page "' +
+      page +
+      '" is currently marked as unavailable.' +
+      (
+        reason
+          ? ' Reason: ' + reason
+          : ''
+      )
+
+  };
+
+}
+
+
+/**
+ * ============================================================================
+ * RENDER INDEX
  * ============================================================================
  */
 function renderIndex_() {
@@ -233,14 +361,6 @@ function renderIndex_() {
  * ============================================================================
  * RENDER JSON EDITOR
  * ============================================================================
- *
- * Loads configuration data from ConfigEditor.gs.
- *
- * IMPORTANT:
- *   getInitialData() remains in ConfigEditor.gs.
- *
- * WebAppRouter.gs only passes the data to the page.
- * ============================================================================
  */
 function renderJsonEditor_() {
 
@@ -250,9 +370,6 @@ function renderJsonEditor_() {
     );
 
 
-  /**
-   * ConfigEditor.gs owns getInitialData().
-   */
   template.initialDataJson =
     JSON.stringify(
       getInitialData()
@@ -277,52 +394,81 @@ function renderJsonEditor_() {
 
 /**
  * ============================================================================
- * RENDER REFERENCE
+ * GET FIELD_SCHEMA
+ * ============================================================================
+ *
+ * FIELD_SCHEMA remains owned by ConfigEditor.gs.
+ *
+ * This router only reads FIELD_SCHEMA and passes it to the documentation
+ * pages.
  * ============================================================================
  */
-function renderReference() {
-
-  var template =
-    HtmlService.createTemplateFromFile(
-      'Reference'
-    );
+function getReferenceFieldSchema_() {
 
   var data =
     getInitialData();
 
-  template.fieldSchema =
-    data.FIELD_SCHEMA || {};
 
-  template.webAppUrl =
-    ScriptApp.getService().getUrl();
+  if (
+    !data ||
+    typeof data !== 'object'
+  ) {
 
-  return template
-    .evaluate()
-    .setTitle(
-      'RD3 Tech — Template Reference'
-    )
-    .setXFrameOptionsMode(
-      HtmlService.XFrameOptionsMode.ALLOWALL
-    );
+    return {};
+
+  }
+
+
+  if (
+    data.FIELD_SCHEMA &&
+    typeof data.FIELD_SCHEMA === 'object'
+  ) {
+
+    return data.FIELD_SCHEMA;
+
+  }
+
+
+  return {};
+
 }
 
 
 /**
  * ============================================================================
- * RENDER TEMPLATE REFERENCE
+ * RENDER EMAIL TEMPLATE REFERENCE
  * ============================================================================
  *
- * Optional page.
+ * HTML FILE:
  *
- * If TemplateReference.html does not yet exist, this route will produce the
- * Router Error page instead of crashing the entire Web App.
+ *   ReferenceTemplate.html
+ *
  * ============================================================================
  */
 function renderTemplateReference_() {
 
   var template =
     HtmlService.createTemplateFromFile(
-      'TemplateReference'
+      'ReferenceTemplate'
+    );
+
+
+  var fieldSchema =
+    getReferenceFieldSchema_();
+
+
+  template.fieldSchemaJson =
+    JSON.stringify(
+      fieldSchema
+    )
+      .replace(/</g, '\\u003c')
+      .replace(/>/g, '\\u003e')
+      .replace(/&/g, '\\u0026');
+
+
+  template.initialFieldSchemaJson =
+    JSON.stringify(
+      fieldSchema
     );
 
 
@@ -333,7 +479,7 @@ function renderTemplateReference_() {
   return template
     .evaluate()
     .setTitle(
-      'RD3 Tech — Template Reference'
+      'RD3 Tech — Email Template Reference'
     )
     .setXFrameOptionsMode(
       HtmlService.XFrameOptionsMode.ALLOWALL
@@ -347,17 +493,36 @@ function renderTemplateReference_() {
  * RENDER WEB FORM REFERENCE
  * ============================================================================
  *
- * Optional page.
+ * HTML FILE:
  *
- * This is intended to document the front-facing form rather than the
- * administration/configuration interface.
+ *   ReferenceWebForm.html
+ *
  * ============================================================================
  */
 function renderWebFormReference_() {
 
   var template =
     HtmlService.createTemplateFromFile(
-      'WebFormReference'
+      'ReferenceWebForm'
+    );
+
+
+  var fieldSchema =
+    getReferenceFieldSchema_();
+
+
+template.fieldSchemaJson =
+  JSON.stringify(
+    fieldSchema
+  )
+  .replace(/</g, '\\u003c')
+  .replace(/>/g, '\\u003e')
+  .replace(/&/g, '\\u0026');
+
+
+  template.initialFieldSchemaJson =
+    JSON.stringify(
+      fieldSchema
     );
 
 
@@ -403,12 +568,6 @@ function getWebAppUrl_() {
  * ============================================================================
  * AUTHORISATION
  * ============================================================================
- *
- * Internal RD3 Tech administration users.
- *
- * IMPORTANT:
- *   This is deliberately separate from routing.
- * ============================================================================
  */
 function isWebAppUserAuthorized_() {
 
@@ -420,9 +579,6 @@ function isWebAppUserAuthorized_() {
   ];
 
 
-  /**
-   * If no users are configured, allow access.
-   */
   if (
     allowedUsers.length === 0
   ) {
@@ -519,7 +675,7 @@ function renderAccessDenied_() {
 
       '<div class="card">' +
 
-      '<h1>🚫 Access Denied</h1>' +
+      '<h1>Access Denied</h1>' +
 
       '<p>' +
       'You are not authorised to access the RD3 Tech administration interface.' +
@@ -549,13 +705,15 @@ function renderAccessDenied_() {
  * ROUTER ERROR
  * ============================================================================
  *
- * Used when:
+ * HTML FILE:
  *
- *   - a page is not registered
- *   - a page cannot be rendered
- *   - a rendering exception occurs
+ *   WebAppRouterError.html
  *
- * This intentionally uses a dedicated RouterError.html page.
+ * IMPORTANT:
+ *
+ * This reports ONLY the error that caused the current request to fail.
+ *
+ * It does not attempt to enumerate unrelated errors elsewhere in the project.
  * ============================================================================
  */
 function renderRouterError_(
@@ -563,48 +721,247 @@ function renderRouterError_(
   errorMessage
 ) {
 
-  var template =
-    HtmlService.createTemplateFromFile(
-      'RouterError'
-    );
+  try {
+
+    var template =
+      HtmlService.createTemplateFromFile(
+        'WebAppRouterError'
+      );
 
 
-  template.requestedPage =
-    requestedPage || 'unknown';
+    template.requestedPage =
+      requestedPage || 'unknown';
 
 
-  template.errorMessage =
-    errorMessage || '';
+    template.errorMessage =
+      errorMessage || 'Unknown router error.';
 
 
-  template.webAppUrl =
-    getWebAppUrl_();
+    template.webAppUrl =
+      getWebAppUrl_();
 
 
-  return template
-    .evaluate()
-    .setTitle(
-      'RD3 Tech — Router Error'
-    )
-    .setXFrameOptionsMode(
-      HtmlService.XFrameOptionsMode.ALLOWALL
-    );
+    return template
+      .evaluate()
+      .setTitle(
+        'RD3 Tech — Router Error'
+      )
+      .setXFrameOptionsMode(
+        HtmlService.XFrameOptionsMode.ALLOWALL
+      );
+
+  } catch (errorPageError) {
+
+    /**
+     * ------------------------------------------------------------------------
+     * FALLBACK ERROR PAGE
+     * ------------------------------------------------------------------------
+     *
+     * If WebAppRouterError.html itself cannot be loaded, return plain HTML.
+     *
+     * This prevents the error handler from creating a second fatal error.
+     */
+    return HtmlService
+      .createHtmlOutput(
+
+        '<!DOCTYPE html>' +
+
+        '<html>' +
+
+        '<head>' +
+
+        '<meta charset="UTF-8">' +
+
+        '<title>RD3 Tech — Router Error</title>' +
+
+        '</head>' +
+
+        '<body>' +
+
+        '<h1>RD3 Tech Router Error</h1>' +
+
+        '<p><strong>Requested page:</strong> ' +
+
+        escapeHtml_(
+          requestedPage || 'unknown'
+        ) +
+
+        '</p>' +
+
+        '<p><strong>Error:</strong> ' +
+
+        escapeHtml_(
+          errorMessage || 'Unknown router error.'
+        ) +
+
+        '</p>' +
+
+        '<p><strong>Error page failure:</strong> ' +
+
+        escapeHtml_(
+          getErrorMessage_(
+            errorPageError
+          )
+        ) +
+
+        '</p>' +
+
+        '</body>' +
+
+        '</html>'
+
+      )
+
+      .setTitle(
+        'RD3 Tech — Router Error'
+      );
+
+  }
 
 }
 
 
 /**
  * ============================================================================
- * ROUTER TEST
+ * ERROR MESSAGE HELPER
+ * ============================================================================
+ */
+function getErrorMessage_(err) {
+
+  if (
+    err &&
+    err.message
+  ) {
+
+    return String(
+      err.message
+    );
+
+  }
+
+
+  return String(
+    err || 'Unknown error.'
+  );
+
+}
+
+
+/**
+ * ============================================================================
+ * HTML ESCAPE HELPER
+ * ============================================================================
+ */
+function escapeHtml_(value) {
+
+  return String(
+    value || ''
+  )
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+}
+
+
+/**
+ * ============================================================================
+ * REQUIRED HTML FILE CHECK
  * ============================================================================
  *
- * Tests the renderer functions directly.
+ * Run:
+ *
+ *   testRequiredHtmlFiles
+ *
+ * Expected files:
+ *
+ *   Index.html
+ *   JSON_Editor.html
+ *   ReferenceTemplate.html
+ *   ReferenceWebForm.html
+ *   WebAppRouterError.html
+ *
+ * Reference.html is deliberately NOT checked.
+ * ============================================================================
+ */
+function testRequiredHtmlFiles() {
+
+  var files = [
+
+    'Index',
+    'JSON_Editor',
+    'ReferenceTemplate',
+    'ReferenceWebForm',
+    'WebAppRouterError'
+
+  ];
+
+
+  Logger.log(
+    '============================================'
+  );
+
+  Logger.log(
+    'RD3 TECH HTML FILE CHECK'
+  );
+
+  Logger.log(
+    '============================================'
+  );
+
+
+  files.forEach(
+    function(fileName) {
+
+      try {
+
+        HtmlService
+          .createTemplateFromFile(
+            fileName
+          );
+
+
+        Logger.log(
+          'OK: ' +
+          fileName +
+          '.html'
+        );
+
+
+      } catch (err) {
+
+        Logger.log(
+          'MISSING: ' +
+          fileName +
+          '.html -> ' +
+          getErrorMessage_(err)
+        );
+
+      }
+
+    }
+  );
+
+
+  Logger.log(
+    '============================================'
+  );
+
+}
+
+
+/**
+ * ============================================================================
+ * ROUTER RENDER TEST
+ * ============================================================================
+ *
+ * Tests the actual renderer functions.
  *
  * Run:
  *
  *   testWebAppRouter
- *
- * This does NOT require a Web App deployment.
  * ============================================================================
  */
 function testWebAppRouter() {
@@ -628,16 +985,15 @@ function testWebAppRouter() {
       renderIndex_();
 
     Logger.log(
-      '✔ Index: ' +
+      'OK: Index -> ' +
       index.getTitle()
     );
-
 
   } catch (err) {
 
     Logger.log(
-      '✖ Index failed: ' +
-      err.message
+      'FAILED: Index -> ' +
+      getErrorMessage_(err)
     );
 
   }
@@ -649,37 +1005,15 @@ function testWebAppRouter() {
       renderJsonEditor_();
 
     Logger.log(
-      '✔ JSON_Editor: ' +
+      'OK: JSON_Editor -> ' +
       editor.getTitle()
     );
 
-
   } catch (err) {
 
     Logger.log(
-      '✖ JSON_Editor failed: ' +
-      err.message
-    );
-
-  }
-
-
-  try {
-
-    var reference =
-      renderReference();
-
-    Logger.log(
-      '✔ Reference: ' +
-      reference.getTitle()
-    );
-
-
-  } catch (err) {
-
-    Logger.log(
-      '✖ Reference failed: ' +
-      err.message
+      'FAILED: JSON_Editor -> ' +
+      getErrorMessage_(err)
     );
 
   }
@@ -691,15 +1025,15 @@ function testWebAppRouter() {
       renderTemplateReference_();
 
     Logger.log(
-      '✔ TemplateReference: ' +
+      'OK: ReferenceTemplate -> ' +
       template.getTitle()
     );
-
 
   } catch (err) {
 
     Logger.log(
-      '⚠ TemplateReference not available yet.'
+      'FAILED: ReferenceTemplate -> ' +
+      getErrorMessage_(err)
     );
 
   }
@@ -711,15 +1045,15 @@ function testWebAppRouter() {
       renderWebFormReference_();
 
     Logger.log(
-      '✔ WebFormReference: ' +
+      'OK: ReferenceWebForm -> ' +
       webForm.getTitle()
     );
-
 
   } catch (err) {
 
     Logger.log(
-      '⚠ WebFormReference not available yet.'
+      'FAILED: ReferenceWebForm -> ' +
+      getErrorMessage_(err)
     );
 
   }
@@ -730,7 +1064,7 @@ function testWebAppRouter() {
   );
 
   Logger.log(
-    '✔ Router render test completed.'
+    'Router render test completed.'
   );
 
   Logger.log(
@@ -745,7 +1079,15 @@ function testWebAppRouter() {
  * ROUTE TEST
  * ============================================================================
  *
- * Tests the routing logic without deploying the Web App.
+ * IMPORTANT:
+ *
+ * There is deliberately NO "reference" route.
+ *
+ * Reference.html no longer exists.
+ *
+ * Run:
+ *
+ *   testWebAppRoutes
  * ============================================================================
  */
 function testWebAppRoutes() {
@@ -767,9 +1109,10 @@ function testWebAppRoutes() {
 
     'index',
     'editor',
-    'reference',
     'template',
+    'referencetemplate',
     'webform',
+    'referencewebform',
     'unknown'
 
   ];
@@ -785,8 +1128,7 @@ function testWebAppRoutes() {
 
             parameter: {
 
-              page:
-                page
+              page: page
 
             }
 
@@ -807,7 +1149,7 @@ function testWebAppRoutes() {
           'Route ?page=' +
           page +
           ' FAILED -> ' +
-          err.message
+          getErrorMessage_(err)
         );
 
       }
@@ -821,8 +1163,115 @@ function testWebAppRoutes() {
   );
 
   Logger.log(
-    '✔ Route test completed.'
+    'Route test completed.'
   );
+
+  Logger.log(
+    '============================================'
+  );
+
+}
+
+
+/**
+ * ============================================================================
+ * FIELD_SCHEMA TEST
+ * ============================================================================
+ *
+ * Run:
+ *
+ *   testReferenceFieldSchema
+ * ============================================================================
+ */
+function testReferenceFieldSchema() {
+
+  Logger.log(
+    '============================================'
+  );
+
+  Logger.log(
+    'RD3 TECH FIELD_SCHEMA REFERENCE TEST'
+  );
+
+  Logger.log(
+    '============================================'
+  );
+
+
+  try {
+
+    var schema =
+      getReferenceFieldSchema_();
+
+
+    if (
+      !schema ||
+      typeof schema !== 'object'
+    ) {
+
+      throw new Error(
+        'FIELD_SCHEMA is missing or is not an object.'
+      );
+
+    }
+
+
+    var keys;
+
+    if (
+      Array.isArray(schema)
+    ) {
+
+      keys =
+        schema.map(
+          function(field) {
+
+            return (
+              field &&
+              field.key
+            )
+              ? field.key
+              : '';
+
+          }
+        );
+
+    } else {
+
+      keys =
+        Object.keys(
+          schema
+        );
+
+    }
+
+
+    Logger.log(
+      'FIELD_SCHEMA loaded.'
+    );
+
+
+    Logger.log(
+      'Field count: ' +
+      keys.length
+    );
+
+
+    Logger.log(
+      'Fields: ' +
+      keys.join(', ')
+    );
+
+
+  } catch (err) {
+
+    Logger.log(
+      'FIELD_SCHEMA TEST FAILED: ' +
+      getErrorMessage_(err)
+    );
+
+  }
+
 
   Logger.log(
     '============================================'

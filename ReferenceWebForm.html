@@ -1,0 +1,3423 @@
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>RD3 Tech — Web Form Reference</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+    }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    a {
+      text-decoration: none;
+    }
+
+    .page {
+      min-height: 100vh;
+      padding: 28px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* ================================================================
+       HEADER
+       ================================================================ */
+
+    .header {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      padding: 24px 28px;
+      margin-bottom: 20px;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .brand h1 {
+      margin: 0;
+      color: #f8fafc;
+      font-size: 26px;
+      line-height: 1.2;
+    }
+
+    .brand p {
+      margin: 7px 0 0;
+      color: #94a3b8;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* ================================================================
+       NAVIGATION
+       ================================================================ */
+
+    .nav {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .nav a {
+      display: inline-block;
+      padding: 9px 14px;
+      border-radius: 8px;
+      background: #0f172a;
+      border: 1px solid #334155;
+      color: #cbd5e1;
+      font-size: 13px;
+      transition:
+        background 0.15s ease,
+        color 0.15s ease,
+        border-color 0.15s ease;
+    }
+
+    .nav a:hover {
+      background: #334155;
+      color: #ffffff;
+    }
+
+    .nav a.active {
+      background: #2563eb;
+      border-color: #2563eb;
+      color: #ffffff;
+    }
+
+    /* ================================================================
+       INTRO
+       ================================================================ */
+
+    .intro {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      padding: 24px 28px;
+      margin-bottom: 20px;
+    }
+
+    .intro h2 {
+      margin: 0 0 9px;
+      color: #f8fafc;
+      font-size: 21px;
+      line-height: 1.3;
+    }
+
+    .intro p {
+      margin: 0;
+      max-width: 900px;
+      color: #94a3b8;
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    /* ================================================================
+       STATUS
+       ================================================================ */
+
+    .status {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+      flex-wrap: wrap;
+
+      margin-bottom: 20px;
+      padding: 16px 20px;
+
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 10px;
+    }
+
+    .status-text {
+      color: #cbd5e1;
+      font-size: 13px;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 7px 11px;
+      border-radius: 6px;
+
+      background: #14532d;
+      border: 1px solid #166534;
+
+      color: #bbf7d0;
+      font-size: 11px;
+      font-weight: 700;
+
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    /* ================================================================
+       CARDS
+       ================================================================ */
+
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 18px 24px;
+      background: #172033;
+      border-bottom: 1px solid #334155;
+    }
+
+    .card-header h2 {
+      margin: 0;
+      color: #f8fafc;
+      font-size: 18px;
+      line-height: 1.4;
+    }
+
+    .card-header p {
+      margin: 6px 0 0;
+      color: #94a3b8;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .card-body {
+      padding: 24px;
+    }
+
+    /* ================================================================
+       CONTENT
+       ================================================================ */
+
+    h3,
+    h4 {
+      color: #f8fafc;
+    }
+
+    h3 {
+      margin-top: 28px;
+      padding-bottom: 7px;
+      border-bottom: 2px solid #334155;
+    }
+
+    h4 {
+      margin-bottom: 8px;
+    }
+
+    p {
+      color: #cbd5e1;
+    }
+
+    strong {
+      color: #f8fafc;
+    }
+
+    /* ================================================================
+       NOTICE TYPES
+       ================================================================ */
+
+    .notice {
+      padding: 15px 18px;
+      margin: 15px 0;
+
+      background: #172554;
+      border-left: 4px solid #3b82f6;
+      border-radius: 6px;
+
+      color: #dbeafe;
+    }
+
+    .success {
+      padding: 15px 18px;
+      margin: 15px 0;
+
+      background: #052e16;
+      border-left: 4px solid #22c55e;
+      border-radius: 6px;
+
+      color: #bbf7d0;
+    }
+
+    .warning {
+      padding: 15px 18px;
+      margin: 15px 0;
+
+      background: #451a03;
+      border-left: 4px solid #f59e0b;
+      border-radius: 6px;
+
+      color: #fed7aa;
+    }
+
+    .danger {
+      padding: 15px 18px;
+      margin: 15px 0;
+
+      background: #450a0a;
+      border-left: 4px solid #ef4444;
+      border-radius: 6px;
+
+      color: #fecaca;
+    }
+
+    /* ================================================================
+       TABLES
+       ================================================================ */
+
+    .relationship {
+      overflow-x: auto;
+      margin: 18px 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #0f172a;
+    }
+
+    th,
+    td {
+      padding: 11px 10px;
+      border: 1px solid #334155;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #172033;
+      color: #cbd5e1;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    td {
+      color: #cbd5e1;
+    }
+
+    tr:hover td {
+      background: #111c31;
+    }
+
+    /* ================================================================
+       CODE
+       ================================================================ */
+
+    code {
+      font-family: Consolas, Monaco, monospace;
+      background: #0f172a;
+      color: #93c5fd;
+      padding: 2px 5px;
+      border-radius: 3px;
+    }
+
+    pre {
+      margin: 15px 0;
+      padding: 18px;
+      overflow-x: auto;
+
+      background: #020617;
+      border: 1px solid #334155;
+
+      color: #e2e8f0;
+      border-radius: 7px;
+
+      font-family: Consolas, Monaco, monospace;
+      font-size: 12px;
+      line-height: 1.55;
+
+      white-space: pre-wrap;
+    }
+
+    /* ================================================================
+       TAG
+       ================================================================ */
+
+    .tag {
+      display: inline-block;
+
+      padding: 4px 7px;
+
+      background: #172554;
+      border: 1px solid #1e40af;
+      border-radius: 4px;
+
+      color: #93c5fd;
+
+      font-family: Consolas, Monaco, monospace;
+      font-size: 12px;
+    }
+
+    /* ================================================================
+       BADGES
+       ================================================================ */
+
+    .badge {
+      display: inline-block;
+
+      padding: 4px 8px;
+      margin: 2px;
+
+      border-radius: 4px;
+
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .badge-live {
+      background: #14532d;
+      color: #bbf7d0;
+    }
+
+    .badge-old {
+      background: #450a0a;
+      color: #fecaca;
+    }
+
+    .badge-new {
+      background: #172554;
+      color: #bfdbfe;
+    }
+
+    .badge-required {
+      background: #450a0a;
+      color: #fecaca;
+    }
+
+    .badge-optional {
+      background: #334155;
+      color: #cbd5e1;
+    }
+
+    .badge-schema {
+      background: #172554;
+      color: #bfdbfe;
+    }
+
+    /* ================================================================
+       SEARCH
+       ================================================================ */
+
+    .search-box {
+      width: 100%;
+      padding: 11px 13px;
+      margin-bottom: 15px;
+
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 7px;
+
+      color: #e2e8f0;
+      font-size: 14px;
+    }
+
+    .search-box::placeholder {
+      color: #64748b;
+    }
+
+    .search-box:focus {
+      outline: none;
+      border-color: #2563eb;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    /* ================================================================
+       SMALL
+       ================================================================ */
+
+    .small {
+      color: #94a3b8;
+      font-size: 12px;
+    }
+
+    /* ================================================================
+       FOOTER
+       ================================================================ */
+
+    .footer {
+      padding: 20px 0 8px;
+      color: #64748b;
+      font-size: 12px;
+      text-align: center;
+    }
+
+    /* ================================================================
+       MOBILE
+       ================================================================ */
+
+    @media only screen and (max-width: 700px) {
+
+      .page {
+        padding: 14px;
+      }
+
+      .header,
+      .intro {
+        padding: 20px;
+      }
+
+      .card-body {
+        padding: 18px;
+      }
+
+      .card-header {
+        padding: 16px 18px;
+      }
+
+      .nav {
+        width: 100%;
+      }
+
+      .nav a {
+        flex: 1;
+        text-align: center;
+      }
+
+      th,
+      td {
+        font-size: 12px;
+      }
+
+      pre {
+        font-size: 11px;
+      }
+    }
+  </style>
+</head>
+
+
+<body>
+
+<div class="page">
+
+  <div class="container">
+
+
+    <!-- ============================================================
+         HEADER
+         ============================================================ -->
+
+    <header class="header">
+
+      <div class="header-top">
+
+        <div class="brand">
+
+          <h1>
+            RD3 Tech Admin
+          </h1>
+
+          <p>
+            Web Form configuration and development reference
+          </p>
+
+        </div>
+
+
+        <nav
+          class="nav"
+          aria-label="Admin navigation"
+        >
+
+          <a
+            id="nav-home"
+            href="#"
+          >
+            Home
+          </a>
+
+          <a
+            id="nav-email-templates"
+            href="#"
+          >
+            Email Templates
+          </a>
+
+          <a
+            id="nav-web-form"
+            href="#"
+            class="active"
+          >
+            Web Form
+          </a>
+
+          <a
+            id="nav-editor"
+            href="#"
+          >
+            JSON Editor
+          </a>
+
+        </nav>
+
+      </div>
+
+    </header>
+
+
+    <!-- ============================================================
+         INTRO
+         ============================================================ -->
+
+    <section class="intro">
+
+      <h2>
+        Web Form Reference
+      </h2>
+
+      <p>
+        This page is a live reference for the RD3 Tech Web Form and its
+        relationship with FIELD_SCHEMA, the WordPress contact form,
+        Web App POST parameters and the submission pipeline.
+      </p>
+
+    </section>
+
+
+    <!-- ============================================================
+         STATUS
+         ============================================================ -->
+
+    <div class="status">
+
+      <div class="status-text">
+
+        FIELD_SCHEMA is supplied by the configuration system.
+        This page does not create or maintain a second schema.
+
+      </div>
+
+      <div class="status-badge">
+        LIVE FIELD_SCHEMA
+      </div>
+
+    </div>
+
+
+    <!-- ============================================================
+         1. WEB FORM CONFIGURATION
+         ============================================================ -->
+
+    <section class="card">
+
+      <div class="card-header">
+
+        <h2>
+          1. Web Form Configuration Overview
+        </h2>
+
+        <p>
+          The RD3 Tech Web Form uses FIELD_SCHEMA as the reference for
+          field identity and mapping.
+        </p>
+
+      </div>
+
+
+      <div class="card-body">
+
+        <p>
+          The WordPress contact form provides the visitor-facing
+          interface. It sends the submitted values to the RD3 Tech
+          Web App.
+        </p>
+
+
+        <div class="notice">
+
+          <strong>Important:</strong>
+
+          The WordPress form does not create a second FIELD_SCHEMA.
+
+          FIELD_SCHEMA remains the source of truth for the RD3 Tech
+          field definitions and their relationships.
+
+        </div>
+
+
+        <h3>
+          Data relationship
+        </h3>
+
+
+        <pre>WordPress Web Form
+        |
+        | HTML fields
+        v
+JavaScript payload
+        |
+        | POST parameters
+        v
+RD3 Tech Web App
+        |
+        v
+FIELD_SCHEMA
+        |
+        v
+Mapped Request / Client Data
+        |
+        v
+Email Templates / Pipeline</pre>
+
+      </div>
+
+    </section>
+
+
+    <!-- ============================================================
+         2. LIVE FIELD SCHEMA
+         ============================================================ -->
+
+    <section class="card">
+
+      <div class="card-header">
+
+        <h2>
+          2. Live FIELD_SCHEMA → Web Form Reference
+        </h2>
+
+        <p>
+          Current field relationships generated directly from the live
+          FIELD_SCHEMA.
+        </p>
+
+      </div>
+
+
+      <div class="card-body">
+
+        <p>
+          Each row represents one field supplied by the current
+          FIELD_SCHEMA configuration.
+        </p>
+
+
+        <input
+          type="text"
+          id="fieldSearch"
+          class="search-box"
+          placeholder="Search fields, titles, keys, entry IDs, aliases..."
+          aria-label="Search FIELD_SCHEMA"
+        >
+
+
+        <div class="relationship">
+
+          <table>
+
+            <thead>
+
+              <tr>
+                <th>#</th>
+                <th>Question Title</th>
+                <th>Schema Key</th>
+                <th>Form Field</th>
+                <th>Entry ID</th>
+                <th>Type</th>
+                <th>Label</th>
+                <th>Section</th>
+                <th>Required</th>
+                <th>Aliases</th>
+              </tr>
+
+            </thead>
+
+
+            <tbody id="fieldSchemaTable">
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- ============================================================
+         3. FIELD MAPPING
+         ============================================================ -->
+
+    <section class="card">
+
+      <div class="card-header">
+
+        <h2>
+          3. Field Mapping Rules
+        </h2>
+
+        <p>
+          How the Web Form field connects to FIELD_SCHEMA.
+        </p>
+
+      </div>
+
+
+      <div class="card-body">
+
+        <h3>
+          Schema Key
+        </h3>
+
+        <p>
+          The schema key is the stable internal identifier for the
+          field.
+        </p>
+
+
+        <pre>FIELD_SCHEMA
+     |
+     +-- key
+     |
+     v
+Internal field identity</pre>
+
+
+        <h3>
+          Form Field
+        </h3>
+
+        <p>
+          The <code>formField</code> value identifies the corresponding
+          form field used by the RD3 Tech configuration.
+        </p>
+
+
+        <pre>FIELD_SCHEMA
+     |
+     +-- formField
+     |
+     v
+Web Form field mapping</pre>
+
+
+        <h3>
+          Entry ID
+        </h3>
+
+        <p>
+          The entry ID identifies the corresponding Google Forms response
+          field.
+        </p>
+
+
+        <pre>Google Form
+     |
+     +-- entry ID
+     |
+     v
+FIELD_SCHEMA.entryId
+     |
+     v
+Mapped value</pre>
+
+
+        <div class="success">
+
+          <strong>
+            Single source of truth:
+          </strong>
+
+          The Web Form should use the FIELD_SCHEMA configuration rather
+          than maintaining a separate hard-coded field schema.
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- ============================================================
+         4. REQUIRED FIELDS
+         ============================================================ -->
+
+    <section class="card">
+
+      <div class="card-header">
+
+        <h2>
+          4. Required Field Rules
+        </h2>
+
+        <p>
+          Required status is read from the current FIELD_SCHEMA.
+        </p>
+
+      </div>
+
+
+      <div class="card-body">
+
+        <table>
+
+          <thead>
+
+            <tr>
+              <th>Field</th>
+              <th>Schema Key</th>
+              <th>Required</th>
+              <th>Web Form Behaviour</th>
+            </tr>
+
+          </thead>
+
+
+          <tbody id="requiredTable">
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </section>
+
+
+    <!-- ============================================================
+         5. OLD / NEW
+         ============================================================ -->
+
+    <section class="card">
+
+      <div class="card-header">
+
+        <h2>
+          5. Old Content / New Content
+        </h2>
+
+        <p>
+          Documentation of the current field relationship.
+        </p>
+
+      </div>
+
+
+      <div class="card-body">
+
+        <p>
+          This section documents the relationship between previous field
+          definitions and the current FIELD_SCHEMA configuration.
+        </p>
+
+
+        <table>
+
+          <thead>
+
+            <tr>
+              <th>Field</th>
+              <th>Old Content</th>
+              <th>New Content</th>
+              <th>Current Schema</th>
+            </tr>
+
+          </thead>
+
+
+          <tbody id="changeTable">
+
+          </tbody>
+
+        </table>
+
+
+        <p class="small">
+
+          This table is documentation only.
+
+          It does not create or modify FIELD_SCHEMA.
+
+        </p>
+
+      </div>
+
+    </section>
+
+
+    <!-- ============================================================
+         6. ADDING / CHANGING FIELDS
+         ============================================================ -->
+
+    <section class="card">
+
+      <div class="card-header">
+
+        <h2>
+          6. Adding or Changing a Web Form Field
+        </h2>
+
+      </div>
+
+
+      <div class="card-body">
+
+        <h3>
+          When adding a field
+        </h3>
+
+
+        <ol>
+
+          <li>
+            Add or update the field in FIELD_SCHEMA.
+          </li>
+
+          <li>
+            Confirm the schema key.
+          </li>
+
+          <li>
+            Confirm the WordPress HTML field ID.
+          </li>
+
+          <li>
+            Confirm the JavaScript POST parameter.
+          </li>
+
+          <li>
+            Confirm the field type.
+          </li>
+
+          <li>
+            Confirm required/optional status.
+          </li>
+
+          <li>
+            Confirm the field is mapped correctly.
+          </li>
+
+          <li>
+            Test the WordPress Web Form.
+          </li>
+
+          <li>
+            Test the submission pipeline.
+          </li>
+
+          <li>
+            Test the email templates.
+          </li>
+
+        </ol>
+
+
+        <div class="warning">
+
+          <strong>
+            Do not create a second FIELD_SCHEMA inside the Web Form.
+          </strong>
+
+          The WordPress form is the user interface.
+
+          FIELD_SCHEMA remains the configuration source of truth.
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- ============================================================
+         7. DIAGNOSTIC
+         ============================================================ -->
+
+    <section class="card">
+
+      <div class="card-header">
+
+        <h2>
+          7. Web Form Diagnostic
+        </h2>
+
+        <p>
+          Browser-side checks performed against the live FIELD_SCHEMA.
+        </p>
+
+      </div>
+
+
+      <div class="card-body">
+
+        <p>
+          The following checks are performed in the browser.
+        </p>
+
+
+        <ul>
+
+          <li>
+            FIELD_SCHEMA exists.
+          </li>
+
+          <li>
+            FIELD_SCHEMA contains fields.
+          </li>
+
+          <li>
+            Each field has a schema key where expected.
+          </li>
+
+          <li>
+            Each field has a form field where expected.
+          </li>
+
+          <li>
+            Each field has an entry ID where expected.
+          </li>
+
+          <li>
+            No unresolved Apps Script scriptlets remain after rendering.
+          </li>
+
+        </ul>
+
+
+        <div
+          id="diagnosticResult"
+          class="notice"
+        >
+          Running diagnostic...
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- ============================================================
+         8. WORDPRESS WEB FORM INTEGRATION
+         ============================================================ -->
+
+    <section class="card">
+
+      <div class="card-header">
+
+        <h2>
+          8. WordPress Web Form Integration
+        </h2>
+
+        <p>
+          WordPress Fluent Snippets implementation and field mapping
+          reference.
+        </p>
+
+      </div>
+
+
+      <div class="card-body">
+
+        <div class="notice">
+
+          <strong>
+            Important:
+          </strong>
+
+          The WordPress contact form is the visitor-facing interface.
+
+          It sends form-urlencoded POST parameters to the RD3 Tech Web App.
+
+          It does not own FIELD_SCHEMA.
+
+        </div>
+
+
+        <h3>
+          WordPress Fluent Snippet
+        </h3>
+
+
+        <p>
+          The current implementation is intended to be installed as a
+          PHP Fluent Snippet using the shortcode:
+        </p>
+
+
+        <pre>[rd3_contact_form_refresh]</pre>
+
+
+        <p>
+          The configuration is controlled by:
+        </p>
+
+
+        <pre>function rd3_contact_form_config() {
+
+    return [
+        'endpoint' =&gt; 'https://script.google.com/macros/s/YOUR_WEB_APP_ID/exec',
+
+        'client_types' =&gt; [
+            'Home or Family',
+            'Small Business',
+            'Community Group'
+        ],
+
+        'help_categories' =&gt; [
+            'Help with Something Broken?',
+            'Help with Something Better?',
+            'Help with Your Workplace Technology?',
+            'Help with Managing Your IT?',
+            'Help with Technology Consulting or Advice?',
+            'Help with Knowing Where to Start?',
+        ],
+
+        'urgency_options' =&gt; [
+            'Low',
+            'Medium',
+            'High'
+        ],
+
+        'contact_preferences' =&gt; [
+            'Email',
+            'Phone'
+        ],
+
+        'previous_client_options' =&gt; [
+            'Yes',
+            'No'
+        ],
+
+        'previous_client_options' =&gt; [
+            'Yes',
+            'No'
+        ],
+    ];
+}</pre>
+
+
+        <div class="warning">
+
+          <strong>
+            Production endpoint:
+          </strong>
+
+          Keep the real production endpoint in the WordPress Fluent
+          Snippet.
+
+          This documentation uses <code>YOUR_WEB_APP_ID</code> so the
+          reference page does not become another copy of the production
+          endpoint.
+
+        </div>
+
+
+        <h3>
+          Where To Change The WordPress Form
+        </h3>
+
+
+        <p>
+          Dropdown configuration is changed inside:
+        </p>
+
+
+        <pre>rd3_contact_form_config()</pre>
+
+
+        <p>
+          For example, to add another client type:
+        </p>
+
+
+        <pre>'client_types' =&gt; [
+    'Home or Family',
+    'Small Business',
+    'Community Group',
+    'Not-for-Profit'
+],</pre>
+
+
+        <p>
+          To change urgency options:
+        </p>
+
+
+        <pre>'urgency_options' =&gt; [
+    'Low',
+    'Medium',
+    'High',
+    'Critical'
+],</pre>
+
+
+        <p>
+          To change contact preferences:
+        </p>
+
+
+        <pre>'contact_preferences' =&gt; [
+    'Email',
+    'Phone',
+    'Either'
+],</pre>
+
+
+        <div class="warning">
+
+          <strong>
+            Configuration boundary:
+          </strong>
+
+          Changing these WordPress arrays changes the choices presented
+          to the visitor.
+
+          It does not automatically change FIELD_SCHEMA.
+
+        </div>
+
+
+        <h3>
+          HTML Field Example
+        </h3>
+
+
+        <p>
+          A typical field in the WordPress form is:
+        </p>
+
+
+        <pre>&lt;div class="rd3-field"&gt;
+
+    &lt;label for="rd3-input-name"&gt;
+        Name &lt;span class="required"&gt;*&lt;/span&gt;
+    &lt;/label&gt;
+
+    &lt;input
+        type="text"
+        id="rd3-input-name"
+        class="rd3-control"
+        placeholder="Jane Smith"
+        autocomplete="name"
+        required
+    &gt;
+
+&lt;/div&gt;</pre>
+
+
+        <h3>
+          JavaScript Payload Example
+        </h3>
+
+
+        <p>
+          The JavaScript then reads the HTML field and adds the value to
+          the POST payload:
+        </p>
+
+
+        <pre>payload.append(
+    'name',
+    document
+        .getElementById('rd3-input-name')
+        .value
+        .trim()
+);</pre>
+
+
+        <h3>
+          Field Relationship
+        </h3>
+
+
+        <pre>HTML field
+    |
+    | id="rd3-input-name"
+    v
+JavaScript
+    |
+    | payload.append('name', ...)
+    v
+Web App POST parameter
+    |
+    | name
+    v
+FIELD_SCHEMA key
+    |
+    v
+RD3 Tech pipeline</pre>
+
+
+        <div class="success">
+
+          <strong>
+            Example:
+          </strong>
+
+          HTML ID:
+
+          <code>rd3-input-name</code>
+
+          &nbsp;→&nbsp;
+
+          POST parameter:
+
+          <code>name</code>
+
+          &nbsp;→&nbsp;
+
+          FIELD_SCHEMA key:
+
+          <code>name</code>
+
+        </div>
+
+
+        <h3>
+          Current WordPress Field Mapping
+        </h3>
+
+
+        <div class="relationship">
+
+          <table>
+
+            <thead>
+
+              <tr>
+                <th>WordPress HTML ID</th>
+                <th>POST Parameter</th>
+                <th>FIELD_SCHEMA Key</th>
+                <th>Purpose</th>
+              </tr>
+
+            </thead>
+
+
+            <tbody>
+
+              <tr>
+
+                <td>
+                  <code>rd3-input-name</code>
+                </td>
+
+                <td>
+                  <code>name</code>
+                </td>
+
+                <td>
+                  <code>name</code>
+                </td>
+
+                <td>
+                  Client name
+                </td>
+
+              </tr>
+
+
+              <tr>
+
+                <td>
+                  <code>rd3-input-email</code>
+                </td>
+
+                <td>
+                  <code>email</code>
+                </td>
+
+                <td>
+                  <code>email</code>
+                </td>
+
+                <td>
+                  Client email address
+                </td>
+
+              </tr>
+
+
+              <tr>
+
+                <td>
+                  <code>rd3-input-phone</code>
+                </td>
+
+                <td>
+                  <code>phone</code>
+                </td>
+
+                <td>
+                  <code>phone</code>
+                </td>
+
+                <td>
+                  Client phone number
+                </td>
+
+              </tr>
+
+
+              <tr>
+
+                <td>
+                  <code>rd3-input-pref</code>
+                </td>
+
+                <td>
+                  <code>preferredContact</code>
+                </td>
+
+                <td>
+                  <code>preferredContact</code>
+                </td>
+
+                <td>
+                  Preferred contact method
+                </td>
+
+              </tr>
+
+
+              <tr>
+
+                <td>
+                  <code>rd3-input-used</code>
+                </td>
+
+                <td>
+                  <code>usedBefore</code>
+                </td>
+
+                <td>
+                  <code>usedBefore</code>
+                </td>
+
+                <td>
+                  Previous RD3 Tech client
+                </td>
+
+              </tr>
+
+
+              <tr>
+
+                <td>
+                  <code>rd3-input-clienttype</code>
+                </td>
+
+                <td>
+                  <code>contactingAs</code>
+                </td>
+
+                <td>
+                  <code>contactingAs</code>
+                </td>
+
+                <td>
+                  Client type
+                </td>
+
+              </tr>
+
+
+              <tr>
+
+                <td>
+                  <code>rd3-input-location</code>
+                </td>
+
+                <td>
+                  <code>location</code>
+                </td>
+
+                <td>
+                  <code>location</code>
+                </td>
+
+                <td>
+                  Address / location
+                </td>
+
+              </tr>
+
+
+              <tr>
+
+                <td>
+                  <code>rd3-input-category</code>
+                </td>
+
+                <td>
+                  <code>helpCategory</code>
+                </td>
+
+                <td>
+                  <code>helpCategory</code>
+                </td>
+
+                <td>
+                  Help category
+                </td>
+
+              </tr>
+
+
+              <tr>
+
+                <td>
+                  <code>rd3-input-goal</code>
+                </td>
+
+                <td>
+                  <code>userGoal</code>
+                </td>
+
+                <td>
+                  <code>userGoal</code>
+                </td>
+
+                <td>
+                  Desired outcome
+                </td>
+
+              </tr>
+
+
+              <tr>
+
+                <td>
+                  <code>rd3-input-urgency</code>
+                </td>
+
+                <td>
+                  <code>urgency</code>
+                </td>
+
+                <td>
+                  <code>urgency</code>
+                </td>
+
+                <td>
+                  Urgency level
+                </td>
+
+              </tr>
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+
+        <h3>
+          How To Change A Field
+        </h3>
+
+
+        <p>
+          When changing a Web Form field, keep the following chain
+          aligned:
+        </p>
+
+
+        <pre>1. WordPress HTML
+       |
+       +-- id
+       |
+       v
+
+2. JavaScript payload
+       |
+       +-- POST parameter
+       |
+       v
+
+3. FIELD_SCHEMA
+       |
+       +-- key
+       +-- formField
+       +-- entryId
+       +-- type
+       |
+       v
+
+4. RD3 Tech pipeline
+       |
+       v
+
+5. Email templates</pre>
+
+
+        <div class="warning">
+
+          <strong>
+            Do not change only the HTML ID.
+          </strong>
+
+          The HTML ID is used by JavaScript to locate the value.
+
+          The JavaScript payload parameter is what is actually sent to
+          the Web App.
+
+          The corresponding server-side mapping and FIELD_SCHEMA must
+          remain aligned.
+
+        </div>
+
+
+        <h3>
+          Example — Adding Company Name
+        </h3>
+
+
+        <p>
+          Suppose a new field called
+          <strong>Company Name</strong>
+          needs to be added.
+        </p>
+
+
+        <h4>
+          Step 1 — Add the HTML field
+        </h4>
+
+
+        <pre>&lt;div class="rd3-field"&gt;
+
+    &lt;label for="rd3-input-company"&gt;
+        Company Name
+    &lt;/label&gt;
+
+    &lt;input
+        type="text"
+        id="rd3-input-company"
+        class="rd3-control"
+        placeholder="Company name"
+    &gt;
+
+&lt;/div&gt;</pre>
+
+
+        <h4>
+          Step 2 — Add the JavaScript payload
+        </h4>
+
+
+        <pre>payload.append(
+    'companyName',
+    document
+        .getElementById('rd3-input-company')
+        .value
+        .trim()
+);</pre>
+
+
+        <h4>
+          Step 3 — Add or update FIELD_SCHEMA
+        </h4>
+
+
+        <pre>{
+    "key": "companyName",
+    "formField": "form_company_name",
+    "title": "Company Name",
+    "entryId": "entry.xxxxxxxxx",
+    "type": "text",
+    "aliases": [
+        "company",
+        "company name"
+    ],
+    "label": "Company Name",
+    "section": "Your Details"
+}</pre>
+
+
+        <h4>
+          Step 4 — Verify the pipeline
+        </h4>
+
+
+        <pre>WordPress
+    |
+    v
+companyName
+    |
+    v
+Web App
+    |
+    v
+FIELD_SCHEMA.companyName
+    |
+    v
+Pipeline mapping
+    |
+    v
+Email / Client Data</pre>
+
+
+        <div class="success">
+
+          <strong>
+            Correct change sequence:
+          </strong>
+
+          WordPress HTML → JavaScript payload → FIELD_SCHEMA →
+          pipeline → email templates.
+
+        </div>
+
+
+        <h3>
+          Complete Submission Example
+        </h3>
+
+
+        <pre>const payload = new URLSearchParams();
+
+payload.append(
+    'name',
+    document.getElementById('rd3-input-name').value.trim()
+);
+
+payload.append(
+    'email',
+    document.getElementById('rd3-input-email').value.trim()
+);
+
+payload.append(
+    'phone',
+    document.getElementById('rd3-input-phone').value.trim()
+);
+
+payload.append(
+    'preferredContact',
+    document.getElementById('rd3-input-pref').value
+);
+
+payload.append(
+    'usedBefore',
+    document.getElementById('rd3-input-used').value
+);
+
+payload.append(
+    'contactingAs',
+    document.getElementById('rd3-input-clienttype').value
+);
+
+payload.append(
+    'location',
+    document.getElementById('rd3-input-location').value.trim()
+);
+
+payload.append(
+    'helpCategory',
+    document.getElementById('rd3-input-category').value
+);
+
+payload.append(
+    'userGoal',
+    document.getElementById('rd3-input-goal').value.trim()
+);
+
+payload.append(
+    'urgency',
+    document.getElementById('rd3-input-urgency').value
+);
+
+payload.append(
+    'website_url',
+    ''
+);
+
+fetch(targetUrl, {
+
+    method: 'POST',
+
+    headers: {
+        'Content-Type':
+            'application/x-www-form-urlencoded;charset=UTF-8'
+    },
+
+    body: payload.toString()
+
+});</pre>
+
+
+        <h3>
+          What To Change Where
+        </h3>
+
+
+        <div class="relationship">
+
+          <table>
+
+            <thead>
+
+              <tr>
+                <th>Change</th>
+                <th>Location</th>
+                <th>FIELD_SCHEMA?</th>
+              </tr>
+
+            </thead>
+
+
+            <tbody>
+
+              <tr>
+
+                <td>
+                  Change visible field label
+                </td>
+
+                <td>
+                  WordPress HTML
+                </td>
+
+                <td>
+                  Usually no
+                </td>
+
+              </tr>
+
+
+              <tr>
+
+                <td>
+                  Change dropdown options
+                </td>
+
+                <td>
+                  <code>rd3_contact_form_config()</code>
+                </td>
+
+                <td>
+                  Usually no
+                </td>
+
+              </tr>
+
+
+              <tr>
+
+                <td>
+                  Change Web App endpoint
+                </td>
+
+                <td>
+                  <code>endpoint</code>
+                </td>
+
+                <td>
+                  No
+                </td>
+
+              </tr>
+
+
+              <tr>
+
+                <td>
+                  Change POST parameter
+                </td>
+
+                <td>
+                  JavaScript <code>payload.append()</code>
+                </td>
+
+                <td>
+                  Yes — mapping must remain aligned
+                </td>
+
+              </tr>
+
+
+              <tr>
+
+                <td>
+                  Change schema key
+                </td>
+
+                <td>
+                  FIELD_SCHEMA
+                </td>
+
+                <td>
+                  Yes
+                </td>
+
+              </tr>
+
+
+              <tr>
+
+                <td>
+                  Change Google Forms entry ID
+                </td>
+
+                <td>
+                  FIELD_SCHEMA
+                </td>
+
+                <td>
+                  Yes
+                </td>
+
+              </tr>
+
+
+              <tr>
+
+                <td>
+                  Change email template field
+                </td>
+
+                <td>
+                  Email template / pipeline mapping
+                </td>
+
+                <td>
+                  Check FIELD_SCHEMA first
+                </td>
+
+              </tr>
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+
+        <div class="danger">
+
+          <strong>
+            Source-of-truth rule:
+          </strong>
+
+          The WordPress form is the user interface.
+
+          The Web App is the transport and processing layer.
+
+          FIELD_SCHEMA is the RD3 Tech field configuration source of
+          truth.
+
+          Do not create another FIELD_SCHEMA inside WordPress or inside
+          this reference page.
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- ============================================================
+         9. MAINTENANCE
+         ============================================================ -->
+
+    <section class="card">
+
+      <div class="card-header">
+
+        <h2>
+          9. Web Form Maintenance Checklist
+        </h2>
+
+      </div>
+
+
+      <div class="card-body">
+
+        <ol>
+
+          <li>
+            Confirm the field exists in FIELD_SCHEMA.
+          </li>
+
+          <li>
+            Confirm the FIELD_SCHEMA key.
+          </li>
+
+          <li>
+            Confirm the WordPress HTML ID.
+          </li>
+
+          <li>
+            Confirm the JavaScript POST parameter.
+          </li>
+
+          <li>
+            Confirm the Web App receives the parameter.
+          </li>
+
+          <li>
+            Confirm the pipeline maps the field correctly.
+          </li>
+
+          <li>
+            Confirm AdminEmail.html.
+          </li>
+
+          <li>
+            Confirm ClientEmail.html.
+          </li>
+
+          <li>
+            Submit a real test enquiry.
+          </li>
+
+          <li>
+            Verify the complete email and client-data flow.
+          </li>
+
+        </ol>
+
+
+        <div class="danger">
+
+          <strong>
+            Never fix a mapping problem by adding a second schema.
+          </strong>
+
+          Fix the field relationship at the correct layer.
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- ============================================================
+         FOOTER
+         ============================================================ -->
+
+    <footer class="footer">
+
+      RD3 Tech &nbsp;|&nbsp;
+      Web Form Configuration &amp; Development Reference
+
+    </footer>
+
+
+  </div>
+
+</div>
+
+
+<script>
+
+/*
+ * ============================================================================
+ * RD3 TECH — REFERENCE WEB FORM
+ * ============================================================================
+ *
+ * IMPORTANT:
+ *
+ * This page is documentation/reference only.
+ *
+ * It does NOT use:
+ *
+ *     request
+ *     client
+ *     payload
+ *
+ * as server-side Apps Script variables.
+ *
+ * The only server-side configuration injected into this page is:
+ *
+ *     webAppUrl
+ *     fieldSchemaJson
+ *
+ * FIELD_SCHEMA remains the source of truth.
+ *
+ * The WordPress Web Form is documented separately below.
+ * ============================================================================
+ */
+
+
+/*
+ * ============================================================================
+ * WEB APP URL
+ * ============================================================================
+ */
+
+var baseUrl =
+  <?!= JSON.stringify(webAppUrl || '') ?>;
+
+
+/*
+ * ============================================================================
+ * ROUTE BUILDER
+ * ============================================================================
+ */
+
+function pageUrl(page) {
+
+  if (!baseUrl) {
+    return '#';
+  }
+
+  return baseUrl +
+    '?page=' +
+    encodeURIComponent(page);
+
+}
+
+
+/*
+ * ============================================================================
+ * NAVIGATION
+ * ============================================================================
+ */
+
+var navHome =
+  document.getElementById(
+    'nav-home'
+  );
+
+
+var navEmailTemplates =
+  document.getElementById(
+    'nav-email-templates'
+  );
+
+
+var navWebForm =
+  document.getElementById(
+    'nav-web-form'
+  );
+
+
+var navEditor =
+  document.getElementById(
+    'nav-editor'
+  );
+
+
+if (navHome) {
+
+  navHome.href =
+    baseUrl || '#';
+
+}
+
+
+if (navEmailTemplates) {
+
+  navEmailTemplates.href =
+    pageUrl('emailtemplates');
+
+}
+
+
+if (navWebForm) {
+
+  navWebForm.href =
+    pageUrl('webform');
+
+}
+
+
+if (navEditor) {
+
+  navEditor.href =
+    pageUrl('editor');
+
+}
+
+
+/*
+ * ============================================================================
+ * FIELD_SCHEMA
+ * ============================================================================
+ *
+ * This is the ONLY configuration data injected into this page.
+ *
+ * There is deliberately NO:
+ *
+ *     request
+ *     client
+ *     payload
+ *
+ * server-side reference here.
+ * ============================================================================
+ */
+
+var FIELD_SCHEMA =
+  <?!= fieldSchemaJson ?>;
+
+
+/*
+ * ============================================================================
+ * NORMALISE FIELD_SCHEMA
+ * ============================================================================
+ */
+
+function normaliseFieldSchema(schema) {
+
+  var fields = [];
+
+
+  if (
+    Array.isArray(schema)
+  ) {
+
+    fields =
+      schema;
+
+  }
+
+
+  else if (
+    schema &&
+    typeof schema === 'object'
+  ) {
+
+    Object.keys(schema).forEach(
+      function(key) {
+
+        var field =
+          schema[key];
+
+
+        if (
+          field &&
+          typeof field === 'object'
+        ) {
+
+          fields.push(
+            field
+          );
+
+        }
+
+      }
+    );
+
+  }
+
+
+  return fields;
+
+}
+
+
+/*
+ * ============================================================================
+ * GET FIELD VALUE
+ * ============================================================================
+ */
+
+function getFieldValue(
+  field,
+  property
+) {
+
+  if (
+    !field ||
+    typeof field !== 'object'
+  ) {
+
+    return '';
+
+  }
+
+
+  if (
+    field[property] !== null &&
+    typeof field[property] !== 'undefined'
+  ) {
+
+    return field[property];
+
+  }
+
+
+  return '';
+
+}
+
+
+/*
+ * ============================================================================
+ * GET FIELD TITLE
+ * ============================================================================
+ */
+
+function getFieldTitle(field) {
+
+  return (
+
+    getFieldValue(
+      field,
+      'title'
+    ) ||
+
+    getFieldValue(
+      field,
+      'label'
+    ) ||
+
+    getFieldValue(
+      field,
+      'name'
+    )
+
+  );
+
+}
+
+
+/*
+ * ============================================================================
+ * GET FIELD ALIASES
+ * ============================================================================
+ */
+
+function getFieldAliases(field) {
+
+  var aliases =
+    getFieldValue(
+      field,
+      'aliases'
+    );
+
+
+  if (
+    Array.isArray(aliases)
+  ) {
+
+    return aliases.join(
+      ', '
+    );
+
+  }
+
+
+  if (
+    aliases
+  ) {
+
+    return String(
+      aliases
+    );
+
+  }
+
+
+  return '';
+
+}
+
+
+/*
+ * ============================================================================
+ * REQUIRED
+ * ============================================================================
+ */
+
+function isRequired(field) {
+
+  if (!field) {
+
+    return false;
+
+  }
+
+
+  if (
+    field.required === true
+  ) {
+
+    return true;
+
+  }
+
+
+  if (
+    field.required === false
+  ) {
+
+    return false;
+
+  }
+
+
+  return (
+    String(
+      field.required
+    ).toLowerCase() === 'true'
+  );
+
+}
+
+
+/*
+ * ============================================================================
+ * ESCAPE HTML
+ * ============================================================================
+ */
+
+function escapeHtml(value) {
+
+  var text =
+    value === null ||
+    typeof value === 'undefined'
+      ? ''
+      : String(value);
+
+
+  return text
+
+    .replace(
+      /&/g,
+      '&amp;'
+    )
+
+    .replace(
+      /</g,
+      '&lt;'
+    )
+
+    .replace(
+      />/g,
+      '&gt;'
+    )
+
+    .replace(
+      /"/g,
+      '&quot;'
+    )
+
+    .replace(
+      /'/g,
+      '&#039;'
+    );
+
+}
+
+
+/*
+ * ============================================================================
+ * RENDER FIELD SCHEMA
+ * ============================================================================
+ */
+
+function renderFieldSchema() {
+
+  var table =
+    document.getElementById(
+      'fieldSchemaTable'
+    );
+
+
+  if (!table) {
+
+    return;
+
+  }
+
+
+  var fields =
+    normaliseFieldSchema(
+      FIELD_SCHEMA
+    );
+
+
+  table.innerHTML =
+    '';
+
+
+  if (
+    fields.length === 0
+  ) {
+
+    var emptyRow =
+      document.createElement(
+        'tr'
+      );
+
+
+    emptyRow.innerHTML =
+      '<td colspan="10">' +
+      'No FIELD_SCHEMA fields were returned.' +
+      '</td>';
+
+
+    table.appendChild(
+      emptyRow
+    );
+
+
+    return;
+
+  }
+
+
+  fields.forEach(
+    function(field, index) {
+
+      var row =
+        document.createElement(
+          'tr'
+        );
+
+
+      var required =
+        isRequired(
+          field
+        );
+
+
+      var aliases =
+        getFieldAliases(
+          field
+        );
+
+
+      row.setAttribute(
+        'data-search',
+        [
+
+          getFieldTitle(field),
+
+          getFieldValue(
+            field,
+            'key'
+          ),
+
+          getFieldValue(
+            field,
+            'formField'
+          ),
+
+          getFieldValue(
+            field,
+            'entryId'
+          ),
+
+          getFieldValue(
+            field,
+            'type'
+          ),
+
+          getFieldValue(
+            field,
+            'label'
+          ),
+
+          getFieldValue(
+            field,
+            'section'
+          ),
+
+          aliases
+
+        ]
+          .join(' ')
+          .toLowerCase()
+      );
+
+
+      row.innerHTML =
+
+        '<td>' +
+
+          (index + 1) +
+
+        '</td>' +
+
+
+        '<td>' +
+
+          escapeHtml(
+            getFieldTitle(field)
+          ) +
+
+        '</td>' +
+
+
+        '<td>' +
+
+          '<code>' +
+
+            escapeHtml(
+              getFieldValue(
+                field,
+                'key'
+              )
+            ) +
+
+          '</code>' +
+
+        '</td>' +
+
+
+        '<td>' +
+
+          escapeHtml(
+            getFieldValue(
+              field,
+              'formField'
+            )
+          ) +
+
+        '</td>' +
+
+
+        '<td>' +
+
+          escapeHtml(
+            getFieldValue(
+              field,
+              'entryId'
+            )
+          ) +
+
+        '</td>' +
+
+
+        '<td>' +
+
+          escapeHtml(
+            getFieldValue(
+              field,
+              'type'
+            )
+          ) +
+
+        '</td>' +
+
+
+        '<td>' +
+
+          escapeHtml(
+            getFieldValue(
+              field,
+              'label'
+            )
+          ) +
+
+        '</td>' +
+
+
+        '<td>' +
+
+          escapeHtml(
+            getFieldValue(
+              field,
+              'section'
+            )
+          ) +
+
+        '</td>' +
+
+
+        '<td>' +
+
+          (
+            required
+
+              ? '<span class="badge badge-required">' +
+                  'REQUIRED' +
+                '</span>'
+
+              : '<span class="badge badge-optional">' +
+                  'OPTIONAL' +
+                '</span>'
+          ) +
+
+        '</td>' +
+
+
+        '<td>' +
+
+          escapeHtml(
+            aliases
+          ) +
+
+        '</td>';
+
+
+      table.appendChild(
+        row
+      );
+
+    }
+  );
+
+}
+
+
+/*
+ * ============================================================================
+ * RENDER REQUIRED TABLE
+ * ============================================================================
+ */
+
+function renderRequiredTable() {
+
+  var table =
+    document.getElementById(
+      'requiredTable'
+    );
+
+
+  if (!table) {
+
+    return;
+
+  }
+
+
+  var fields =
+    normaliseFieldSchema(
+      FIELD_SCHEMA
+    );
+
+
+  table.innerHTML =
+    '';
+
+
+  if (
+    fields.length === 0
+  ) {
+
+    var emptyRow =
+      document.createElement(
+        'tr'
+      );
+
+
+    emptyRow.innerHTML =
+      '<td colspan="4">' +
+      'No FIELD_SCHEMA fields were returned.' +
+      '</td>';
+
+
+    table.appendChild(
+      emptyRow
+    );
+
+
+    return;
+
+  }
+
+
+  fields.forEach(
+    function(field) {
+
+      var row =
+        document.createElement(
+          'tr'
+        );
+
+
+      var required =
+        isRequired(
+          field
+        );
+
+
+      row.innerHTML =
+
+        '<td>' +
+
+          escapeHtml(
+            getFieldTitle(field)
+          ) +
+
+        '</td>' +
+
+
+        '<td>' +
+
+          '<code>' +
+
+            escapeHtml(
+              getFieldValue(
+                field,
+                'key'
+              )
+            ) +
+
+          '</code>' +
+
+        '</td>' +
+
+
+        '<td>' +
+
+          (
+            required
+
+              ? '<span class="badge badge-required">' +
+                  'REQUIRED' +
+                '</span>'
+
+              : '<span class="badge badge-optional">' +
+                  'OPTIONAL' +
+                '</span>'
+          ) +
+
+        '</td>' +
+
+
+        '<td>' +
+
+          (
+            required
+
+              ? 'Web Form should require a value.'
+
+              : 'Web Form may allow the field to remain empty.'
+          ) +
+
+        '</td>';
+
+
+      table.appendChild(
+        row
+      );
+
+    }
+  );
+
+}
+
+
+/*
+ * ============================================================================
+ * RENDER CHANGE TABLE
+ * ============================================================================
+ */
+
+function renderChangeTable() {
+
+  var table =
+    document.getElementById(
+      'changeTable'
+    );
+
+
+  if (!table) {
+
+    return;
+
+  }
+
+
+  var fields =
+    normaliseFieldSchema(
+      FIELD_SCHEMA
+    );
+
+
+  table.innerHTML =
+    '';
+
+
+  if (
+    fields.length === 0
+  ) {
+
+    var emptyRow =
+      document.createElement(
+        'tr'
+      );
+
+
+    emptyRow.innerHTML =
+      '<td colspan="4">' +
+      'No FIELD_SCHEMA fields were returned.' +
+      '</td>';
+
+
+    table.appendChild(
+      emptyRow
+    );
+
+
+    return;
+
+  }
+
+
+  fields.forEach(
+    function(field) {
+
+      var row =
+        document.createElement(
+          'tr'
+        );
+
+
+      var title =
+        getFieldTitle(
+          field
+        );
+
+
+      var key =
+        getFieldValue(
+          field,
+          'key'
+        );
+
+
+      var formField =
+        getFieldValue(
+          field,
+          'formField'
+        );
+
+
+      var entryId =
+        getFieldValue(
+          field,
+          'entryId'
+        );
+
+
+      row.innerHTML =
+
+        '<td>' +
+
+          '<strong>' +
+
+            escapeHtml(
+              title
+            ) +
+
+          '</strong>' +
+
+          '<br>' +
+
+          '<code>' +
+
+            escapeHtml(
+              key
+            ) +
+
+          '</code>' +
+
+        '</td>' +
+
+
+        '<td>' +
+
+          '<span class="badge badge-old">' +
+            'OLD' +
+          '</span>' +
+
+          '<br>' +
+
+          '<span class="small">' +
+            'Previous field definition recorded separately.' +
+          '</span>' +
+
+        '</td>' +
+
+
+        '<td>' +
+
+          '<span class="badge badge-new">' +
+            'NEW' +
+          '</span>' +
+
+          '<br>' +
+
+          '<span class="small">' +
+
+            escapeHtml(
+              formField
+            ) +
+
+            ' / ' +
+
+            escapeHtml(
+              entryId
+            ) +
+
+          '</span>' +
+
+        '</td>' +
+
+
+        '<td>' +
+
+          '<span class="badge badge-live">' +
+            'LIVE FIELD_SCHEMA' +
+          '</span>' +
+
+          '<br>' +
+
+          '<code>' +
+
+            escapeHtml(
+              key
+            ) +
+
+          '</code>' +
+
+        '</td>';
+
+
+      table.appendChild(
+        row
+      );
+
+    }
+  );
+
+}
+
+
+/*
+ * ============================================================================
+ * SEARCH
+ * ============================================================================
+ */
+
+function setupSearch() {
+
+  var search =
+    document.getElementById(
+      'fieldSearch'
+    );
+
+
+  if (!search) {
+
+    return;
+
+  }
+
+
+  search.addEventListener(
+    'input',
+    function() {
+
+      var value =
+        search.value
+          .toLowerCase()
+          .trim();
+
+
+      var rows =
+        document.querySelectorAll(
+          '#fieldSchemaTable tr'
+        );
+
+
+      rows.forEach(
+        function(row) {
+
+          var searchable =
+            row.getAttribute(
+              'data-search'
+            ) || '';
+
+
+          if (
+            !value ||
+            searchable.indexOf(
+              value
+            ) !== -1
+          ) {
+
+            row.classList.remove(
+              'hidden'
+            );
+
+          }
+
+          else {
+
+            row.classList.add(
+              'hidden'
+            );
+
+          }
+
+        }
+      );
+
+    }
+  );
+
+}
+
+
+/*
+ * ============================================================================
+ * DIAGNOSTIC
+ * ============================================================================
+ */
+
+function runDiagnostic() {
+
+  var result =
+    document.getElementById(
+      'diagnosticResult'
+    );
+
+
+  if (!result) {
+
+    return;
+
+  }
+
+
+  try {
+
+    var fields =
+      normaliseFieldSchema(
+        FIELD_SCHEMA
+      );
+
+
+    if (
+      fields.length === 0
+    ) {
+
+      result.className =
+        'danger';
+
+
+      result.textContent =
+        'FAIL: FIELD_SCHEMA contains no fields.';
+
+
+      return;
+
+    }
+
+
+    var missingKeys =
+      0;
+
+
+    var missingFormFields =
+      0;
+
+
+    var missingEntryIds =
+      0;
+
+
+    fields.forEach(
+      function(field) {
+
+        if (
+          !field.key
+        ) {
+
+          missingKeys++;
+
+        }
+
+
+        if (
+          !field.formField
+        ) {
+
+          missingFormFields++;
+
+        }
+
+
+        if (
+          !field.entryId
+        ) {
+
+          missingEntryIds++;
+
+        }
+
+      }
+    );
+
+
+    var messages = [];
+
+
+    messages.push(
+      'FIELD_SCHEMA loaded: ' +
+      fields.length +
+      ' fields.'
+    );
+
+
+    messages.push(
+      'Missing schema keys: ' +
+      missingKeys
+    );
+
+
+    messages.push(
+      'Missing form fields: ' +
+      missingFormFields
+    );
+
+
+    messages.push(
+      'Missing entry IDs: ' +
+      missingEntryIds
+    );
+
+
+    if (
+      missingKeys === 0 &&
+      missingFormFields === 0 &&
+      missingEntryIds === 0
+    ) {
+
+      result.className =
+        'success';
+
+
+      result.textContent =
+        'PASS: Web Form FIELD_SCHEMA diagnostic passed. ' +
+        messages.join(' ');
+
+    }
+
+    else {
+
+      result.className =
+        'warning';
+
+
+      result.textContent =
+        'WARNING: Web Form FIELD_SCHEMA contains incomplete mappings. ' +
+        messages.join(' ');
+
+    }
+
+  }
+
+  catch (error) {
+
+    result.className =
+      'danger';
+
+
+    result.textContent =
+      'FAIL: Web Form diagnostic failed: ' +
+      error.message;
+
+  }
+
+}
+
+
+/*
+ * ============================================================================
+ * INITIALISE
+ * ============================================================================
+ */
+
+document.addEventListener(
+  'DOMContentLoaded',
+  function() {
+
+    try {
+
+      renderFieldSchema();
+
+      renderRequiredTable();
+
+      renderChangeTable();
+
+      setupSearch();
+
+      runDiagnostic();
+
+    }
+
+    catch (error) {
+
+      var result =
+        document.getElementById(
+          'diagnosticResult'
+        );
+
+
+      if (result) {
+
+        result.className =
+          'danger';
+
+
+        result.textContent =
+          'FAIL: ReferenceWebForm initialization failed: ' +
+          error.message;
+
+      }
+
+
+      console.error(
+        'ReferenceWebForm initialization failed:',
+        error
+      );
+
+    }
+
+  }
+);
+
+
+/*
+ * ============================================================================
+ * ROUTER SAFETY CHECK
+ * ============================================================================
+ */
+
+if (!baseUrl) {
+
+  console.warn(
+    'RD3 Tech ReferenceWebForm: webAppUrl was not supplied by the router.'
+  );
+
+}
+
+</script>
+
+</body>
+</html>
+```
